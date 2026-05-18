@@ -21,4 +21,6 @@ urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('feedback/<int:pk>/edit/', views.edit_feedback, name='edit_feedback'),
+
 ]

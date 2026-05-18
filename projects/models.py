@@ -147,6 +147,7 @@ class Feedback(models.Model):
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_feedback')
     subject = models.CharField(max_length=200)
     message = models.TextField()
+    rating = models.PositiveSmallIntegerField(default=0)  
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

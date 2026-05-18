@@ -25,6 +25,15 @@
                         <label class="form-label fw-bold small">Your Message</label>
                         {{ form.message }}
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Rate this Project</label>
+                        <div class="rating">
+                            {% for i in "12345" %}
+                            <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}">
+                            <label for="star{{ forloop.counter }}"><i class="fas fa-star"></i></label>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Send Feedback</button>
                 </form>
             </div>
@@ -45,14 +54,58 @@
                             <span class="x-small text-muted">{{ feedback.created_at|date:"M d, Y" }}</span>
                         </div>
                         <div class="badge bg-light text-dark x-small mb-2">{{ feedback.project.title }}</div>
+                        <div class="text-warning mb-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= feedback.rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
                         <p class="text-muted small mb-0">{{ feedback.message }}</p>
+                        <a href="{% url 'edit_feedback' feedback.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </a>
                     </div>
                     {% empty %}
                     <div class="text-center py-5 text-muted">You haven't submitted any feedback yet.</div>
                     {% endfor %}
+                    
                 </div>
             </div>
         </div>
     </div>
 </div>
+<style>
+ .btn.btn-primary {
+    opacity: 1;
+    background-color: rgb(32, 32, 154);
+}
+   
+.rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    gap: 5px;
+}
+
+.rating input {
+    display: none;
+}
+
+.rating label {
+    font-size: 1.5rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.rating input:checked ~ label,
+.rating label:hover,
+.rating label:hover ~ label {
+    color: #f5c518; /* gold */
+}
+
+</style>
 {% endblock %}

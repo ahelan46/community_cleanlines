@@ -63,11 +63,12 @@ from .models import Feedback
 class FeedbackForm(forms.ModelForm):
     class Meta:
         model = Feedback
-        fields = ['project', 'subject', 'message']
+        fields = ['project', 'subject', 'message', 'rating']
         widgets = {
             'project': forms.Select(attrs={'class': 'form-select'}),
             'subject': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Subject'}),
             'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Your Feedback'}),
+            'rating': forms.RadioSelect(choices=[(i, '⭐'*i) for i in range(1, 6)])
         }
 
 class ClientProjectForm(forms.Form):
@@ -133,3 +134,7 @@ class ClientProjectForm(forms.Form):
             'accept': '*/*'
         })
     )
+
+
+
+

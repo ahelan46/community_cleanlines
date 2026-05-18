@@ -348,3 +348,16 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+@login_required
+def edit_feedback(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk, client=request.user)
+    if request.method == 'POST':
+        form = FeedbackForm(request.POST, instance=feedback)
+        if form.is_valid():
+            form.save()
+            return redirect('client_feedback')
+    else:
+        form = FeedbackForm(instance=feedback)
+        form.fields['project'].queryset = Project.objects.filter(client__email=request.user.email)
+    return render(request, 'projects/edit_feedback.html', {'form': form})

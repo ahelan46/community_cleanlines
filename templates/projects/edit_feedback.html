@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Edit Feedback{% endblock %}
+{% block content %}
+<div class="card p-4 shadow-sm border-0" style="border-radius: 16px;">
+    <h4 class="fw-bold mb-3">Edit Feedback</h4>
+    <form method="POST">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label fw-bold small">Select Project</label>
+        {{ form.project }}
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold small">Subject</label>
+        {{ form.subject }}
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold small">Your Message</label>
+        {{ form.message }}
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold small">Rate this Project</label>
+        {{ form.rating }}
+    </div>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+</div>
+<style>
+    .btn.btn-primary {
+        opacity: 1;
+        background-color: rgb(32, 32, 154);
+    }
+</style>
+{% endblock %}
