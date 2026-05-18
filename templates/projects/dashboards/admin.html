@@ -78,7 +78,6 @@
                             <tr>
                                 <th class="px-4 py-3 border-0">Project</th>
                                 <th class="py-3 border-0">Client</th>
-                                <th class="py-3 border-0">Manager</th>
                                 <th class="py-3 border-0">Status</th>
                             </tr>
                         </thead>
@@ -87,11 +86,10 @@
                             <tr>
                                 <td class="px-4"><a href="{% url 'project_detail' project.pk %}" class="fw-bold text-decoration-none">{{ project.title }}</a></td>
                                 <td>{{ project.client.name }}</td>
-                                <td>{{ project.manager.username|default:"Unassigned" }}</td>
                                 <td><span class="badge bg-{{ project.status }}">{{ project.get_status_display }}</span></td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="4" class="text-center py-4">No projects found</td></tr>
+                            <tr><td colspan="3" class="text-center py-4">No projects found</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
