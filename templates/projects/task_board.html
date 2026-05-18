@@ -1,105 +1,396 @@
 {% extends 'base.html' %}
 
-{% block title %}Task Board | Tracker{% endblock %}
+{% block title %}Task Board | Workspace{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+    :root {
+        --board-gap: 1.25rem;
+    }
+    
+    .kanban-board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--board-gap);
+        align-items: start;
+        margin-top: 1.5rem;
+    }
+    
+    @media (max-width: 1200px) {
+        .kanban-board {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .kanban-board {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .kanban-column {
+        background-color: #f8fafc;
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 1.25rem;
+        min-height: 70vh;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .kanban-column.drag-over {
+        background-color: rgba(59, 130, 246, 0.05);
+        border: 2px dashed var(--primary-color) !important;
+        transform: scale(1.01);
+    }
+    
+    .column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+    
+    .column-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .column-count {
+        background-color: rgba(100, 116, 139, 0.1);
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+    }
+    
+    .task-list-container {
+        flex-grow: 1;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .task-card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+        cursor: grab;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        user-select: none;
+    }
+    
+    .task-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .task-card:active {
+        cursor: grabbing;
+    }
+    
+    .task-card.dragging {
+        opacity: 0.4;
+        transform: scale(0.95);
+        border: 2px dashed var(--primary-color) !important;
+    }
+    
+    .priority-indicator {
+        width: 6px;
+        height: 60px;
+        border-radius: 10px;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    /* Alarm alert animation */
+    .overdue-pulse {
+        animation: pulse-red 2s infinite;
+        border: 1.5px solid #ef4444 !important;
+    }
+    
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    
+    /* Filter bar */
+    .filter-card {
+        border-radius: 16px;
+        border: 1px solid var(--border-color) !important;
+        background-color: var(--card-bg);
+    }
+
+    /* Modal styling */
+    .task-modal-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+        background-color: #f8fafc;
+    }
+    
+    .comment-bubble {
+        background-color: #f1f5f9;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .attachment-card {
+        background-color: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .drag-drop-zone {
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #f8fafc;
+    }
+    
+    .drag-drop-zone:hover {
+        background-color: rgba(59, 130, 246, 0.02);
+        border-color: var(--primary-color);
+    }
+</style>
+
+<!-- Header Area -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h3 class="fw-bold mb-0">Task Board</h3>
-        <p class="text-muted small mb-0">Manage and track project tasks</p>
+        <h2 class="fw-bold mb-1 text-main">Task Workspace</h2>
+        <p class="text-muted small mb-0">Drag and drop tasks, track progress columns, and organize deliverables.</p>
     </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-        <i class="fas fa-plus me-2"></i> Add Task
+    <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+        <i class="fas fa-plus"></i> Add Task
     </button>
 </div>
 
-<div class="row g-4">
-    <!-- To Do -->
-    <div class="col-lg-4">
-        <div class="card bg-light border-0" style="border-radius: 12px; min-height: 70vh;">
-            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
-                <h6 class="fw-bold mb-0 text-muted text-uppercase small">To Do</h6>
-                <span class="badge bg-secondary rounded-pill">{{ tasks|dictsort:"status"|slice:":1"|length }}</span>
+<!-- Task Filters Card -->
+<div class="card filter-card border-0 shadow-sm p-3 mb-4">
+    <div class="row g-3">
+        <!-- Search -->
+        <div class="col-md-3">
+            <label class="form-label x-small fw-bold text-uppercase text-muted">Search task</label>
+            <div class="position-relative">
+                <i class="fas fa-search position-absolute text-muted" style="left: 1rem; top: 50%; transform: translateY(-50%);"></i>
+                <input type="text" id="taskSearchInput" class="form-control form-control-sm ps-5" placeholder="Enter keywords...">
             </div>
-            <div class="card-body p-2">
-                {% for task in tasks %}
-                    {% if task.status == 'todo' %}
-                    <div class="card border-0 shadow-sm mb-2 p-3" style="border-radius: 10px;">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="badge bg-{{ task.priority }} x-small">{{ task.get_priority_display }}</span>
-                            <span class="text-muted x-small"><i class="far fa-calendar-alt me-1"></i> {{ task.deadline }}</span>
-                        </div>
-                        <h6 class="fw-bold mb-1">{{ task.title }}</h6>
-                        <p class="text-muted x-small mb-2">{{ task.project.title }}</p>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name={{ task.assigned_to.username }}&size=24&background=random" class="rounded-circle me-2" alt="">
-                                <span class="x-small text-muted">{{ task.assigned_to.username }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+        </div>
+        <!-- Project -->
+        <div class="col-md-3">
+            <label class="form-label x-small fw-bold text-uppercase text-muted">Project</label>
+            <select id="filterProject" class="form-select form-select-sm">
+                <option value="all">All Projects</option>
+                {% for proj in projects %}
+                <option value="{{ proj.title|lower }}">{{ proj.title }}</option>
                 {% endfor %}
-            </div>
+            </select>
+        </div>
+        <!-- Priority -->
+        <div class="col-md-3">
+            <label class="form-label x-small fw-bold text-uppercase text-muted">Priority</label>
+            <select id="filterPriority" class="form-select form-select-sm">
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+            </select>
+        </div>
+        <!-- Deadline -->
+        <div class="col-md-3">
+            <label class="form-label x-small fw-bold text-uppercase text-muted">Deadline Alerts</label>
+            <select id="filterDeadline" class="form-select form-select-sm">
+                <option value="all">All Deadlines</option>
+                <option value="overdue">Overdue Tasks</option>
+                <option value="today">Due Today</option>
+                <option value="upcoming">Upcoming (2 Days)</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- KANBAN BOARD CONTAINER -->
+<div class="kanban-board">
+    <!-- To Do -->
+    <div class="kanban-column shadow-sm" data-status="todo" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event)">
+        <div class="column-header">
+            <h6 class="column-title text-muted"><i class="fas fa-clipboard-list"></i> To Do</h6>
+            <span class="column-count" id="count-todo">0</span>
+        </div>
+        <div class="task-list-container" id="list-todo">
+            <!-- Populated via python, filtered via JS -->
+            {% for task in tasks %}
+                {% if task.status == 'todo' %}
+                    {% include 'projects/task_card_partial.html' %}
+                {% endif %}
+            {% endfor %}
         </div>
     </div>
 
     <!-- In Progress -->
-    <div class="col-lg-4">
-        <div class="card bg-light border-0" style="border-radius: 12px; min-height: 70vh;">
-            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
-                <h6 class="fw-bold mb-0 text-primary text-uppercase small">In Progress</h6>
-                <span class="badge bg-primary rounded-pill">{{ tasks|dictsort:"status"|length }}</span>
-            </div>
-            <div class="card-body p-2">
-                {% for task in tasks %}
-                    {% if task.status == 'in_progress' %}
-                    <div class="card border-0 shadow-sm mb-2 p-3" style="border-radius: 10px; border-left: 4px solid var(--primary-color) !important;">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="badge bg-{{ task.priority }} x-small">{{ task.get_priority_display }}</span>
-                            <span class="text-muted x-small"><i class="far fa-calendar-alt me-1"></i> {{ task.deadline }}</span>
-                        </div>
-                        <h6 class="fw-bold mb-1">{{ task.title }}</h6>
-                        <p class="text-muted x-small mb-2">{{ task.project.title }}</p>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name={{ task.assigned_to.username }}&size=24&background=random" class="rounded-circle me-2" alt="">
-                                <span class="x-small text-muted">{{ task.assigned_to.username }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
+    <div class="kanban-column shadow-sm" data-status="in_progress" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event)">
+        <div class="column-header">
+            <h6 class="column-title text-primary"><i class="fas fa-spinner fa-spin"></i> In Progress</h6>
+            <span class="column-count" id="count-in_progress">0</span>
+        </div>
+        <div class="task-list-container" id="list-in_progress">
+            {% for task in tasks %}
+                {% if task.status == 'in_progress' %}
+                    {% include 'projects/task_card_partial.html' %}
+                {% endif %}
+            {% endfor %}
         </div>
     </div>
 
-    <!-- Done -->
-    <div class="col-lg-4">
-        <div class="card bg-light border-0" style="border-radius: 12px; min-height: 70vh;">
-            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
-                <h6 class="fw-bold mb-0 text-success text-uppercase small">Completed</h6>
-                <span class="badge bg-success rounded-pill">{{ tasks|dictsort:"status"|length }}</span>
+    <!-- In Review -->
+    <div class="kanban-column shadow-sm" data-status="review" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event)">
+        <div class="column-header">
+            <h6 class="column-title text-warning"><i class="fas fa-eye"></i> In Review</h6>
+            <span class="column-count" id="count-review">0</span>
+        </div>
+        <div class="task-list-container" id="list-review">
+            {% for task in tasks %}
+                {% if task.status == 'review' %}
+                    {% include 'projects/task_card_partial.html' %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Completed -->
+    <div class="kanban-column shadow-sm" data-status="done" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="handleDrop(event)">
+        <div class="column-header">
+            <h6 class="column-title text-success"><i class="fas fa-check-circle"></i> Completed</h6>
+            <span class="column-count" id="count-done">0</span>
+        </div>
+        <div class="task-list-container" id="list-done">
+            {% for task in tasks %}
+                {% if task.status == 'done' %}
+                    {% include 'projects/task_card_partial.html' %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- TASK DETAILS MODAL -->
+<div class="modal fade" id="taskDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="task-modal-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-tasks fa-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-main" id="modalTaskTitle">Task Title</h4>
+                        <span class="text-muted small" id="modalTaskProject">Project Title</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="card-body p-2">
-                {% for task in tasks %}
-                    {% if task.status == 'done' %}
-                    <div class="card border-0 shadow-sm mb-2 p-3" style="border-radius: 10px; opacity: 0.8;">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="badge bg-success x-small">Done</span>
-                            <span class="text-muted x-small"><i class="far fa-calendar-alt me-1"></i> {{ task.deadline }}</span>
+
+            <!-- Tab Navigation -->
+            <nav class="nav nav-tabs bg-light px-4 border-bottom" id="taskModalTabs">
+                <button class="nav-link active py-3 fw-bold text-muted border-0" data-bs-toggle="tab" data-bs-target="#task-tab-overview" style="background: transparent;">Overview</button>
+                <button class="nav-link py-3 fw-bold text-muted border-0" data-bs-toggle="tab" data-bs-target="#task-tab-comments" style="background: transparent;">Comments (<span id="modalCommentsCount">0</span>)</button>
+                <button class="nav-link py-3 fw-bold text-muted border-0" data-bs-toggle="tab" data-bs-target="#task-tab-attachments" style="background: transparent;">Attachments (<span id="modalAttachmentsCount">0</span>)</button>
+            </nav>
+
+            <!-- Tab Content -->
+            <div class="tab-content p-4" style="min-height: 320px;">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="task-tab-overview">
+                    <div class="row g-4">
+                        <div class="col-md-7">
+                            <h6 class="fw-bold text-main mb-2"><i class="fas fa-align-left text-muted me-2"></i>Description</h6>
+                            <p class="text-muted small bg-light p-3 rounded-3 mb-4" id="modalTaskDescription" style="min-height: 120px; white-space: pre-wrap;">Task details...</p>
+                            
+                            <div class="bg-light p-3 rounded-3">
+                                <h6 class="fw-bold text-main mb-2 small"><i class="fas fa-user-circle text-muted me-2"></i>Assigned Team Member</h6>
+                                <strong class="text-main small" id="modalTaskAssignee">Assignee Name</strong>
+                            </div>
                         </div>
-                        <h6 class="fw-bold mb-1 text-decoration-line-through">{{ task.title }}</h6>
-                        <p class="text-muted x-small mb-2">{{ task.project.title }}</p>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name={{ task.assigned_to.username }}&size=24&background=random" class="rounded-circle me-2" alt="">
-                                <span class="x-small text-muted">{{ task.assigned_to.username }}</span>
+                        
+                        <div class="col-md-5">
+                            <h6 class="fw-bold text-main mb-3"><i class="fas fa-info-circle text-muted me-2"></i>Task Meta</h6>
+                            
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <span class="text-muted d-block small">Status State</span>
+                                <span class="badge px-3 py-1.5 rounded-pill fw-semibold mt-1" id="modalTaskStatusBadge">To Do</span>
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <span class="text-muted d-block small">Priority Level</span>
+                                <span class="badge px-3 py-1.5 rounded-pill fw-semibold mt-1" id="modalTaskPriorityBadge">Medium</span>
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3" id="modalTaskDeadlineCard">
+                                <span class="text-muted d-block small">Deadline Date</span>
+                                <strong class="text-main small mt-1 d-block"><i class="far fa-calendar-alt text-muted me-1.5"></i><span id="modalTaskDeadline">Date</span></strong>
                             </div>
                         </div>
                     </div>
-                    {% endif %}
-                {% endfor %}
+                </div>
+
+                <!-- Comments Tab -->
+                <div class="tab-pane fade" id="task-tab-comments">
+                    <!-- Comment Input Form -->
+                    <div class="mb-4 d-flex gap-2">
+                        <input type="text" id="taskCommentInput" class="form-control rounded-pill" placeholder="Add a comment to this task...">
+                        <button class="btn btn-primary rounded-pill px-4" onclick="submitTaskComment()"><i class="far fa-paper-plane me-1.5"></i>Send</button>
+                    </div>
+
+                    <!-- Comments Timeline List -->
+                    <div id="modalTaskCommentsList" style="max-height: 280px; overflow-y: auto; padding-right: 5px;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Attachments Tab -->
+                <div class="tab-pane fade" id="task-tab-attachments">
+                    <!-- Drop Zone -->
+                    <div class="drag-drop-zone mb-4" onclick="document.getElementById('taskAttachmentInput').click()">
+                        <i class="fas fa-cloud-upload-alt text-primary fa-2x mb-2"></i>
+                        <h6 class="mb-1 text-main fw-bold">Drag and drop file here, or click to upload</h6>
+                        <span class="x-small text-muted">Supports PDFs, Images, ZIPs, Docs (max 10MB)</span>
+                        <input type="file" id="taskAttachmentInput" style="display: none;" onchange="uploadTaskAttachment(this.files[0])">
+                    </div>
+
+                    <!-- File List -->
+                    <div id="modalTaskFilesList" style="max-height: 220px; overflow-y: auto;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close Profile</button>
             </div>
         </div>
     </div>
@@ -107,10 +398,10 @@
 
 <!-- Add Task Modal -->
 <div class="modal fade" id="addTaskModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-            <div class="modal-header border-0 pt-4 px-4">
-                <h5 class="fw-bold">Create New Task</h5>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header py-3 px-4 bg-light">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-tasks text-primary me-2"></i>Create Task</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
@@ -118,7 +409,7 @@
                     {% csrf_token %}
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label small fw-bold">Project</label>
+                            <label class="form-label small fw-bold">Link to Project</label>
                             {{ form.project }}
                         </div>
                         <div class="col-12">
@@ -126,32 +417,375 @@
                             {{ form.title }}
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-bold">Description</label>
+                            <label class="form-label small fw-bold">Task Description</label>
                             {{ form.description }}
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Assigned To</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Assigned Representative</label>
                             {{ form.assigned_to }}
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Deadline</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Target Deadline</label>
                             {{ form.deadline }}
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Priority</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Priority Badge</label>
                             {{ form.priority }}
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Status</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Starting Status</label>
                             {{ form.status }}
                         </div>
                     </div>
                     <div class="mt-4 text-end">
-                        <button type="submit" class="btn btn-primary px-4">Save Task</button>
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Save Task</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Live filter system
+    const searchInput = document.getElementById('taskSearchInput');
+    const filterProject = document.getElementById('filterProject');
+    const filterPriority = document.getElementById('filterPriority');
+    const filterDeadline = document.getElementById('filterDeadline');
+    const taskCards = Array.from(document.querySelectorAll('.task-card'));
+
+    function applyFilters() {
+        const query = searchInput.value.toLowerCase().trim();
+        const project = filterProject.value;
+        const priority = filterPriority.value;
+        const deadline = filterDeadline.value;
+
+        taskCards.forEach(card => {
+            const cardTitle = card.dataset.title;
+            const cardDesc = card.dataset.desc;
+            const cardProj = card.dataset.project;
+            const cardPrio = card.dataset.priority;
+            const cardAlert = card.dataset.alert; // overdue, today, upcoming, safe
+
+            const matchesQuery = cardTitle.includes(query) || cardDesc.includes(query);
+            const matchesProj = project === 'all' || cardProj === project;
+            const matchesPrio = priority === 'all' || cardPrio === priority;
+            
+            let matchesAlert = true;
+            if (deadline === 'overdue') matchesAlert = cardAlert === 'overdue';
+            else if (deadline === 'today') matchesAlert = cardAlert === 'today';
+            else if (deadline === 'upcoming') matchesAlert = cardAlert === 'upcoming';
+
+            if (matchesQuery && matchesProj && matchesPrio && matchesAlert) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        updateColumnCounts();
+    }
+
+    function updateColumnCounts() {
+        ['todo', 'in_progress', 'review', 'done'].forEach(status => {
+            const list = document.getElementById(`list-${status}`);
+            const visibleCards = Array.from(list.children).filter(c => c.style.display !== 'none');
+            document.getElementById(`count-${status}`).textContent = visibleCards.length;
+        });
+    }
+
+    // Attach filter listeners
+    searchInput.addEventListener('input', applyFilters);
+    filterProject.addEventListener('change', applyFilters);
+    filterPriority.addEventListener('change', applyFilters);
+    filterDeadline.addEventListener('change', applyFilters);
+
+    // Initial counts setup
+    updateColumnCounts();
+
+    // DRAG AND DROP FUNCTIONALITY (HTML5 API)
+    window.allowDrop = function(e) {
+        e.preventDefault();
+    };
+
+    window.dragStart = function(e) {
+        e.dataTransfer.setData("text/plain", e.target.id);
+        e.target.classList.add("dragging");
+    };
+
+    window.dragEnd = function(e) {
+        e.target.classList.remove("dragging");
+    };
+
+    window.dragEnter = function(e) {
+        e.preventDefault();
+        const col = e.target.closest(".kanban-column");
+        if (col) col.classList.add("drag-over");
+    };
+
+    window.dragLeave = function(e) {
+        const col = e.target.closest(".kanban-column");
+        if (col && !col.contains(e.relatedTarget)) {
+            col.classList.remove("drag-over");
+        }
+    };
+
+    // DRAG DROP AJAX HANDLER
+    window.handleDrop = function(e) {
+        e.preventDefault();
+        const col = e.target.closest(".kanban-column");
+        if (!col) return;
+        col.classList.remove("drag-over");
+
+        const cardIdStr = e.dataTransfer.getData("text/plain");
+        const card = document.getElementById(cardIdStr);
+        if (!card) return;
+
+        const newStatus = col.dataset.status;
+        const taskId = card.dataset.id;
+        const listContainer = col.querySelector(".task-list-container");
+        
+        // Optimistic DOM update
+        listContainer.appendChild(card);
+        updateColumnCounts();
+
+        // Send AJAX state persist request to Server
+        fetch(`/tasks/${taskId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to update status');
+            return res.json();
+        })
+        .then(data => {
+            // Apply visual adjustments to the card based on status
+            if (newStatus === 'done') {
+                card.querySelector('h6').classList.add('text-decoration-line-through');
+                card.style.opacity = '0.75';
+            } else {
+                card.querySelector('h6').classList.remove('text-decoration-line-through');
+                card.style.opacity = '1';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            // Revert drop if failed
+            alert("Could not update task status on server.");
+            window.location.reload();
+        });
+    };
+
+    // ACTIVE DETAILS MODAL FLOW & PERSISTENT DATA INTERACTION
+    let activeTaskId = null;
+
+    window.openTaskDetails = function(taskId) {
+        activeTaskId = taskId;
+        const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+        
+        const modalTaskTitle = document.getElementById('modalTaskTitle');
+        const modalTaskProject = document.getElementById('modalTaskProject');
+        const modalTaskDescription = document.getElementById('modalTaskDescription');
+        const modalTaskAssignee = document.getElementById('modalTaskAssignee');
+        const modalTaskStatusBadge = document.getElementById('modalTaskStatusBadge');
+        const modalTaskPriorityBadge = document.getElementById('modalTaskPriorityBadge');
+        const modalTaskDeadline = document.getElementById('modalTaskDeadline');
+        const modalTaskDeadlineCard = document.getElementById('modalTaskDeadlineCard');
+        
+        const modalCommentsCount = document.getElementById('modalCommentsCount');
+        const modalTaskCommentsList = document.getElementById('modalTaskCommentsList');
+        
+        const modalAttachmentsCount = document.getElementById('modalAttachmentsCount');
+        const modalTaskFilesList = document.getElementById('modalTaskFilesList');
+
+        // Loading indicators
+        modalTaskTitle.textContent = 'Loading...';
+        modalTaskProject.textContent = 'Loading...';
+        modalTaskDescription.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading details...';
+        modalTaskAssignee.textContent = 'Loading...';
+        modalTaskCommentsList.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading comments...</div>';
+        modalTaskFilesList.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading attachments...</div>';
+
+        // Set active tab to Overview
+        const firstTab = document.querySelector('#taskModalTabs button:first-child');
+        bootstrap.Tab.getInstance(firstTab)?.show() || new bootstrap.Tab(firstTab).show();
+
+        modal.show();
+
+        fetch(`/tasks/${taskId}/json/`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load task details');
+                return res.json();
+            })
+            .then(data => {
+                modalTaskTitle.textContent = data.title;
+                modalTaskProject.textContent = data.project_title;
+                modalTaskDescription.textContent = data.description;
+                modalTaskAssignee.textContent = data.assignee;
+                
+                // Status Badge styling
+                modalTaskStatusBadge.className = `badge bg-${data.status_code} px-3 py-1.5 rounded-pill fw-semibold mt-1`;
+                modalTaskStatusBadge.textContent = data.status;
+
+                // Priority Badge styling
+                modalTaskPriorityBadge.className = `badge bg-${data.priority_code} px-3 py-1.5 rounded-pill fw-semibold mt-1`;
+                modalTaskPriorityBadge.textContent = data.priority;
+
+                // Deadline coloring & Overdue pulse alerts
+                modalTaskDeadline.textContent = data.deadline;
+                if (data.is_overdue) {
+                    modalTaskDeadlineCard.className = 'bg-danger bg-opacity-10 p-3 rounded-3 text-danger border border-danger-subtle';
+                    modalTaskDeadline.className = 'text-danger fw-bold';
+                } else {
+                    modalTaskDeadlineCard.className = 'bg-light p-3 rounded-3';
+                    modalTaskDeadline.className = 'text-main';
+                }
+
+                // Render Comments
+                modalCommentsCount.textContent = data.comments.length;
+                renderComments(data.comments);
+
+                // Render Attachments
+                modalAttachmentsCount.textContent = data.files.length;
+                renderAttachments(data.files);
+            })
+            .catch(err => {
+                console.error(err);
+                modalTaskTitle.textContent = 'Error Loading Details';
+                modalTaskDescription.textContent = 'Could not download detailed record from server.';
+            });
+    };
+
+    function renderComments(comments) {
+        const list = document.getElementById('modalTaskCommentsList');
+        if (comments.length === 0) {
+            list.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="far fa-comment-dots fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0 small">No comments logged yet. Start the discussion below!</p>
+                </div>
+            `;
+        } else {
+            list.innerHTML = comments.map(c => `
+                <div class="comment-bubble">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-main small">${c.author}</strong>
+                        <span class="x-small text-muted">${c.created_at}</span>
+                    </div>
+                    <p class="small text-muted mb-0" style="white-space: pre-wrap;">${c.content}</p>
+                </div>
+            `).join('');
+        }
+    }
+
+    function renderAttachments(files) {
+        const list = document.getElementById('modalTaskFilesList');
+        if (files.length === 0) {
+            list.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-paperclip fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0 small">No attachments uploaded yet.</p>
+                </div>
+            `;
+        } else {
+            list.innerHTML = files.map(f => `
+                <div class="attachment-card">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="far fa-file-alt text-primary fa-lg"></i>
+                        <div>
+                            <strong class="text-main small d-block">${f.name}</strong>
+                            <span class="x-small text-muted">Uploaded ${f.uploaded_at}</span>
+                        </div>
+                    </div>
+                    <a href="${f.url}" download class="btn btn-sm btn-link text-primary p-0 text-decoration-none">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
+            `).join('');
+        }
+    }
+
+    // COMMENT PERSISTENCE AJAX
+    window.submitTaskComment = function() {
+        const input = document.getElementById('taskCommentInput');
+        const content = input.value.trim();
+        if (!content) return;
+
+        fetch(`/tasks/${activeTaskId}/comment/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to comment');
+            return res.json();
+        })
+        .then(data => {
+            input.value = '';
+            // Fetch updated list asynchronously
+            return fetch(`/tasks/${activeTaskId}/json/`);
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('modalCommentsCount').textContent = data.comments.length;
+            renderComments(data.comments);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Could not post comment.");
+        });
+    };
+
+    // FILE ATTACHMENT PERSISTENCE AJAX
+    window.uploadTaskAttachment = function(file) {
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Show uploading feedback
+        const list = document.getElementById('modalTaskFilesList');
+        list.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Uploading file...</div>';
+
+        fetch(`/tasks/${activeTaskId}/attachment/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Attachment Failed');
+            return res.json();
+        })
+        .then(data => {
+            // Fetch updated list asynchronously
+            return fetch(`/tasks/${activeTaskId}/json/`);
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('modalAttachmentsCount').textContent = data.files.length;
+            renderAttachments(data.files);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Could not upload file.");
+            // Re-fetch files list
+            fetch(`/tasks/${activeTaskId}/json/`)
+                .then(res => res.json())
+                .then(data => renderAttachments(data.files));
+        });
+    };
+</script>
 {% endblock %}

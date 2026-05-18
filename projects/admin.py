@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Client, Project, Task, Notification, UserProfile
+from .models import Client, Project, Task, Notification, UserProfile, TaskComment, TaskFile, Meeting
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -28,3 +28,18 @@ class TaskAdmin(admin.ModelAdmin):
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'message', 'is_read', 'created_at')
     list_filter = ('is_read',)
+
+@admin.register(TaskComment)
+class TaskCommentAdmin(admin.ModelAdmin):
+    list_display = ('task', 'author', 'content', 'created_at')
+    list_filter = ('created_at',)
+
+@admin.register(TaskFile)
+class TaskFileAdmin(admin.ModelAdmin):
+    list_display = ('task', 'name', 'uploaded_at')
+
+@admin.register(Meeting)
+class MeetingAdmin(admin.ModelAdmin):
+    list_display = ('title', 'project', 'organizer', 'start_time', 'end_time')
+    list_filter = ('start_time', 'project')
+    search_fields = ('title', 'description')

@@ -1,78 +1,421 @@
 {% extends 'base.html' %}
 
-{% block title %}Clients | Manage your client relationships and organizations{% endblock %}
+{% block title %}Clients | Workspace{% endblock %}
 
 {% block content %}
-<div class="top-header">
+<style>
+    .client-card-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .table-container {
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    
+    .client-row {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .client-row:hover {
+        background-color: rgba(59, 130, 246, 0.04) !important;
+        transform: scale(1.002);
+    }
+    
+    .avatar-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .filter-btn {
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        color: var(--text-muted);
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+        background-color: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+    
+    .search-input-group {
+        position: relative;
+        max-width: 360px;
+    }
+    
+    .search-input-group i {
+        position: absolute;
+        left: 1.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    
+    .search-input-group input {
+        padding-left: 2.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        color: var(--text-main);
+        transition: all 0.2s ease;
+    }
+    
+    .search-input-group input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Modal Styling */
+    .modal-detail-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+    }
+    
+    .modal-tab-nav {
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 2rem;
+    }
+    
+    .modal-tab-nav .nav-link {
+        border: none;
+        color: var(--text-muted);
+        font-weight: 600;
+        padding: 1rem 1.25rem;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-tab-nav .nav-link:hover {
+        color: var(--primary-color);
+    }
+    
+    .modal-tab-nav .nav-link.active {
+        color: var(--primary-color);
+        background: transparent;
+    }
+    
+    .modal-tab-nav .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 1.25rem;
+        right: 1.25rem;
+        height: 3px;
+        background-color: var(--primary-color);
+        border-radius: 10px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 5px;
+        bottom: 0;
+        width: 2px;
+        background-color: var(--border-color);
+    }
+
+    .timeline-item:last-child::before {
+        display: none;
+    }
+
+    .timeline-dot {
+        position: absolute;
+        left: 0;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .badge-active {
+        background-color: rgba(16, 185, 129, 0.1) !important;
+        color: #10b981 !important;
+    }
+
+    .badge-inactive {
+        background-color: rgba(100, 116, 139, 0.1) !important;
+        color: #64748b !important;
+    }
+</style>
+
+<!-- Header Area -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1">Clients</h2>
-        <p class="text-muted small mb-0">Manage your client relationships and organizations.</p>
+        <h2 class="fw-bold mb-1 text-main">Clients Directory</h2>
+        <p class="text-muted small mb-0">Manage all clients, organizations, and linked projects in one system.</p>
     </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
-        <i class="fas fa-plus me-2"></i> New Client
+    <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newClientModal">
+        <i class="fas fa-user-plus"></i> New Client
     </button>
 </div>
 
-<div class="search-wrapper mb-4">
-    <i class="fas fa-search"></i>
-    <input type="text" class="form-control" placeholder="Search clients...">
+<!-- Search & Filters Container -->
+<div class="card border-0 shadow-sm p-3 mb-4" style="border-radius: 16px; border: 1px solid var(--border-color) !important;">
+    <div class="row g-3 align-items-center justify-content-between">
+        <div class="col-md-5 col-lg-4">
+            <div class="search-input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="clientSearch" class="form-control" placeholder="Search name, company, email...">
+            </div>
+        </div>
+        <div class="col-md-7 col-lg-8 text-md-end">
+            <div class="d-inline-flex gap-2 flex-wrap">
+                <button class="filter-btn active" data-filter="all">All Clients</button>
+                <button class="filter-btn" data-filter="active">Active</button>
+                <button class="filter-btn" data-filter="inactive">Inactive</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
-    <table class="table-custom">
-        <thead>
-            <tr>
-                <th>Client</th>
-                <th>Contact</th>
-                <th>Status</th>
-                <th>Added</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for client in clients %}
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <img src="https://ui-avatars.com/api/?name={{ client.name }}&background=3b82f6&color=fff" class="rounded me-3" width="32" height="32">
-                        <div>
-                            <div class="fw-bold">{{ client.name }}</div>
-                            <div class="text-muted small">{{ client.address|truncatechars:30|default:"No company info" }}</div>
+<!-- Clients Table Container -->
+<div class="table-container shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0" id="clientsTable">
+            <thead class="table-light">
+                <tr>
+                    <th class="px-4 py-3 border-0">Client</th>
+                    <th class="py-3 border-0">Company</th>
+                    <th class="py-3 border-0">Contact Details</th>
+                    <th class="py-3 border-0">Status</th>
+                    <th class="py-3 border-0 text-center">Projects</th>
+                    <th class="py-3 border-0 text-end px-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="clientsTableBody">
+                {% for client in clients %}
+                <tr class="client-row border-bottom" 
+                    data-id="{{ client.pk }}"
+                    data-name="{{ client.name|lower }}"
+                    data-company="{{ client.address|lower }}"
+                    data-email="{{ client.email|lower }}"
+                    data-phone="{{ client.phone|lower }}"
+                    data-status="{% if client.active_project_count > 0 %}active{% else %}inactive{% endif %}"
+                    onclick="openClientDetails({{ client.pk }})">
+                    <td class="px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary">
+                                {{ client.name|slice:":2"|upper }}
+                            </div>
+                            <div>
+                                <span class="fw-bold text-main d-block">{{ client.name }}</span>
+                                <span class="text-muted x-small">Added {{ client.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="text-main fw-medium">{{ client.address|default:"No organization" }}</span>
+                    </td>
+                    <td>
+                        <div class="small">
+                            <div class="text-main mb-0.5"><i class="far fa-envelope text-muted me-1.5"></i>{{ client.email }}</div>
+                            <div class="text-muted"><i class="fas fa-phone-alt text-muted me-1.5" style="font-size: 0.8rem;"></i>{{ client.phone|default:"N/A" }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if client.active_project_count > 0 %}
+                        <span class="badge badge-active px-3 py-1.5 rounded-pill fw-semibold"><i class="fas fa-circle me-1" style="font-size: 0.5rem; vertical-align: middle;"></i> Active</span>
+                        {% else %}
+                        <span class="badge badge-inactive px-3 py-1.5 rounded-pill fw-semibold"><i class="fas fa-circle me-1" style="font-size: 0.5rem; vertical-align: middle;"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1.5 rounded-3">{{ client.project_count }}</span>
+                    </td>
+                    <td class="text-end px-4">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5" onclick="event.stopPropagation(); openClientDetails({{ client.pk }})">
+                            <i class="far fa-eye me-1"></i> View Profile
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="noClientsRow">
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fas fa-users fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-0 fw-semibold">No clients registered.</p>
+                        <p class="small text-muted">Add a new client using the "New Client" button above.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 p-4 border-top" id="paginationContainer" style="background-color: var(--card-bg);">
+        <span class="text-muted small" id="paginationInfo">Showing 1 to 5 of 5 clients</span>
+        <nav>
+            <ul class="pagination pagination-sm mb-0 gap-1" id="paginationControls">
+                <!-- Javascript populated -->
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Client Details Modal / Profile Popup -->
+<div class="modal fade" id="clientDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="modal-detail-header d-flex justify-content-between align-items-center bg-light">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-circle bg-primary text-white" style="width: 54px; height: 54px; font-size: 1.25rem;" id="modalAvatar">
+                        --
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-main" id="modalClientName">Client Name</h4>
+                        <span class="badge badge-active px-2.5 py-1 rounded-pill" id="modalClientStatus">Active</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <nav class="nav modal-tab-nav bg-light" id="modalTabs">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview">Overview</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-projects">Projects</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-files">Files</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-communication">Communication History</button>
+            </nav>
+
+            <!-- Tab Contents -->
+            <div class="tab-content p-4" style="min-height: 320px;">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="tab-overview">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-main mb-3"><i class="fas fa-building text-muted me-2"></i>Company Details</h6>
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <span class="text-muted d-block small">Company Name / Address</span>
+                                <strong class="text-main" id="modalCompanyInfo">Address</strong>
+                            </div>
+                            <div class="bg-light p-3 rounded-3">
+                                <span class="text-muted d-block small">Direct Contacts</span>
+                                <div class="text-main mb-1.5"><i class="far fa-envelope me-2 text-muted"></i><span id="modalEmailInfo">--</span></div>
+                                <div class="text-main"><i class="fas fa-phone-alt me-2 text-muted"></i><span id="modalPhoneInfo">--</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-main mb-3"><i class="fas fa-chart-pie text-muted me-2"></i>Workspace Overview</h6>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="border rounded-3 p-3 text-center bg-light">
+                                        <h3 class="fw-bold text-primary mb-1" id="modalTotalProjectsCount">0</h3>
+                                        <span class="x-small text-muted text-uppercase fw-semibold">Total Projects</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded-3 p-3 text-center bg-light">
+                                        <h3 class="fw-bold text-success mb-1" id="modalActiveProjectsCount">0</h3>
+                                        <span class="x-small text-muted text-uppercase fw-semibold">Active Projects</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded-3 p-3 text-center bg-light">
+                                        <h3 class="fw-bold text-info mb-1" id="modalTotalFilesCount">0</h3>
+                                        <span class="x-small text-muted text-uppercase fw-semibold">Stored Files</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded-3 p-3 text-center bg-light">
+                                        <h3 class="fw-bold text-warning mb-1" id="modalTotalMessagesCount">0</h3>
+                                        <span class="x-small text-muted text-uppercase fw-semibold">Messages Logged</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </td>
-                <td>
-                    <div class="small">
-                        <i class="far fa-envelope text-muted me-1"></i> {{ client.email }}<br>
-                        <i class="fas fa-phone text-muted me-1"></i> {{ client.phone|default:"N/A" }}
+                </div>
+
+                <!-- Projects Tab -->
+                <div class="tab-pane fade" id="tab-projects">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Project</th>
+                                    <th class="border-0">Status</th>
+                                    <th class="border-0">Deadline</th>
+                                    <th class="border-0">Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalProjectsList">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
                     </div>
-                </td>
-                <td>
-                    <span class="badge bg-completed">Active</span>
-                </td>
-                <td class="text-muted small">
-                    {{ client.created_at|date:"M d, Y" }}
-                </td>
-                <td class="text-end">
-                    <button class="btn btn-link text-muted p-0"><i class="fas fa-ellipsis-v"></i></button>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="text-center py-5 text-muted">No clients found. Add one to get started!</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+
+                <!-- Files Tab -->
+                <div class="tab-pane fade" id="tab-files">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">File Name</th>
+                                    <th class="border-0">Project</th>
+                                    <th class="border-0">Uploaded At</th>
+                                    <th class="border-0 text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalFilesList">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Communication History Tab -->
+                <div class="tab-pane fade" id="tab-communication">
+                    <div id="modalCommunicationList" class="timeline-container px-2" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close Profile</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- New Client Modal -->
 <div class="modal fade" id="newClientModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">New Client</h5>
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header py-3 px-4 bg-light">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-user-plus text-primary me-2"></i>New Client</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form method="POST" action="{% url 'admin:projects_client_add' %}">
                     {% csrf_token %}
                     <div class="mb-3">
@@ -80,26 +423,320 @@
                         <input type="text" name="name" class="form-control" placeholder="Enter contact name" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Company</label>
+                        <label class="form-label">Company / Organization</label>
                         <input type="text" name="address" class="form-control" placeholder="Enter company name">
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
+                            <label class="form-label">Email Address</label>
                             <input type="email" name="email" class="form-control" placeholder="email@example.com" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Phone</label>
+                            <label class="form-label">Phone Number</label>
                             <input type="text" name="phone" class="form-control" placeholder="+1 (555) 000-0000">
                         </div>
                     </div>
                     <div class="mt-4 text-end">
-                        <button type="button" class="btn btn-link text-muted me-3 text-decoration-none" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Client</button>
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Create Client</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search, Filter and Pagination Logic
+    const searchInput = document.getElementById('clientSearch');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const tableRows = Array.from(document.querySelectorAll('.client-row'));
+    const paginationControls = document.getElementById('paginationControls');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const paginationContainer = document.getElementById('paginationContainer');
+    const noClientsRow = document.getElementById('noClientsRow');
+    
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let currentPage = 1;
+    const itemsPerPage = 5;
+
+    function applyFilterAndSearch() {
+        let visibleCount = 0;
+        let matchedRows = [];
+
+        tableRows.forEach(row => {
+            const name = row.dataset.name;
+            const company = row.dataset.company;
+            const email = row.dataset.email;
+            const status = row.dataset.status;
+
+            const matchesSearch = name.includes(searchQuery) || company.includes(searchQuery) || email.includes(searchQuery);
+            const matchesFilter = currentFilter === 'all' || status === currentFilter;
+
+            if (matchesSearch && matchesFilter) {
+                matchedRows.push(row);
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Toggle Empty State Row
+        if (tableRows.length > 0) {
+            if (matchedRows.length === 0) {
+                if (!document.getElementById('noMatchedClientsRow')) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.id = 'noMatchedClientsRow';
+                    emptyRow.innerHTML = `
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-search fa-2x mb-3 opacity-50"></i>
+                            <p class="mb-0 fw-semibold">No clients match your filter criteria.</p>
+                        </td>
+                    `;
+                    document.getElementById('clientsTableBody').appendChild(emptyRow);
+                }
+                paginationContainer.style.display = 'none';
+            } else {
+                const emptyRow = document.getElementById('noMatchedClientsRow');
+                if (emptyRow) emptyRow.remove();
+                paginationContainer.style.display = 'flex';
+            }
+        }
+
+        // Apply Pagination to Matched Rows
+        const totalPages = Math.ceil(matchedRows.length / itemsPerPage);
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        }
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+
+        matchedRows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.style.display = 'table-row';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Render Pagination Controls
+        renderPagination(matchedRows.length, totalPages);
+    }
+
+    function renderPagination(totalItems, totalPages) {
+        paginationControls.innerHTML = '';
+        
+        if (totalItems === 0) {
+            paginationInfo.textContent = 'Showing 0 to 0 of 0 clients';
+            return;
+        }
+
+        const startIdx = (currentPage - 1) * itemsPerPage + 1;
+        const endIdx = Math.min(currentPage * itemsPerPage, totalItems);
+        paginationInfo.textContent = `Showing ${startIdx} to ${endIdx} of ${totalItems} clients`;
+
+        if (totalPages <= 1) {
+            return;
+        }
+
+        // Previous button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<button class="page-link" onclick="changePage(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>`;
+        paginationControls.appendChild(prevLi);
+
+        // Page buttons
+        for (let i = 1; i <= totalPages; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            pageLi.innerHTML = `<button class="page-link" onclick="changePage(${i})">${i}</button>`;
+            paginationControls.appendChild(pageLi);
+        }
+
+        // Next button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<button class="page-link" onclick="changePage(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>`;
+        paginationControls.appendChild(nextLi);
+    }
+
+    window.changePage = function(pageNumber) {
+        currentPage = pageNumber;
+        applyFilterAndSearch();
+    };
+
+    // Event listeners
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        currentPage = 1;
+        applyFilterAndSearch();
+    });
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            currentPage = 1;
+            applyFilterAndSearch();
+        });
+    });
+
+    // Initialize layout
+    applyFilterAndSearch();
+
+    // AJAX Call for Client Details Modal
+    window.openClientDetails = function(clientId) {
+        const modal = new bootstrap.Modal(document.getElementById('clientDetailsModal'));
+        const modalAvatar = document.getElementById('modalAvatar');
+        const modalClientName = document.getElementById('modalClientName');
+        const modalClientStatus = document.getElementById('modalClientStatus');
+        
+        const modalCompanyInfo = document.getElementById('modalCompanyInfo');
+        const modalEmailInfo = document.getElementById('modalEmailInfo');
+        const modalPhoneInfo = document.getElementById('modalPhoneInfo');
+        
+        const modalTotalProjectsCount = document.getElementById('modalTotalProjectsCount');
+        const modalActiveProjectsCount = document.getElementById('modalActiveProjectsCount');
+        const modalTotalFilesCount = document.getElementById('modalTotalFilesCount');
+        const modalTotalMessagesCount = document.getElementById('modalTotalMessagesCount');
+        
+        const modalProjectsList = document.getElementById('modalProjectsList');
+        const modalFilesList = document.getElementById('modalFilesList');
+        const modalCommunicationList = document.getElementById('modalCommunicationList');
+
+        // Loading states
+        modalAvatar.textContent = '--';
+        modalClientName.textContent = 'Loading...';
+        modalCompanyInfo.innerHTML = '<span class="text-muted spinner-border spinner-border-sm me-2"></span>Loading details...';
+        modalEmailInfo.textContent = 'Loading...';
+        modalPhoneInfo.textContent = 'Loading...';
+        
+        modalProjectsList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching projects...</td></tr>';
+        modalFilesList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching files...</td></tr>';
+        modalCommunicationList.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading conversation logs...</div>';
+
+        // Switch to the first tab (Overview)
+        const firstTab = document.querySelector('#modalTabs button:first-child');
+        bootstrap.Tab.getInstance(firstTab)?.show() || new bootstrap.Tab(firstTab).show();
+
+        modal.show();
+
+        // Fetch client details
+        fetch(`/clients/${clientId}/json/`)
+            .then(res => {
+                if (!res.ok) throw new Error('API Request Failed');
+                return res.json();
+            })
+            .then(data => {
+                // Set Header Details
+                modalAvatar.textContent = data.name.substring(0, 2).toUpperCase();
+                modalClientName.textContent = data.name;
+                
+                // Active/Inactive badge logic
+                const isActive = data.projects.some(p => p.status_code === 'planning' || p.status_code === 'ongoing' || p.status_code === 'on_hold');
+                if (isActive) {
+                    modalClientStatus.className = 'badge badge-active px-3 py-1.5 rounded-pill';
+                    modalClientStatus.innerHTML = '<i class="fas fa-circle me-1" style="font-size: 0.5rem; vertical-align: middle;"></i> Active';
+                } else {
+                    modalClientStatus.className = 'badge badge-inactive px-3 py-1.5 rounded-pill';
+                    modalClientStatus.innerHTML = '<i class="fas fa-circle me-1" style="font-size: 0.5rem; vertical-align: middle;"></i> Inactive';
+                }
+
+                // Company Contacts info
+                modalCompanyInfo.textContent = data.address;
+                modalEmailInfo.innerHTML = `<a href="mailto:${data.email}" class="text-decoration-none text-primary">${data.email}</a>`;
+                modalPhoneInfo.innerHTML = `<a href="tel:${data.phone}" class="text-decoration-none text-main">${data.phone}</a>`;
+
+                // Stats Dashboard numbers
+                const totalProjCount = data.projects.length;
+                const activeProjCount = data.projects.filter(p => p.status_code === 'planning' || p.status_code === 'ongoing' || p.status_code === 'on_hold').length;
+                modalTotalProjectsCount.textContent = totalProjCount;
+                modalActiveProjectsCount.textContent = activeProjCount;
+                modalTotalFilesCount.textContent = data.files.length;
+                modalTotalMessagesCount.textContent = data.messages.length;
+
+                // Render Projects Table list
+                if (data.projects.length === 0) {
+                    modalProjectsList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No projects found.</td></tr>';
+                } else {
+                    modalProjectsList.innerHTML = data.projects.map(p => `
+                        <tr>
+                            <td class="fw-semibold text-main">${p.title}</td>
+                            <td><span class="badge bg-${p.status_code} px-2.5 py-1 rounded-pill">${p.status}</span></td>
+                            <td class="text-muted small">${p.deadline}</td>
+                            <td style="width: 140px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar" style="width: ${p.progress}%"></div>
+                                    </div>
+                                    <span class="x-small text-muted fw-bold">${p.progress}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Render Files Table list
+                if (data.files.length === 0) {
+                    modalFilesList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No files uploaded.</td></tr>';
+                } else {
+                    modalFilesList.innerHTML = data.files.map(f => `
+                        <tr>
+                            <td class="text-main fw-medium">${f.name}</td>
+                            <td class="text-muted small">${f.project_title}</td>
+                            <td class="text-muted small">${f.uploaded_at}</td>
+                            <td class="text-end">
+                                <a href="${f.url}" download class="btn btn-sm btn-link text-primary p-0 text-decoration-none">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Render Messages timeline logs
+                if (data.messages.length === 0) {
+                    modalCommunicationList.innerHTML = `
+                        <div class="text-center py-5 text-muted">
+                            <i class="far fa-comments fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-0 fw-semibold">No message history.</p>
+                            <p class="small text-muted">Messages sent inside client projects will show here.</p>
+                        </div>
+                    `;
+                } else {
+                    modalCommunicationList.innerHTML = data.messages.map(m => `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="bg-light p-3 rounded-3 border-0">
+                                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                    <div>
+                                        <strong class="text-main">${m.sender}</strong>
+                                        <span class="text-muted small mx-1">to</span>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary text-capitalize px-2 py-0.5" style="font-size: 0.7rem;">${m.receiver}</span>
+                                    </div>
+                                    <span class="x-small text-muted">${m.created_at}</span>
+                                </div>
+                                <div class="x-small text-muted mb-2"><i class="fas fa-folder-open me-1"></i>Project: ${m.project_title}</div>
+                                <p class="small text-main mb-0 style="white-space: pre-wrap;">${m.content}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                modalClientName.textContent = 'Error Loading Profile';
+                modalCompanyInfo.textContent = 'Could not load details from workspace server.';
+                modalProjectsList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle me-1"></i> Failed to retrieve projects.</td></tr>';
+                modalFilesList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle me-1"></i> Failed to retrieve file database.</td></tr>';
+                modalCommunicationList.innerHTML = '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle me-1"></i> Failed to retrieve conversation timeline.</div>';
+            });
+    }
+</script>
 {% endblock %}

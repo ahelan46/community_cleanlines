@@ -1,21 +1,92 @@
 {% extends 'base.html' %}
 
-{% block title %}My Tasks | Tracker{% endblock %}
+{% block title %}My Dashboard | Tracker{% endblock %}
 
 {% block content %}
+<!-- Styles for premium aesthetics and hover animations -->
+<style>
+    :root {
+        --kpi-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+    }
+    
+    .kpi-card {
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--card-bg);
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.15);
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 10px;
+        background-color: #e2e8f0;
+        overflow: hidden;
+    }
+    
+    .task-item {
+        border-radius: 12px;
+        border-left: 5px solid transparent;
+        transition: all 0.2s ease;
+        background-color: var(--card-bg);
+    }
+    
+    .task-item:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .task-priority-urgent { border-left-color: #ef4444; }
+    .task-priority-high { border-left-color: #f97316; }
+    .task-priority-medium { border-left-color: #3b82f6; }
+    .task-priority-low { border-left-color: #10b981; }
+
+    .notification-item {
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        transition: background-color 0.2s ease;
+        border: 1px solid transparent;
+    }
+    
+    .notification-item:hover {
+        background-color: rgba(59, 130, 246, 0.04);
+        border-color: rgba(59, 130, 246, 0.08);
+    }
+    
+    .notification-unread {
+        background-color: rgba(59, 130, 246, 0.08) !important;
+        font-weight: 500;
+    }
+
+    .icon-badge {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+</style>
+
 <!-- Welcome Banner -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%);">
             <div class="card-body p-4 p-lg-5 text-white position-relative">
                 <div class="row align-items-center">
                     <div class="col-lg-8">
-                        <h2 class="fw-bold mb-2">Welcome Team Member!</h2>
-                        <p class="mb-0 opacity-75">You have {{ upcoming_deadlines.count }} upcoming deadlines. Let's get things done!</p>
+                        <span class="badge bg-white bg-opacity-20 text-white mb-2 px-3 py-2 text-uppercase fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Team Workspace</span>
+                        <h2 class="fw-bold mb-2">Welcome Back, {{ user.get_full_name|default:user.username }}!</h2>
+                        <p class="mb-0 opacity-75">You have <strong class="text-white">{{ upcoming_deadlines.count }}</strong> pending tasks with upcoming deadlines. Let's make progress today!</p>
                     </div>
                     <div class="col-lg-4 text-end d-none d-lg-block">
-                        <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                            <i class="fas fa-user-check fa-2x"></i>
+                        <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px; backdrop-filter: blur(10px);">
+                            <i class="fas fa-tasks fa-3x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -24,69 +95,187 @@
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <!-- Stats Sidebar -->
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
-            <div class="card-body p-4">
-                <div class="text-center mb-4">
-                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&size=80&background=3b82f6&color=fff" class="rounded-circle mb-3 shadow-sm border border-4 border-white">
-                    <h5 class="fw-bold mb-0">{{ user.get_full_name|default:user.username }}</h5>
-                    <p class="text-muted small">Team Member</p>
+<!-- KPI Cards Grid (Assigned, Completed, Pending, Daily Progress) -->
+<div class="row g-4 mb-4">
+    <!-- Total Assigned Tasks -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Assigned Tasks</span>
+                    <h3 class="fw-bold mb-0 text-main">{{ total_tasks }}</h3>
                 </div>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <div class="bg-primary bg-opacity-10 p-3 rounded-3 text-center">
-                            <div class="h4 fw-bold text-primary mb-0">{{ total_tasks }}</div>
-                            <div class="x-small text-primary">Assigned</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="bg-success bg-opacity-10 p-3 rounded-3 text-center">
-                            <div class="h4 fw-bold text-success mb-0">{{ done_tasks }}</div>
-                            <div class="x-small text-success">Completed</div>
-                        </div>
-                    </div>
+                <div class="icon-badge bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-clipboard-list fa-lg"></i>
                 </div>
             </div>
-        </div>
-
-        <div class="card border-0 shadow-sm" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                <h6 class="fw-bold mb-0">Quick Action</h6>
-            </div>
-            <div class="card-body">
-                <a href="{% url 'task_list' %}" class="btn btn-primary w-100 mb-2">View All My Tasks</a>
+            <div class="x-small text-muted mt-2">
+                <i class="fas fa-info-circle me-1"></i> Total tasks allocated to you
             </div>
         </div>
     </div>
 
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
-                <h5 class="fw-bold mb-0">My Priority Tasks</h5>
+    <!-- Completed Tasks -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Completed Tasks</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ done_tasks }}</h3>
+                </div>
+                <div class="icon-badge bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-check-circle fa-lg"></i>
+                </div>
             </div>
-            <div class="card-body px-4">
+            <div class="x-small text-muted mt-2">
+                <i class="fas fa-history me-1"></i> Task items marked as done
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Tasks -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Pending Tasks</span>
+                    <h3 class="fw-bold mb-0 text-warning">{{ pending_tasks }}</h3>
+                </div>
+                <div class="icon-badge bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-hourglass-half fa-lg"></i>
+                </div>
+            </div>
+            <div class="x-small text-muted mt-2">
+                <i class="fas fa-spinner me-1"></i> Tasks in todo or in progress
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Progress -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-1">Daily Progress</span>
+                    <h3 class="fw-bold mb-0 text-info">{{ task_completion_rate }}%</h3>
+                </div>
+                <div class="icon-badge bg-info bg-opacity-10 text-info">
+                    <i class="fas fa-chart-line fa-lg"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <div class="progress progress-bar-custom">
+                    <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ task_completion_rate }}%" aria-valuenow="{{ task_completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="x-small text-muted mt-2">
+                    Overall task completion rate
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Two-Column Layout: Left (Upcoming Deadlines), Right (Notifications & Quick Actions) -->
+<div class="row g-4">
+    <!-- Left Column: Upcoming Deadlines -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; border: 1px solid var(--border-color) !important;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1 text-main">Upcoming Deadlines</h5>
+                    <p class="text-muted small mb-0">High priority and upcoming tasks assigned to you</p>
+                </div>
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-semibold">{{ upcoming_deadlines.count }} Tasks</span>
+            </div>
+            <div class="card-body px-4 pt-3">
                 {% for task in upcoming_deadlines %}
-                <div class="d-flex align-items-center p-3 mb-3 border rounded-3 hover-shadow-sm transition-all">
-                    <div class="bg-{{ task.priority }} bg-opacity-10 text-{{ task.priority }} p-2 rounded-3 me-3">
-                        <i class="fas fa-exclamation-circle"></i>
+                <div class="task-item p-3 mb-3 border shadow-sm task-priority-{{ task.priority }} d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                    <div class="d-flex align-items-center mb-3 mb-md-0">
+                        <div class="bg-light p-2 rounded-3 me-3 text-center d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            {% if task.priority == 'urgent' or task.priority == 'high' %}
+                                <i class="fas fa-exclamation-triangle text-warning fa-lg"></i>
+                            {% else %}
+                                <i class="fas fa-tasks text-muted fa-lg"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1 text-main">{{ task.title }}</h6>
+                            <span class="text-muted small">
+                                <i class="fas fa-folder-open me-1"></i> Project: <strong class="text-dark">{{ task.project.title }}</strong>
+                            </span>
+                        </div>
                     </div>
-                    <div class="flex-grow-1">
-                        <div class="fw-bold">{{ task.title }}</div>
-                        <div class="text-muted small">Project: {{ task.project.title }}</div>
-                    </div>
-                    <div class="text-end">
-                        <div class="badge bg-{{ task.status }} mb-1">{{ task.get_status_display }}</div>
-                        <div class="text-danger x-small fw-bold">Due: {{ task.deadline|date:"M d" }}</div>
+                    
+                    <div class="d-flex align-items-center justify-content-between justify-content-md-end gap-3">
+                        <div class="text-end">
+                            <span class="badge bg-{{ task.status }} px-3 py-1.5 fw-semibold">{{ task.get_status_display }}</span>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-danger small fw-bold"><i class="far fa-calendar-alt me-1"></i>Due {{ task.deadline|date:"M d, Y" }}</div>
+                            <span class="badge bg-{{ task.priority }} bg-opacity-10 text-{{ task.priority }} px-2 py-0.5 x-small fw-semibold text-uppercase">{{ task.get_priority_display }}</span>
+                        </div>
                     </div>
                 </div>
                 {% empty %}
                 <div class="text-center py-5 text-muted">
-                    <i class="fas fa-check-circle fa-3x mb-3 opacity-25"></i>
-                    <p>All caught up! No pending priority tasks.</p>
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                        <i class="fas fa-smile-beam fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5 class="fw-bold text-main">All Caught Up!</h5>
+                    <p class="small text-muted mb-0">You have no pending high priority or upcoming tasks.</p>
                 </div>
                 {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Notifications & Quick Actions -->
+    <div class="col-lg-4">
+        <!-- Notifications Card -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; border: 1px solid var(--border-color) !important;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-bell text-primary me-2"></i>Recent Notifications</h5>
+                <p class="text-muted small mb-0">Stay updated on approvals and events</p>
+            </div>
+            <div class="card-body px-4 pt-3">
+                <div class="notification-list" style="max-height: 380px; overflow-y: auto;">
+                    {% for notification in notifications %}
+                    <div class="notification-item {% if not notification.is_read %}notification-unread{% endif %}">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-3 me-3 mt-1">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="small text-main mb-1">{{ notification.message }}</p>
+                                <span class="x-small text-muted"><i class="far fa-clock me-1"></i>{{ notification.created_at|date:"M d, P" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px;">
+                            <i class="far fa-bell-slash fa-lg text-muted opacity-50"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1 text-main">No Notifications</h6>
+                        <p class="x-small text-muted mb-0">You're all caught up! Nothing new here.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card border-0 shadow-sm" style="border-radius: 16px; border: 1px solid var(--border-color) !important;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h6 class="fw-bold mb-1 text-main"><i class="fas fa-bolt text-warning me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'task_list' %}" class="btn btn-primary w-100 mb-3 py-2 d-flex align-items-center justify-content-center gap-2">
+                    <i class="fas fa-clipboard-check"></i> View All My Tasks
+                </a>
+                <a href="{% url 'calendar' %}" class="btn btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                    <i class="far fa-calendar-alt"></i> Access Workspace Calendar
+                </a>
             </div>
         </div>
     </div>

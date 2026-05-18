@@ -1,0 +1,69 @@
+<div class="card task-card border-0 shadow-sm p-3 {% if task.status != 'done' and task.deadline < today %}overdue-pulse{% endif %}" 
+     id="task-{{ task.id }}" 
+     draggable="true" 
+     ondragstart="dragStart(event)" 
+     ondragend="dragEnd(event)"
+     data-id="{{ task.id }}"
+     data-title="{{ task.title|lower }}"
+     data-desc="{{ task.description|lower }}"
+     data-project="{{ task.project.title|lower }}"
+     data-priority="{{ task.priority }}"
+     data-alert="{% if task.status != 'done' and task.deadline < today %}overdue{% elif task.status != 'done' and task.deadline == today %}today{% else %}safe{% endif %}"
+     onclick="openTaskDetails({{ task.id }})">
+    
+    <!-- Top Meta Row -->
+    <div class="d-flex justify-content-between align-items-center mb-2.5">
+        <!-- Priority Label -->
+        <span class="badge bg-{{ task.priority }} bg-opacity-10 text-{{ task.priority }} border border-{{ task.priority }}-subtle px-2 py-0.5 rounded-pill fw-semibold text-uppercase" style="font-size: 0.65rem;">
+            {{ task.get_priority_display }}
+        </span>
+        
+        <!-- Due Date Alert Badge -->
+        {% if task.status == 'done' %}
+            <span class="text-success x-small fw-semibold"><i class="fas fa-check me-1"></i>Done</span>
+        {% elif task.deadline < today %}
+            <span class="text-danger x-small fw-bold animate-pulse"><i class="fas fa-exclamation-circle me-1"></i>Overdue</span>
+        {% elif task.deadline == today %}
+            <span class="text-warning x-small fw-bold"><i class="fas fa-bell me-1"></i>Due Today</span>
+        {% else %}
+            <span class="text-muted x-small"><i class="far fa-calendar-alt me-1"></i>{{ task.deadline|date:"M d" }}</span>
+        {% endif %}
+    </div>
+
+    <!-- Task Title & Project -->
+    <h6 class="fw-bold mb-1 text-main {% if task.status == 'done' %}text-decoration-line-through text-muted{% endif %}" style="font-size: 0.9rem;">
+        {{ task.title }}
+    </h6>
+    <span class="text-muted d-block mb-2.5" style="font-size: 0.72rem;">
+        <i class="fas fa-folder text-muted me-1"></i>{{ task.project.title }}
+    </span>
+
+    <!-- Truncated Description Snippet -->
+    {% if task.description %}
+    <p class="text-muted x-small mb-3 text-truncate-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35;">
+        {{ task.description }}
+    </p>
+    {% endif %}
+
+    <!-- Bottom Action Row -->
+    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+        <!-- Assignee bubble -->
+        <div class="d-flex align-items-center gap-1.5">
+            <div class="avatar-bubble bg-primary bg-opacity-10 text-primary m-0" style="width: 24px; height: 24px; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700;" title="Assigned to {{ task.assigned_to.username }}">
+                {{ task.assigned_to.username|slice:":1"|upper|default:"?" }}
+            </div>
+            <span class="x-small text-muted" style="font-size: 0.7rem;">{{ task.assigned_to.username }}</span>
+        </div>
+
+        <!-- Meta Counters (Comments / Attachments) -->
+        <div class="d-flex align-items-center gap-2">
+            {% if task.comments.exists %}
+            <span class="x-small text-muted" title="Comments logged"><i class="far fa-comment text-muted me-1"></i>{{ task.comments.count }}</span>
+            {% endif %}
+            
+            {% if task.files.exists %}
+            <span class="x-small text-muted" title="Documents attached"><i class="fas fa-paperclip text-muted me-1"></i>{{ task.files.count }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>

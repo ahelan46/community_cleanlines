@@ -78,6 +78,7 @@ class Task(models.Model):
     STATUS_CHOICES = [
         ('todo', 'To Do'),
         ('in_progress', 'In Progress'),
+        ('review', 'In Review'),
         ('done', 'Completed'),
     ]
     PRIORITY_CHOICES = [
@@ -127,7 +128,9 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages', null=True, blank=True)
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
-    content = models.TextField()
+    content = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to='chat_files/', null=True, blank=True)
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -152,3 +155,32 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"Feedback from {self.client.username} on {self.project.title}"
+
+class TaskComment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.task.title}"
+
+class TaskFile(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='files')
+    name = models.CharField(max_length=200)
+    file = models.FileField(upload_to='task_files/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class Meeting(models.Model):
+    title = models.CharField(max_length=200)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='meetings', null=True, blank=True)
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organized_meetings')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.title

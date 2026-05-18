@@ -1,141 +1,513 @@
 {% extends 'base.html' %}
 
-{% block title %}Calendar | Tracker{% endblock %}
+{% block title %}Interactive Calendar | Workspace{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold mb-0">Project Calendar</h3>
-        <p class="text-muted small mb-0">Monitor upcoming project and task deadlines</p>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0">May 2026</h5>
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-chevron-left"></i></button>
-                    <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-chevron-right"></i></button>
-                </div>
-            </div>
-            <div class="card-body p-4">
-                <div class="calendar-grid">
-                    <!-- Day Headers -->
-                    <div class="calendar-day-header">Sun</div>
-                    <div class="calendar-day-header">Mon</div>
-                    <div class="calendar-day-header">Tue</div>
-                    <div class="calendar-day-header">Wed</div>
-                    <div class="calendar-day-header">Thu</div>
-                    <div class="calendar-day-header">Fri</div>
-                    <div class="calendar-day-header">Sat</div>
-                    
-                    <!-- Empty slots for May 2026 (Starts on Friday) -->
-                    <div class="calendar-day empty"></div>
-                    <div class="calendar-day empty"></div>
-                    <div class="calendar-day empty"></div>
-                    <div class="calendar-day empty"></div>
-                    <div class="calendar-day empty"></div>
-                    
-                    <!-- Days -->
-                    {% for day in "12345678910111213141516171819202122232425262728293031"|make_list %}
-                        <div class="calendar-day">
-                            <span class="day-number">{{ forloop.counter }}</span>
-                            <!-- Show tasks for this day if any (simplified for demo) -->
-                            {% if forloop.counter == 18 %}
-                                <div class="calendar-event bg-primary-subtle text-primary">Task: UI Design</div>
-                            {% endif %}
-                            {% if forloop.counter == 22 %}
-                                <div class="calendar-event bg-warning-subtle text-warning">Project: CRM Update</div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-white border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">Upcoming Deadlines</h5>
-            </div>
-            <div class="card-body px-4 pt-2">
-                <div class="list-group list-group-flush">
-                    {% for project in projects %}
-                        <div class="list-group-item px-0 py-3 border-0 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold small">{{ project.title }}</div>
-                                    <div class="text-muted x-small">Project Deadline</div>
-                                </div>
-                                <div class="badge bg-danger-subtle text-danger small px-2 py-1">{{ project.deadline|date:"M d" }}</div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                    
-                    {% for task in tasks %}
-                        {% if task.status != 'done' %}
-                        <div class="list-group-item px-0 py-3 border-0 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold small">{{ task.title }}</div>
-                                    <div class="text-muted x-small">Task: {{ task.project.title }}</div>
-                                </div>
-                                <div class="badge bg-primary-subtle text-primary small px-2 py-1">{{ task.deadline|date:"M d" }}</div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Include FullCalendar v6.1.11 Global Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
 <style>
-    .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 1px;
-        background-color: var(--border-color);
+    :root {
+        --fc-border-color: var(--border-color);
+        --fc-today-bg-color: rgba(59, 130, 246, 0.05);
+        --fc-button-bg-color: var(--primary-color);
+        --fc-button-border-color: var(--primary-color);
+        --fc-button-hover-bg-color: #1d4ed8;
+        --fc-button-hover-border-color: #1d4ed8;
+        --fc-button-active-bg-color: #1e3a8a;
+        --fc-button-active-border-color: #1e3a8a;
+    }
+
+    .calendar-container-card {
+        border-radius: 16px;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         overflow: hidden;
     }
-    .calendar-day-header {
-        background-color: var(--main-bg);
-        padding: 10px;
-        text-align: center;
-        font-weight: bold;
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        text-uppercase;
-    }
-    .calendar-day {
-        background-color: var(--main-bg);
-        min-height: 100px;
-        padding: 10px;
-        position: relative;
-    }
-    .calendar-day.empty {
-        background-color: #f8f9fa;
-    }
-    .day-number {
-        font-size: 0.9rem;
-        font-weight: 600;
+
+    /* Style overrides for FullCalendar premium theme matching */
+    #calendar {
+        font-family: inherit;
         color: var(--text-main);
     }
-    .calendar-event {
-        font-size: 0.7rem;
-        padding: 4px 8px;
-        border-radius: 4px;
-        margin-top: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
+
+    .fc-header-toolbar {
+        padding: 1.5rem 1.5rem 1rem 1.5rem;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: var(--text-main);
+    }
+
+    .fc-button {
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        padding: 0.45rem 0.9rem !important;
+        border-radius: 8px !important;
+        text-transform: capitalize !important;
+        box-shadow: none !important;
+    }
+
+    .fc-view-harness {
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--border-color);
+        padding: 1rem;
+    }
+
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: var(--border-color) !important;
+    }
+
+    .fc-col-header-cell {
+        background-color: #f8fafc;
+        padding: 0.75rem 0 !important;
+    }
+
+    .fc-col-header-cell-cushion {
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        text-decoration: none !important;
+    }
+
+    .fc-daygrid-day-number {
+        font-size: 0.85rem !important;
+        font-weight: 600;
+        color: var(--text-main);
+        padding: 6px 8px !important;
+        text-decoration: none !important;
+    }
+
+    .fc-event {
+        cursor: pointer;
+        border-radius: 6px !important;
+        padding: 2px 6px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        margin: 2px 0 !important;
+        border: none !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+    }
+
+    .fc-event:hover {
+        transform: translateY(-1px) scale(1.01);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Side list elements */
+    .legend-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .toast-notification {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #1e293b;
+        color: #fff;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 1060;
+        transform: translateY(120%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toast-notification.show {
+        transform: translateY(0);
     }
 </style>
+
+<!-- Floating Micro-Toast for alerts -->
+<div id="calendarToast" class="toast-notification">
+    <i class="fas fa-check-circle text-success"></i>
+    <span id="calendarToastMessage" class="small fw-semibold">Event date updated successfully!</span>
+</div>
+
+<!-- Header Area -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1 text-main">Workspace Scheduler</h2>
+        <p class="text-muted small mb-0">Drag and drop deadlines, review schedules, and track meetings.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createMeetingModal">
+            <i class="fas fa-handshake"></i> Schedule Meeting
+        </button>
+    </div>
+</div>
+
+<!-- Main Calendar Layout -->
+<div class="row g-4">
+    <!-- Left: Calendar Container -->
+    <div class="col-lg-9">
+        <div class="card calendar-container-card border-0 shadow-sm">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Right: Sidebar Panel -->
+    <div class="col-lg-3">
+        <!-- Calendar Legend Card -->
+        <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 16px; border: 1px solid var(--border-color) !important;">
+            <h6 class="fw-bold text-main mb-3"><i class="fas fa-palette text-muted me-2"></i>Event Colors</h6>
+            <div class="d-flex flex-column gap-2.5">
+                <div class="d-flex align-items-center gap-2.5">
+                    <span class="legend-indicator" style="background-color: #4f46e5;"></span>
+                    <span class="small fw-semibold text-main">Project Deadlines</span>
+                </div>
+                <div class="d-flex align-items-center gap-2.5">
+                    <span class="legend-indicator" style="background-color: #db2777;"></span>
+                    <span class="small fw-semibold text-main">Team Meetings</span>
+                </div>
+                <div class="d-flex align-items-center gap-2.5">
+                    <span class="legend-indicator" style="background-color: #2563eb;"></span>
+                    <span class="small fw-semibold text-main">Tasks: In Progress</span>
+                </div>
+                <div class="d-flex align-items-center gap-2.5">
+                    <span class="legend-indicator" style="background-color: #16a34a;"></span>
+                    <span class="small fw-semibold text-main">Tasks: Completed</span>
+                </div>
+                <div class="d-flex align-items-center gap-2.5">
+                    <span class="legend-indicator" style="background-color: #ea580c;"></span>
+                    <span class="small fw-semibold text-main">Tasks: In Review</span>
+                </div>
+                <div class="d-flex align-items-center gap-2.5">
+                    <span class="legend-indicator" style="background-color: #64748b;"></span>
+                    <span class="small fw-semibold text-main">Tasks: To Do</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Reminders Feed -->
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 16px; border: 1px solid var(--border-color) !important; max-height: 480px; overflow-y: auto;">
+            <h6 class="fw-bold text-main mb-3"><i class="fas fa-bell text-muted me-2"></i>Upcoming Deadlines</h6>
+            <div class="d-flex flex-column gap-3">
+                {% for project in projects|slice:":3" %}
+                <div class="p-2.5 bg-light rounded-3 d-flex justify-content-between align-items-center border-0">
+                    <div>
+                        <strong class="text-main x-small d-block text-truncate" style="max-width: 130px;">{{ project.title }}</strong>
+                        <span class="text-muted x-small">Project Deadline</span>
+                    </div>
+                    <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">{{ project.deadline|date:"M d" }}</span>
+                </div>
+                {% empty %}
+                <span class="text-muted x-small text-center py-3">No active project deadlines.</span>
+                {% endfor %}
+
+                {% for task in tasks|slice:":5" %}
+                {% if task.status != 'done' %}
+                <div class="p-2.5 bg-light rounded-3 d-flex justify-content-between align-items-center border-0">
+                    <div>
+                        <strong class="text-main x-small d-block text-truncate" style="max-width: 130px;">{{ task.title }}</strong>
+                        <span class="text-muted x-small">Task Deadline</span>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">{{ task.deadline|date:"M d" }}</span>
+                </div>
+                {% endif %}
+                {% empty %}
+                <span class="text-muted x-small text-center py-3">No pending task deadlines.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EVENT DETAILS POPUP MODAL -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header py-3 px-4 bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="legend-indicator" id="modalEventColor"></span>
+                    <h5 class="modal-title fw-bold text-main" id="modalEventTitle">Event Title</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Details grid -->
+                <div class="d-flex flex-column gap-3">
+                    <!-- Event Type Tag -->
+                    <div>
+                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1">Event category</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary text-capitalize px-3 py-1 rounded-pill" id="modalEventType">Type</span>
+                    </div>
+
+                    <!-- Timings -->
+                    <div class="bg-light p-3 rounded-3">
+                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1">Schedule date & time</span>
+                        <strong class="text-main small" id="modalEventTime">timings...</strong>
+                    </div>
+
+                    <!-- Category-specific Details -->
+                    <div id="modalSpecificDetails" class="bg-light p-3 rounded-3">
+                        <!-- Dynamic descriptors -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCHEDULE MEETING MODAL -->
+<div class="modal fade" id="createMeetingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header py-3 px-4 bg-light">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-handshake text-primary me-2"></i>Schedule Meeting</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="meetingForm" onsubmit="submitMeetingForm(event)">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Meeting Title</label>
+                        <input type="text" id="meetTitle" class="form-control" placeholder="e.g. Project Alignment Call" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Link to Project (Optional)</label>
+                        <select id="meetProject" class="form-select">
+                            <option value="">No linked project</option>
+                            {% for proj in projects %}
+                            <option value="{{ proj.id }}">{{ proj.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">Start Date & Time</label>
+                            <input type="datetime-local" id="meetStart" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">End Date & Time</label>
+                            <input type="datetime-local" id="meetEnd" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Description / Agenda</label>
+                        <textarea id="meetDescription" class="form-control" rows="3" placeholder="Brief outline of meeting agenda..."></textarea>
+                    </div>
+
+                    <div class="mt-4 text-end">
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Schedule Meeting</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let calendar = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            editable: true, // ENABLES DRAG & DROP deadliness rescheduling!
+            headerToolbar: {
+                left: 'title',
+                center: 'dayGridMonth,timeGridWeek,listMonth',
+                right: 'prev,next today'
+            },
+            events: '/calendar/events/json/', // Dynamically fetch JSON events list
+            
+            // drag drop reschedule handler
+            eventDrop: function(info) {
+                rescheduleEvent(info);
+            },
+            
+            // event resize reschedule handler (meetings timing updates)
+            eventResize: function(info) {
+                rescheduleEvent(info);
+            },
+            
+            // Click Handler
+            eventClick: function(info) {
+                openEventDetails(info.event);
+            }
+        });
+
+        calendar.render();
+    });
+
+    // Toast alert triggers
+    function showToast(message) {
+        const toast = document.getElementById('calendarToast');
+        const msg = document.getElementById('calendarToastMessage');
+        msg.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // EVENT RESCHEDULER VIA AJAX drag drop
+    function rescheduleEvent(info) {
+        const eventId = info.event.id;
+        const [type, pk] = eventId.split('_');
+        
+        let startStr = info.event.startStr;
+        let endStr = info.event.endStr || '';
+
+        // If no end time, default to start + 1hr for meetings
+        if (type === 'meeting' && !endStr) {
+            const end = new Date(info.event.start);
+            end.setHours(end.getHours() + 1);
+            endStr = end.toISOString();
+        }
+
+        fetch(`/calendar/events/${type}/${pk}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                start: startStr,
+                end: endStr
+            })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Reschedule failed');
+            return res.json();
+        })
+        .then(data => {
+            showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} rescheduled successfully!`);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Could not update schedule on server.");
+            info.revert();
+        });
+    }
+
+    // EVENT DETAILS POPUP HANDLER
+    function openEventDetails(event) {
+        const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+        const modalEventColor = document.getElementById('modalEventColor');
+        const modalEventTitle = document.getElementById('modalEventTitle');
+        const modalEventType = document.getElementById('modalEventType');
+        const modalEventTime = document.getElementById('modalEventTime');
+        const modalSpecificDetails = document.getElementById('modalSpecificDetails');
+
+        // Color sync
+        modalEventColor.style.backgroundColor = event.backgroundColor;
+        modalEventTitle.textContent = event.title.split(': ').slice(1).join(': ');
+        
+        const type = event.extendedProps.type;
+        modalEventType.className = `badge bg-secondary bg-opacity-10 text-secondary text-capitalize px-3 py-1 rounded-pill`;
+        modalEventType.textContent = type;
+
+        // Schedule dates format
+        let timingStr = '';
+        if (event.allDay) {
+            const dateObj = new Date(event.start);
+            timingStr = `<i class="far fa-calendar-alt me-2 text-muted"></i>All Day - ${dateObj.toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}`;
+        } else {
+            const startObj = new Date(event.start);
+            const endObj = new Date(event.end);
+            timingStr = `<i class="far fa-clock me-2 text-muted"></i>${startObj.toLocaleDateString('en-US', {month: 'long', day: 'numeric'})} at ${startObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})} - ${endObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}`;
+        }
+        modalEventTime.innerHTML = timingStr;
+
+        // Specific details
+        if (type === 'project') {
+            modalSpecificDetails.innerHTML = `
+                <div class="d-flex flex-column gap-2 small">
+                    <div><strong class="text-main">Client:</strong> <span class="text-muted">${event.extendedProps.client}</span></div>
+                    <div><strong class="text-main">Project Manager:</strong> <span class="text-muted">${event.extendedProps.manager}</span></div>
+                    <div><strong class="text-main">Status:</strong> <span class="badge bg-info bg-opacity-10 text-info px-2 py-0.5 rounded-pill small">${event.extendedProps.status}</span></div>
+                </div>
+            `;
+        } else if (type === 'task') {
+            modalSpecificDetails.innerHTML = `
+                <div class="d-flex flex-column gap-2 small">
+                    <div><strong class="text-main">Project:</strong> <span class="text-muted">${event.extendedProps.project}</span></div>
+                    <div><strong class="text-main">Assignee:</strong> <span class="text-muted">${event.extendedProps.assignee}</span></div>
+                    <div><strong class="text-main">Status:</strong> <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-0.5 rounded-pill small">${event.extendedProps.status}</span></div>
+                    <div><strong class="text-main">Priority:</strong> <span class="badge bg-warning bg-opacity-10 text-warning px-2 py-0.5 rounded-pill small text-uppercase">${event.extendedProps.priority}</span></div>
+                </div>
+            `;
+        } else if (type === 'meeting') {
+            modalSpecificDetails.innerHTML = `
+                <div class="d-flex flex-column gap-2 small">
+                    <div><strong class="text-main">Linked Project:</strong> <span class="text-muted">${event.extendedProps.project}</span></div>
+                    <div><strong class="text-main">Organizer:</strong> <span class="text-muted">${event.extendedProps.organizer}</span></div>
+                    <div><strong class="text-main">Agenda / Notes:</strong> <p class="text-muted bg-white p-2 rounded-3 border-0 mt-1 mb-0">${event.extendedProps.description}</p></div>
+                </div>
+            `;
+        }
+
+        modal.show();
+    }
+
+    // CREATE MEETING VIA AJAX SUBMIT
+    window.submitMeetingForm = function(event) {
+        event.preventDefault();
+        
+        const title = document.getElementById('meetTitle').value;
+        const projectId = document.getElementById('meetProject').value;
+        const start = document.getElementById('meetStart').value;
+        const end = document.getElementById('meetEnd').value;
+        const description = document.getElementById('meetDescription').value;
+
+        fetch('/calendar/events/create-meeting/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                title: title,
+                project_id: projectId,
+                start: start,
+                end: end,
+                description: description
+            })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Create failed');
+            return res.json();
+        })
+        .then(data => {
+            // Dismiss Modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createMeetingModal'));
+            modal.hide();
+            
+            // Reset Form fields
+            document.getElementById('meetingForm').reset();
+            
+            // Refetch events and show toast
+            calendar.refetchEvents();
+            showToast("Meeting scheduled successfully!");
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Could not schedule meeting on server.");
+        });
+    }
+</script>
 {% endblock %}

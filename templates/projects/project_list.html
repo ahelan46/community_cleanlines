@@ -1,83 +1,498 @@
 {% extends 'base.html' %}
 
-{% block title %}Projects | Manage and track your team's projects{% endblock %}
+{% block title %}Projects | Workspace{% endblock %}
 
 {% block content %}
-<div class="top-header">
+<style>
+    .kpi-card {
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .project-card {
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.25);
+    }
+
+    .project-thumbnail {
+        height: 60px;
+        background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+        position: relative;
+    }
+
+    .project-priority-urgent { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important; }
+    .project-priority-high { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%) !important; }
+    .project-priority-medium { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; }
+    .project-priority-low { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; }
+
+    .project-priority-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        backdrop-filter: blur(8px);
+        background-color: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border-radius: 20px;
+        padding: 4px 10px;
+    }
+
+    .project-initials-badge {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #ffffff;
+        font-size: 1.2rem;
+        position: absolute;
+        bottom: -20px;
+        left: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .avatar-group .avatar-bubble {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background-color: #f1f5f9;
+        color: #475569;
+        margin-left: -8px;
+        transition: transform 0.2s ease;
+    }
+    
+    .avatar-group .avatar-bubble:first-child {
+        margin-left: 0;
+    }
+    
+    .avatar-group .avatar-bubble:hover {
+        transform: translateY(-4px) scale(1.1);
+        z-index: 10;
+        cursor: pointer;
+    }
+
+    .table-container {
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        overflow: hidden;
+    }
+
+    .table-row-custom {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .table-row-custom:hover {
+        background-color: rgba(59, 130, 246, 0.04) !important;
+    }
+
+    /* Modal Tweaks */
+    .project-modal-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+        background-color: #f8fafc;
+    }
+    
+    .project-modal-tabs {
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 2rem;
+        background-color: #f8fafc;
+    }
+
+    .project-modal-tabs .nav-link {
+        border: none;
+        color: var(--text-muted);
+        font-weight: 600;
+        padding: 1rem 1.25rem;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+    
+    .project-modal-tabs .nav-link.active {
+        color: var(--primary-color);
+        background: transparent;
+    }
+    
+    .project-modal-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 1.25rem;
+        right: 1.25rem;
+        height: 3px;
+        background-color: var(--primary-color);
+        border-radius: 10px;
+    }
+</style>
+
+<!-- Header Area -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1">Projects</h2>
-        <p class="text-muted small mb-0">Manage and track your team's projects.</p>
+        <h2 class="fw-bold mb-1 text-main">Projects Hub</h2>
+        <p class="text-muted small mb-0">Track workspace progress, priority states, team members, and deliverables.</p>
     </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
-        <i class="fas fa-plus me-2"></i> New Project
+    <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+        <i class="fas fa-plus"></i> New Project
     </button>
 </div>
 
-<div class="search-wrapper mb-4">
-    <i class="fas fa-search"></i>
-    <input type="text" class="form-control" placeholder="Search projects...">
+<!-- Project Status Overview KPI Row -->
+<div class="row g-4 mb-4">
+    <!-- Active Projects -->
+    <div class="col-md-4">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fas fa-rocket fa-lg"></i>
+                </div>
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-0.5">Active Projects</span>
+                    <h3 class="fw-bold mb-0 text-main">{{ active_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completed Projects -->
+    <div class="col-md-4">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fas fa-check-double fa-lg"></i>
+                </div>
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-0.5">Completed Projects</span>
+                    <h3 class="fw-bold mb-0 text-success">{{ completed_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delayed Projects -->
+    <div class="col-md-4">
+        <div class="card kpi-card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                </div>
+                <div>
+                    <span class="small fw-semibold text-muted text-uppercase d-block mb-0.5">Delayed Projects</span>
+                    <h3 class="fw-bold mb-0 text-danger">{{ delayed_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
-    <table class="table-custom">
-        <thead>
-            <tr>
-                <th>Project</th>
-                <th>Client</th>
-                <th>Status & Priority</th>
-                <th>Progress</th>
-                <th>Deadline</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for project in projects %}
-            <tr>
-                <td>
-                    <a href="{% url 'project_detail' project.pk %}" class="project-name">{{ project.title }}</a>
-                </td>
-                <td>{{ project.client.name }}</td>
-                <td>
-                    <div class="mb-1">
-                        <span class="badge bg-{{ project.status }}">
-                            {{ project.get_status_display }}
-                        </span>
+<!-- Navigation Tabs for views -->
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <nav class="nav nav-pills gap-2">
+        <button class="btn btn-sm btn-outline-primary active" id="btnShowCards" onclick="switchView('cards')"><i class="fas fa-th-large me-1.5"></i>Cards Grid</button>
+        <button class="btn btn-sm btn-outline-primary" id="btnShowTable" onclick="switchView('table')"><i class="fas fa-list me-1.5"></i>Recent Table</button>
+    </nav>
+    <div class="search-input-group" style="position: relative; max-width: 280px; width: 100%;">
+        <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+        <input type="text" id="projectSearch" class="form-control form-control-sm" placeholder="Search projects..." style="padding-left: 2.2rem; border-radius: 8px;">
+    </div>
+</div>
+
+<!-- SECTION 1: PROJECT CARDS GRID VIEW -->
+<div class="row g-4 mb-5" id="projectsCardsView">
+    {% for project in projects %}
+    <div class="col-md-6 col-lg-4 project-card-item" data-title="{{ project.title|lower }}" data-client="{{ project.client.name|lower }}">
+        <div class="card project-card border-0 shadow-sm h-100" onclick="openProjectDetails({{ project.pk }})">
+            <!-- Project Thumbnail / Card Header -->
+            <div class="project-thumbnail project-priority-{{ project.priority }}">
+                <span class="project-priority-badge">{{ project.get_priority_display }}</span>
+                <div class="project-initials-badge">
+                    {{ project.title|slice:":2"|upper }}
+                </div>
+            </div>
+            
+            <div class="card-body p-4 pt-4">
+                <div class="mt-3 mb-3">
+                    <h5 class="fw-bold mb-1 text-main text-truncate">{{ project.title }}</h5>
+                    <span class="text-muted small"><i class="fas fa-user-tie me-1"></i>Client: <strong>{{ project.client.name }}</strong></span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                        <span class="small fw-semibold text-muted">Workspace Progress</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size: 0.75rem;">{{ project.get_progress }}%</span>
                     </div>
-                    <span class="text-muted" style="font-size: 0.75rem;">
-                        {{ project.get_priority_display }}
-                    </span>
-                </td>
-                <td style="width: 200px;">
-                    <div class="d-flex align-items-center">
-                        <div class="progress flex-grow-1 me-2">
-                            <div class="progress-bar" role="progressbar" style="width: {{ project.get_progress }}%"></div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ project.get_progress }}%" aria-valuenow="{{ project.get_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+
+                <!-- Card Footer Details -->
+                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                    <!-- Deadline -->
+                    <div>
+                        <span class="d-block x-small text-uppercase fw-semibold text-muted mb-0.5">Deadline</span>
+                        {% if project.status != 'completed' and project.deadline < today %}
+                            <span class="text-danger small fw-bold"><i class="far fa-calendar-times me-1"></i>{{ project.deadline|date:"M d, Y" }}</span>
+                        {% else %}
+                            <span class="text-muted small"><i class="far fa-calendar me-1"></i>{{ project.deadline|date:"M d, Y" }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Assigned Team -->
+                    <div class="text-end">
+                        <span class="d-block x-small text-uppercase fw-semibold text-muted mb-1.5">Team Assignees</span>
+                        <div class="avatar-group d-flex align-items-center justify-content-end">
+                            <div class="avatar-bubble" title="Project Manager">
+                                {{ project.manager.username|slice:":1"|upper|default:"?" }}
+                            </div>
+                            <div class="avatar-bubble bg-info bg-opacity-10 text-info" title="Linked Client">
+                                {{ project.client.name|slice:":1"|upper }}
+                            </div>
                         </div>
-                        <span class="small text-muted">{{ project.get_progress }}%</span>
                     </div>
-                </td>
-                <td class="text-muted small">
-                    <i class="far fa-calendar me-1"></i> {{ project.deadline|date:"M d, Y" }}
-                </td>
-                <td class="text-end">
-                    <button class="btn btn-link text-muted p-0"><i class="fas fa-ellipsis-v"></i></button>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="text-center py-5 text-muted">No projects found. Create one to get started!</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="fas fa-briefcase fa-4x mb-3 opacity-25"></i>
+        <h5 class="fw-bold">No Projects Registered</h5>
+        <p class="small text-muted mb-0">Create a new project using the "New Project" button above.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- SECTION 2: RECENT PROJECTS TABLE VIEW (Initially Hidden) -->
+<div class="table-container shadow-sm d-none" id="projectsTableView">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0" id="projectsListTable">
+            <thead class="table-light">
+                <tr>
+                    <th class="px-4 py-3 border-0">Project Thumbnail & Name</th>
+                    <th class="py-3 border-0">Client</th>
+                    <th class="py-3 border-0">Project Manager</th>
+                    <th class="py-3 border-0">Latest Updates / Added</th>
+                    <th class="py-3 border-0">Priority</th>
+                    <th class="py-3 border-0">Progress</th>
+                    <th class="py-3 border-0 text-end px-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr class="table-row-custom border-bottom" data-title="{{ project.title|lower }}" data-client="{{ project.client.name|lower }}" onclick="openProjectDetails({{ project.pk }})">
+                    <td class="px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle text-white d-flex align-items-center justify-content-center fw-bold text-uppercase" 
+                                 style="width: 40px; height: 40px; border-radius: 8px; background: {% if project.priority == 'urgent' %}#ef4444{% elif project.priority == 'high' %}#f97316{% elif project.priority == 'medium' %}#3b82f6{% else %}#10b981{% endif %}; font-size: 0.95rem;">
+                                {{ project.title|slice:":2" }}
+                            </div>
+                            <div>
+                                <span class="fw-bold text-main d-block">{{ project.title }}</span>
+                                <span class="badge bg-{{ project.status }} px-2 py-0.5 rounded-pill" style="font-size: 0.7rem;">{{ project.get_status_display }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="text-main fw-medium"><i class="fas fa-user-tie text-muted me-1.5"></i>{{ project.client.name }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-bubble bg-light border-0 m-0 text-center" style="width: 28px; height: 28px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                {{ project.manager.username|slice:":1"|upper|default:"?" }}
+                            </div>
+                            <span class="text-main small">{{ project.manager.get_full_name|default:project.manager.username|default:"Unassigned" }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="text-muted small"><i class="far fa-clock me-1.5"></i>Created {{ project.created_at|date:"M d, Y" }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ project.priority }} bg-opacity-10 text-{{ project.priority }} border border-{{ project.priority }}-subtle px-2.5 py-1 rounded-pill fw-semibold text-uppercase" style="font-size: 0.7rem;">{{ project.get_priority_display }}</span>
+                    </td>
+                    <td style="width: 140px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 5px;">
+                                <div class="progress-bar" style="width: {{ project.get_progress }}%"></div>
+                            </div>
+                            <span class="x-small text-muted fw-bold">{{ project.get_progress }}%</span>
+                        </div>
+                    </td>
+                    <td class="text-end px-4">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5" onclick="event.stopPropagation(); openProjectDetails({{ project.pk }})">
+                            <i class="far fa-eye me-1"></i> Details
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">No projects found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Project Details Modal / Profile Popup -->
+<div class="modal fade" id="projectDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="project-modal-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width: 50px; height: 50px; border-radius: 12px; background: #3b82f6; font-size: 1.2rem;" id="modalProjIcon">
+                        --
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1 text-main" id="modalProjTitle">Project Name</h4>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge px-2 py-0.5 rounded-pill" id="modalProjStatusBadge">Ongoing</span>
+                            <span class="badge px-2 py-0.5 rounded-pill" id="modalProjPriorityBadge">Medium</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <nav class="nav project-modal-tabs" id="projectModalTabs">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#proj-tab-overview">Overview</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#proj-tab-tasks">Tasks</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#proj-tab-files">Files Database</button>
+            </nav>
+
+            <!-- Tab Contents -->
+            <div class="tab-content p-4" style="min-height: 300px;">
+                <!-- Overview -->
+                <div class="tab-pane fade show active" id="proj-tab-overview">
+                    <div class="row g-4">
+                        <div class="col-md-7">
+                            <h6 class="fw-bold text-main mb-2"><i class="fas fa-align-left text-muted me-2"></i>Project Description</h6>
+                            <p class="text-muted small bg-light p-3 rounded-3" id="modalProjDescription" style="min-height: 100px; white-space: pre-wrap;">Description...</p>
+                            
+                            <div class="bg-light p-3 rounded-3 mt-3">
+                                <h6 class="fw-bold text-main mb-2 small"><i class="fas fa-users-cog text-muted me-2"></i>Responsible Manager</h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-bubble bg-primary bg-opacity-10 text-primary m-0" style="width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 600;">
+                                        M
+                                    </div>
+                                    <strong class="text-main small" id="modalProjManager">Manager</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-5">
+                            <h6 class="fw-bold text-main mb-3"><i class="fas fa-chart-pie text-muted me-2"></i>Metrics Summary</h6>
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <span class="text-muted d-block small mb-1">Completion Progress</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" id="modalProjProgressBar" style="width: 0%"></div>
+                                    </div>
+                                    <strong class="text-main small" id="modalProjProgressPercent">0%</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <span class="text-muted d-block small">Client Contact</span>
+                                <strong class="text-main d-block small" id="modalProjClientName">Client Name</strong>
+                                <span class="text-muted small" id="modalProjClientEmail">client@example.com</span>
+                            </div>
+
+                            <div class="bg-light p-3 rounded-3">
+                                <span class="text-muted d-block small">Target Deadline</span>
+                                <strong class="text-main small"><i class="far fa-calendar-alt text-muted me-1.5"></i><span id="modalProjDeadline">Deadline</span></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Tab -->
+                <div class="tab-pane fade" id="proj-tab-tasks">
+                    <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Task Name</th>
+                                    <th class="border-0">Assignee</th>
+                                    <th class="border-0">Status</th>
+                                    <th class="border-0">Priority</th>
+                                    <th class="border-0">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalProjTasksList">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Files Tab -->
+                <div class="tab-pane fade" id="proj-tab-files">
+                    <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">File Name</th>
+                                    <th class="border-0">Uploaded At</th>
+                                    <th class="border-0 text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalProjFilesList">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close Profile</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- New Project Modal -->
 <div class="modal fade" id="newProjectModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">New Project</h5>
+        <div class="modal-content shadow-lg border-0" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header py-3 px-4 bg-light">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-briefcase text-primary me-2"></i>New Project</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form method="POST" action="{% url 'admin:projects_project_add' %}">
                     {% csrf_token %}
                     <div class="row g-3">
@@ -121,12 +536,184 @@
                         </div>
                     </div>
                     <div class="mt-4 text-end">
-                        <button type="button" class="btn btn-link text-muted me-3 text-decoration-none" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Project</button>
+                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Create Project</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Live Search
+    const searchInput = document.getElementById('projectSearch');
+    const cardItems = Array.from(document.querySelectorAll('.project-card-item'));
+    const tableRows = Array.from(document.querySelectorAll('.table-row-custom'));
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        
+        // Filter cards view
+        cardItems.forEach(item => {
+            const title = item.dataset.title;
+            const client = item.dataset.client;
+            if (title.includes(query) || client.includes(query)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Filter table view
+        tableRows.forEach(row => {
+            const title = row.dataset.title;
+            const client = row.dataset.client;
+            if (title.includes(query) || client.includes(query)) {
+                row.style.display = 'table-row';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // View switcher (Cards vs Table)
+    window.switchView = function(view) {
+        const btnCards = document.getElementById('btnShowCards');
+        const btnTable = document.getElementById('btnShowTable');
+        const viewCards = document.getElementById('projectsCardsView');
+        const viewTable = document.getElementById('projectsTableView');
+
+        if (view === 'cards') {
+            btnCards.classList.add('active');
+            btnTable.classList.remove('active');
+            viewCards.classList.remove('d-none');
+            viewTable.classList.add('d-none');
+        } else {
+            btnCards.classList.remove('active');
+            btnTable.classList.add('active');
+            viewCards.classList.add('d-none');
+            viewTable.classList.remove('d-none');
+        }
+    };
+
+    // AJAX Details Modal
+    window.openProjectDetails = function(projectId) {
+        const modal = new bootstrap.Modal(document.getElementById('projectDetailsModal'));
+        const modalProjIcon = document.getElementById('modalProjIcon');
+        const modalProjTitle = document.getElementById('modalProjTitle');
+        const modalProjStatusBadge = document.getElementById('modalProjStatusBadge');
+        const modalProjPriorityBadge = document.getElementById('modalProjPriorityBadge');
+        
+        const modalProjDescription = document.getElementById('modalProjDescription');
+        const modalProjManager = document.getElementById('modalProjManager');
+        const modalProjProgressBar = document.getElementById('modalProjProgressBar');
+        const modalProjProgressPercent = document.getElementById('modalProjProgressPercent');
+        const modalProjClientName = document.getElementById('modalProjClientName');
+        const modalProjClientEmail = document.getElementById('modalProjClientEmail');
+        const modalProjDeadline = document.getElementById('modalProjDeadline');
+        
+        const modalProjTasksList = document.getElementById('modalProjTasksList');
+        const modalProjFilesList = document.getElementById('modalProjFilesList');
+
+        // Loading states
+        modalProjIcon.textContent = '--';
+        modalProjIcon.style.background = '#64748b';
+        modalProjTitle.textContent = 'Loading...';
+        modalProjDescription.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading details...';
+        modalProjManager.textContent = 'Loading...';
+        modalProjClientName.textContent = 'Loading...';
+        modalProjClientEmail.textContent = 'Loading...';
+        modalProjDeadline.textContent = 'Loading...';
+        
+        modalProjTasksList.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching project tasks...</td></tr>';
+        modalProjFilesList.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching project files...</td></tr>';
+
+        // Reset to first tab (Overview)
+        const firstTab = document.querySelector('#projectModalTabs button:first-child');
+        bootstrap.Tab.getInstance(firstTab)?.show() || new bootstrap.Tab(firstTab).show();
+
+        modal.show();
+
+        fetch(`/projects/${projectId}/json/`)
+            .then(res => {
+                if (!res.ok) throw new Error('API Request Failed');
+                return res.json();
+            })
+            .then(data => {
+                // Icon & Title
+                modalProjIcon.textContent = data.title.substring(0, 2).toUpperCase();
+                
+                // Priority color mapping
+                let color = '#3b82f6';
+                if (data.priority_code === 'urgent') color = '#ef4444';
+                else if (data.priority_code === 'high') color = '#f97316';
+                else if (data.priority_code === 'low') color = '#10b981';
+                modalProjIcon.style.background = color;
+
+                modalProjTitle.textContent = data.title;
+                
+                // Status Badge
+                modalProjStatusBadge.className = `badge bg-${data.status_code} px-2.5 py-1 rounded-pill`;
+                modalProjStatusBadge.textContent = data.status;
+
+                // Priority Badge
+                modalProjPriorityBadge.className = `badge bg-${data.priority_code} px-2.5 py-1 rounded-pill`;
+                modalProjPriorityBadge.textContent = data.priority;
+
+                // Details & Contacts
+                modalProjDescription.textContent = data.description;
+                modalProjManager.textContent = data.manager;
+                modalProjClientName.textContent = data.client_name;
+                modalProjClientEmail.innerHTML = `<a href="mailto:${data.client_email}" class="text-decoration-none text-primary small">${data.client_email}</a>`;
+                modalProjDeadline.textContent = data.deadline;
+
+                // Progress Bar
+                modalProjProgressBar.style.width = `${data.progress}%`;
+                modalProjProgressPercent.textContent = `${data.progress}%`;
+
+                // Render Tasks
+                if (data.tasks.length === 0) {
+                    modalProjTasksList.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No tasks defined for this project.</td></tr>';
+                } else {
+                    modalProjTasksList.innerHTML = data.tasks.map(t => `
+                        <tr>
+                            <td class="fw-semibold text-main small">${t.title}</td>
+                            <td class="small">${t.assignee}</td>
+                            <td><span class="badge bg-${t.status_code} px-2 py-0.5 rounded-pill" style="font-size: 0.7rem;">${t.status}</span></td>
+                            <td><span class="badge bg-${t.priority_code} bg-opacity-10 text-${t.priority_code} px-2 py-0.5 rounded-pill" style="font-size: 0.7rem;">${t.priority}</span></td>
+                            <td class="text-muted small">${t.deadline}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Render Files
+                if (data.files.length === 0) {
+                    modalProjFilesList.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No uploaded documents.</td></tr>';
+                } else {
+                    modalProjFilesList.innerHTML = data.files.map(f => `
+                        <tr>
+                            <td class="text-main fw-medium small">${f.name}</td>
+                            <td class="text-muted small">${f.uploaded_at}</td>
+                            <td class="text-end">
+                                <a href="${f.url}" download class="btn btn-sm btn-link text-primary p-0 text-decoration-none">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                modalProjTitle.textContent = 'Error Loading Project';
+                modalProjDescription.textContent = 'Failed to load details from workspace server.';
+                modalProjTasksList.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle me-1"></i> Failed to retrieve tasks.</td></tr>';
+                modalProjFilesList.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger"><i class="fas fa-exclamation-circle me-1"></i> Failed to retrieve documents.</td></tr>';
+            });
+    };
+</script>
 {% endblock %}
