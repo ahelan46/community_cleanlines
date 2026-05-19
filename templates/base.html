@@ -120,11 +120,21 @@
                         <i class="fas fa-user-friends"></i> <span class="nav-link-text">Clients</span>
                     </a>
                 </div>
+                {% if user.profile.role != 'team_leader' %}
                 <div class="nav-item-custom">
                     <a href="{% url 'project_list' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}" title="Projects">
                         <i class="fas fa-briefcase"></i> <span class="nav-link-text">Projects</span>
                     </a>
                 </div>
+                {% endif %}
+
+                {% if user.profile.role == 'team_leader' %}
+                <div class="nav-item-custom">
+                    <a href="{% url 'team_leader_projects' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'team_leader_projects' %}active{% endif %}" title="Assigned Projects">
+                        <i class="fas fa-inbox"></i> <span class="nav-link-text">My Assignments</span>
+                    </a>
+                </div>
+                {% endif %}
 
                 {% if user.profile.role == 'project_manager' %}
                 <div class="nav-item-custom">
@@ -140,8 +150,8 @@
                     </a>
                 </div>
                 <div class="nav-item-custom">
-                    <a href="{% url 'messages' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'messages' %}active{% endif %}" title="Messages">
-                        <i class="fas fa-envelope"></i> <span class="nav-link-text">Messages</span>
+                    <a href="{% url 'messages' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'messages' %}active{% endif %}" title="Discussion">
+                        <i class="fas fa-comments"></i> <span class="nav-link-text">Discussion</span>
                     </a>
                 </div>
                 {% endif %}

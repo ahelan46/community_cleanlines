@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
 
 {% block title %}Calendar | Tracker{% endblock %}
 
@@ -164,6 +163,7 @@
     // Populate calendar events
     document.querySelectorAll('.calendar-day[data-date]').forEach(function(dayElement) {
         const monthDay = dayElement.getAttribute('data-date');
+        // Format: YYYY-MM-DD
         const fullDateStr = year + '-' + monthDay;
         
         if (deadlineData[fullDateStr]) {

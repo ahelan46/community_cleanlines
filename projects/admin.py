@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Client, Project, Task, Notification, UserProfile
+from .models import Client, Project, Task, Notification, UserProfile, ProjectAssignment
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -28,3 +28,10 @@ class TaskAdmin(admin.ModelAdmin):
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'message', 'is_read', 'created_at')
     list_filter = ('is_read',)
+
+@admin.register(ProjectAssignment)
+class ProjectAssignmentAdmin(admin.ModelAdmin):
+    list_display = ('project', 'team_leader', 'assigned_by', 'status', 'assigned_at')
+    list_filter = ('status', 'assigned_at')
+    search_fields = ('project__title', 'team_leader__username')
+    readonly_fields = ('assigned_at', 'updated_at')

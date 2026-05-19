@@ -153,6 +153,25 @@ class ProjectFile(models.Model):
     def __str__(self):
         return self.name
 
+class ProjectAssignment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    ]
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='assignments')
+    team_leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_assignments')
+    assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assigned_projects')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('project', 'team_leader')
+
+    def __str__(self):
+        return f"{self.project.title} -> {self.team_leader.username} ({self.status})"
+
 class Feedback(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='feedbacks')
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_feedback')

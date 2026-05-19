@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Count, Q
-from .models import Client, Project, Task, Notification, Report, Message, Team, UserProfile, ProjectFile, Feedback
-from .forms import SignUpForm, ProjectForm, TaskForm, ReportForm, FeedbackForm, ClientProjectForm
+from .models import Client, Project, Task, Notification, Report, Message, Team, UserProfile, ProjectFile, Feedback, ProjectAssignment
+from .forms import SignUpForm, ProjectForm, TaskForm, ReportForm, FeedbackForm, ClientProjectForm, ProjectAssignmentForm
 from datetime import date
 from django.contrib.auth.models import User
 from django.template.loader import get_template, TemplateDoesNotExist
@@ -47,6 +47,20 @@ def dashboard(request):
     recent_projects = projects.order_by('-created_at')[:5]
     upcoming_deadlines = tasks.filter(status__in=['todo', 'in_progress'], deadline__gte=date.today()).order_by('deadline')[:5]
     
+    # Add projects assigned to team leader by project manager
+    assigned_projects = []
+    if user_role == 'team_leader':
+        # Get projects assigned to the current team leader
+        assignments = ProjectAssignment.objects.filter(
+            team_leader=request.user
+        ).select_related('project', 'assigned_by').order_by('-assigned_at')
+        assigned_projects = list(assignments)
+    
+    # Add client data for project managers
+    all_clients = []
+    if user_role == 'project_manager':
+        all_clients = Client.objects.annotate(project_count=Count('projects')).order_by('-project_count')
+    
     context = {
         'user_role': user_role,
         'total_projects': total_projects,
@@ -59,6 +73,8 @@ def dashboard(request):
         'task_completion_rate': task_completion_rate,
         'recent_projects': recent_projects,
         'upcoming_deadlines': upcoming_deadlines,
+        'assigned_projects': assigned_projects,
+        'all_clients': all_clients,
     }
     
     template_name = f'projects/dashboards/{user_role}.html'
@@ -226,8 +242,19 @@ def calendar_view(request):
     
     user_role = request.user.profile.role
     if user_role == 'project_manager':
-        projects = Project.objects.filter(manager=request.user)
-        tasks = Task.objects.filter(project__manager=request.user)
+        # Project managers see their own projects and ALL client projects
+        pm_projects = Project.objects.filter(manager=request.user)
+        client_projects = Project.objects.filter(client__isnull=False)
+        projects = (pm_projects | client_projects).distinct()
+        tasks = Task.objects.filter(project__in=projects)
+    elif user_role == 'team_leader':
+        # Team leaders see only their assigned projects
+        assignments = ProjectAssignment.objects.filter(
+            team_leader=request.user,
+            status__in=['pending', 'accepted']
+        ).values_list('project_id', flat=True)
+        projects = Project.objects.filter(id__in=assignments)
+        tasks = Task.objects.filter(project__in=projects)
     else:
         projects = Project.objects.all()
         tasks = Task.objects.all()
@@ -309,27 +336,77 @@ def messages_view(request):
     if user_role == 'project_manager':
         managed_projects = Project.objects.filter(manager=request.user)
         messages = Message.objects.filter(Q(project__in=managed_projects) | Q(sender=request.user) | Q(receiver=request.user)).order_by('-created_at')
+        projects = Project.objects.filter(manager=request.user)
+    elif user_role == 'team_leader':
+        # Team leaders can only have conversations with project managers and clients
+        project_managers = User.objects.filter(profile__role='project_manager')
+        clients = User.objects.filter(profile__role='client')
+        allowed_users = project_managers | clients
+        messages = Message.objects.filter(
+            Q(sender=request.user, receiver__in=allowed_users) |
+            Q(receiver=request.user, sender__in=allowed_users)
+        ).order_by('-created_at')
+        projects = Project.objects.none()
     else:
         messages = Message.objects.filter(Q(sender=request.user) | Q(receiver=request.user)).order_by('-created_at')
+        projects = Project.objects.all()
 
     if request.method == 'POST':
         content = request.POST.get('content')
         project_id = request.POST.get('project')
+        receiver_id = request.POST.get('receiver')
         if content:
+            receiver = None
+            if receiver_id:
+                receiver = User.objects.get(pk=receiver_id)
             project = Project.objects.get(pk=project_id) if project_id else None
-            Message.objects.create(sender=request.user, content=content, project=project)
+            Message.objects.create(sender=request.user, receiver=receiver, content=content, project=project)
             return redirect('messages')
-    projects = Project.objects.filter(manager=request.user) if user_role == 'project_manager' else Project.objects.all()
+    
     return render(request, 'projects/messages.html', {'messages': messages, 'projects': projects})
 
+@login_required
 @login_required
 def teams(request):
     if request.user.profile.role != 'project_manager':
         return render(request, 'projects/teams.html', {'error': 'Access denied'})
 
+    # Get all team leaders (users with team_leader role)
+    team_leaders = User.objects.filter(profile__role='team_leader')
+    
+    # Get ALL projects (both client-uploaded and PM-created)
+    # This allows PMs to assign any project to team leaders
+    # Exclude projects that have already been assigned (pending or accepted)
+    assigned_project_ids = ProjectAssignment.objects.filter(
+        status__in=['pending', 'accepted']
+    ).values_list('project_id', flat=True)
+    projects = Project.objects.exclude(id__in=assigned_project_ids).order_by('-deadline')
+    
+    # Get assignments for each team leader
+    team_leader_data = []
+    for leader in team_leaders:
+        assignments = ProjectAssignment.objects.filter(team_leader=leader)
+        pending = assignments.filter(status='pending').count()
+        accepted = assignments.filter(status='accepted').count()
+        rejected = assignments.filter(status='rejected').count()
+        
+        team_leader_data.append({
+            'user': leader,
+            'pending_count': pending,
+            'accepted_count': accepted,
+            'rejected_count': rejected,
+            'assignments': assignments,
+            'assignment_count': assignments.count(),
+        })
+    
     teams = Team.objects.filter(project_manager=request.user).prefetch_related('leaders', 'members')
 
-    return render(request, 'projects/teams.html', {'teams': teams})
+    context = {
+        'teams': teams,
+        'team_leader_data': team_leader_data,
+        'projects': projects,
+    }
+    return render(request, 'projects/teams.html', context)
 
 # Auth Views
 def signup_view(request):
@@ -370,3 +447,90 @@ def edit_feedback(request, pk):
         form = FeedbackForm(instance=feedback)
         form.fields['project'].queryset = Project.objects.filter(client__email=request.user.email)
     return render(request, 'projects/edit_feedback.html', {'form': form})
+
+# Project Assignment Views for Team Leaders
+@login_required
+def assign_project_to_leader(request, project_id):
+    """Project Manager assigns a project to a team leader"""
+    project = get_object_or_404(Project, pk=project_id)
+    
+    # Check if user is the project manager
+    if request.user != project.manager:
+        return redirect('project_detail', pk=project_id)
+    
+    if request.method == 'POST':
+        form = ProjectAssignmentForm(request.POST)
+        if form.is_valid():
+            team_leader = form.cleaned_data['team_leader']
+            # Create or update assignment
+            assignment, created = ProjectAssignment.objects.get_or_create(
+                project=project,
+                team_leader=team_leader,
+                defaults={'assigned_by': request.user, 'status': 'pending'}
+            )
+            if not created:
+                assignment.status = 'pending'
+                assignment.assigned_by = request.user
+                assignment.save()
+            return redirect('project_detail', pk=project_id)
+    else:
+        form = ProjectAssignmentForm()
+    
+    return render(request, 'projects/assign_project.html', {'form': form, 'project': project})
+
+@login_required
+def team_leader_projects(request):
+    """Team Leader sees all projects assigned to him"""
+    # Get all project assignments for this team leader
+    assignments = ProjectAssignment.objects.filter(team_leader=request.user)
+    
+    pending_assignments = assignments.filter(status='pending')
+    accepted_assignments = assignments.filter(status='accepted')
+    rejected_assignments = assignments.filter(status='rejected')
+    
+    context = {
+        'pending_assignments': pending_assignments,
+        'accepted_assignments': accepted_assignments,
+        'rejected_assignments': rejected_assignments,
+    }
+    return render(request, 'projects/team_leader_projects.html', context)
+
+@login_required
+def accept_project_assignment(request, assignment_id):
+    """Team Leader accepts a project assignment"""
+    assignment = get_object_or_404(ProjectAssignment, pk=assignment_id, team_leader=request.user)
+    assignment.status = 'accepted'
+    assignment.save()
+    return redirect('team_leader_projects')
+
+@login_required
+def reject_project_assignment(request, assignment_id):
+    """Team Leader rejects a project assignment"""
+    assignment = get_object_or_404(ProjectAssignment, pk=assignment_id, team_leader=request.user)
+    assignment.status = 'rejected'
+    assignment.save()
+    return redirect('team_leader_projects')
+
+@login_required
+def quick_assign_project(request, project_id, team_leader_id):
+    """Project Manager quickly assigns a project to a team leader from Teams page"""
+    # Check that user is a project manager
+    if request.user.profile.role != 'project_manager':
+        return redirect('teams')
+    
+    project = get_object_or_404(Project, pk=project_id)
+    team_leader = get_object_or_404(User, pk=team_leader_id, profile__role='team_leader')
+    
+    # Create or update assignment
+    assignment, created = ProjectAssignment.objects.get_or_create(
+        project=project,
+        team_leader=team_leader,
+        defaults={'assigned_by': request.user, 'status': 'pending'}
+    )
+    
+    if not created and assignment.status != 'pending':
+        assignment.status = 'pending'
+        assignment.assigned_by = request.user
+        assignment.save()
+    
+    return redirect('teams')

@@ -1,42 +1,108 @@
 {% extends 'base.html' %}
-{% block title %}Teams | Project Manager{% endblock %}
-
+{% block title %}Team Leaders & Project Assignments{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <h2 class="fw-bold mb-4">My Teams</h2>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Team Leaders & Project Assignments</h2>
+    </div>
 
-    {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
-    {% else %}
-        {% for team in teams %}
-            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <h5 class="fw-bold mb-0">{{ team.name }}</h5>
-                    <small class="text-muted">Managed by {{ team.project_manager.username }}</small>
-                </div>
-                <div class="card-body px-4">
-                    <h6 class="fw-bold">Leaders</h6>
-                    <ul>
-                        {% for leader in team.leaders.all %}
-                            <li>{{ leader.username }}</li>
-                        {% empty %}
-                            <li class="text-muted">No leaders assigned</li>
-                        {% endfor %}
-                    </ul>
+    <div class="card shadow-sm mb-5">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-users-cog me-2"></i>Team Leaders</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Team Leader</th>
+                            <th>Email</th>
+                            <th>Assignments</th>
+                            <th>Status Summary</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leader_data in team_leader_data %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                        {{ leader_data.user.username|slice:":1"|upper }}
+                                    </div>
+                                    {{ leader_data.user.username }}
+                                </div>
+                            </td>
+                            <td>{{ leader_data.user.email }}</td>
+                            <td><span class="badge bg-info text-dark">{{ leader_data.assignment_count }}</span></td>
+                            <td>
+                                <span class="badge bg-warning text-dark">{{ leader_data.pending_count }} Pending</span>
+                                <span class="badge bg-success">{{ leader_data.accepted_count }} Accepted</span>
+                                <span class="badge bg-danger">{{ leader_data.rejected_count }} Rejected</span>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignModal{{ leader_data.user.id }}">
+                                    <i class="fas fa-plus-circle me-1"></i>Assign
+                                </button>
 
-                    <h6 class="fw-bold mt-3">Members</h6>
-                    <ul>
-                        {% for member in team.members.all %}
-                            <li>{{ member.username }}</li>
-                        {% empty %}
-                            <li class="text-muted">No members assigned</li>
+                                <!-- Modal -->
+                                <div class="modal fade" id="assignModal{{ leader_data.user.id }}" tabindex="-1" aria-labelledby="assignModalLabel{{ leader_data.user.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="assignModalLabel{{ leader_data.user.id }}">Assign Project to {{ leader_data.user.username }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                {% if projects %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Project Title</th>
+                                                                <th>Client</th>
+                                                                <th>Deadline</th>
+                                                                <th>Status</th>
+                                                                <th>Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for project in projects %}
+                                                            <tr>
+                                                                <td>{{ project.title }}</td>
+                                                                <td>{{ project.client }}</td>
+                                                                <td>{{ project.deadline|date:"M d, Y"|default:"N/A" }}</td>
+                                                                <td>
+                                                                    <span class="badge {% if project.get_status_display == 'Completed' %}bg-success{% elif project.get_status_display == 'In Progress' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                                        {{ project.get_status_display }}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{% url 'quick_assign_project' project.id leader_data.user.id %}" class="btn btn-xs btn-success">
+                                                                        Assign
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                {% else %}
+                                                <p class="text-center text-muted py-4">
+                                                    <i class="fas fa-inbox me-2"></i>No projects available to assign
+                                                </p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
                         {% endfor %}
-                    </ul>
-                </div>
+                    </tbody>
+                </table>
             </div>
-        {% empty %}
-            <p class="text-muted">You don’t have any teams yet.</p>
-        {% endfor %}
-    {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

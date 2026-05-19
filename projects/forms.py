@@ -19,7 +19,7 @@ class SignUpForm(UserCreationForm):
             profile.save()
         return user
 
-from .models import Project, Task, Report, Client, ProjectFile
+from .models import Project, Task, Report, Client, ProjectFile, ProjectAssignment
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -134,6 +134,18 @@ class ClientProjectForm(forms.Form):
             'accept': '*/*'
         })
     )
+
+
+class ProjectAssignmentForm(forms.ModelForm):
+    team_leader = forms.ModelChoiceField(
+        queryset=User.objects.filter(profile__role='team_leader'),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Assign to Team Leader'
+    )
+    
+    class Meta:
+        model = ProjectAssignment
+        fields = ['team_leader']
 
 
 

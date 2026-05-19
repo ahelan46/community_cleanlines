@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Project to Team Leader | Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0">Assign Project to Team Leader</h3>
+        <p class="text-muted small mb-0">Delegate {{ project.title }} to a team leader</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0">{{ project.title }}</h5>
+                <p class="text-muted small mb-0">Client: {{ project.client.name }}</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Project Details</label>
+                        <div class="bg-light p-3 rounded-2 mb-3">
+                            <p class="mb-2"><strong>Title:</strong> {{ project.title }}</p>
+                            <p class="mb-2"><strong>Client:</strong> {{ project.client.name }}</p>
+                            <p class="mb-2"><strong>Status:</strong> <span class="badge bg-{{ project.status }}">{{ project.get_status_display }}</span></p>
+                            <p class="mb-2"><strong>Priority:</strong> <span class="badge bg-warning">{{ project.get_priority_display }}</span></p>
+                            <p class="mb-0"><strong>Deadline:</strong> {{ project.deadline|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">Select Team Leader</label>
+                        <p class="text-muted small mb-2">Choose a team leader to assign this project</p>
+                        {{ form.team_leader }}
+                        {% if form.team_leader.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.team_leader.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'project_detail' project.pk %}" class="btn btn-light px-4">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-check"></i> Assign Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    }
+</style>
+{% endblock %}

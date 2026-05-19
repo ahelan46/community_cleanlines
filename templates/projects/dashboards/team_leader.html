@@ -95,4 +95,52 @@
         </div>
     </div>
 </div>
+
+<!-- Projects Assigned to Me Section -->
+<div class="row g-4 mt-4">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0">Projects Assigned to Me by Project Manager</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr class="bg-light">
+                                <th class="px-4 py-3 border-0">Project Title</th>
+                                <th class="py-3 border-0">Client</th>
+                                <th class="py-3 border-0">Assigned By</th>
+                                <th class="py-3 border-0 text-center">Deadline</th>
+                                <th class="py-3 border-0 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assigned_projects %}
+                            <tr>
+                                <td class="px-4 fw-bold">{{ assignment.project.title }}</td>
+                                <td>{{ assignment.project.client.name|default:"N/A" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name={{ assignment.assigned_by.username }}&size=24&background=random" class="rounded-circle me-2">
+                                        {{ assignment.assigned_by.username }}
+                                    </div>
+                                </td>
+                                <td class="text-center">{{ assignment.project.deadline|date:"M d, Y" }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-{% if assignment.status == 'pending' %}warning{% elif assignment.status == 'accepted' %}success{% else %}danger{% endif %}">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-4 text-muted">No projects assigned yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
