@@ -204,6 +204,262 @@
         </div>
     </div>
 </div>
+
+<!-- Row 2: Blocker Alerts & Recent Activities Timeline -->
+<div class="row g-4 mb-4">
+    <!-- Urgent Blocker Alerts -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-triangle-exclamation text-danger me-2"></i>Sprint
+                    Blocker Alerts</h5>
+                <p class="text-muted x-small mb-0">High-priority operational hurdles and software bugs requiring lead
+                    mitigation</p>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for issue in tl_urgent_issues %}
+                <div
+                    class="p-3 rounded-3 bg-{{ issue.color }} bg-opacity-10 text-{{ issue.color }} border border-{{ issue.color }}-subtle d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-{{ issue.color }} text-white rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 36px; height: 36px;"><i class="fas fa-circle-exclamation"></i></div>
+                        <div>
+                            <div class="small fw-bold text-main">{{ issue.title }}</div>
+                            <span class="x-small text-muted">{{ issue.category }} | Severity: <strong>{{ issue.severity
+                                    }}</strong></span>
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ issue.color }}">{{ issue.severity }}</span>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-clipboard-check fa-3x mb-3 opacity-25"></i>
+                    <div class="small fw-bold">Clean Workspace!</div>
+                    <span class="x-small text-muted">No unresolved blockers in ongoing sprints.</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Team Activities Timeline -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-history text-indigo me-2"></i>Developer Activity
+                    Feed</h5>
+                <p class="text-muted x-small mb-0">Sprints work log tracking commit triggers, task modifications and
+                    deployments</p>
+            </div>
+
+            <div class="timeline-container px-2" style="max-height: 280px; overflow-y: auto;">
+                {% for act in tl_activities %}
+                <div class="d-flex mb-3 position-relative tl-timeline-row">
+                    <div class="me-3 text-center position-relative" style="z-index: 2;">
+                        <div class="p-2 rounded-circle text-indigo bg-indigo bg-opacity-10 d-inline-flex align-items-center justify-content-center"
+                            style="width: 36px; height: 36px;">
+                            {% if 'Complete' in act.activity_type or 'Completed' in act.activity_type %}
+                            <i class="fas fa-circle-check text-success"></i>
+                            {% elif 'Bug' in act.activity_type %}
+                            <i class="fas fa-bug text-danger"></i>
+                            {% elif 'Upload' in act.activity_type or 'Design' in act.activity_type %}
+                            <i class="fas fa-cloud-upload-alt text-info"></i>
+                            {% else %}
+                            <i class="fas fa-flag text-indigo"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="small fw-bold text-main">{{ act.activity_type }}</div>
+                        <p class="text-muted x-small mb-0">{{ act.description }}</p>
+                        <span class="x-small text-muted font-monospace" style="font-size: 0.65rem;">{{ act.time
+                            }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Actions & Team Workload/Mood Status -->
+<div class="row g-4 mb-4">
+    <!-- Quick Actions Panel -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-bolt text-warning me-2"></i>Sprint Workflow Suite
+                </h5>
+                <p class="text-muted x-small mb-0">Trigger core sprint management actions instantly</p>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="{% url 'task_list' %}"
+                        class="btn btn-outline-indigo w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-tasks fa-lg mb-2 text-indigo"></i>
+                        <div class="fw-bold small">Assign Task</div>
+                        <span class="x-small text-muted d-block">Dispatch tickets to staff</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'task_list' %}"
+                        class="btn btn-outline-warning w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-cubes-stacked fa-lg mb-2 text-warning"></i>
+                        <div class="fw-bold small">Create Sprint</div>
+                        <span class="x-small text-muted d-block">Initialize future scope</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'calendar' %}"
+                        class="btn btn-outline-success w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-clock fa-lg mb-2 text-success"></i>
+                        <div class="fw-bold small">Start Meeting</div>
+                        <span class="x-small text-muted d-block">Initialize daily standups</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'client_files' %}"
+                        class="btn btn-outline-info w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-circle-nodes fa-lg mb-2 text-info"></i>
+                        <div class="fw-bold small">Review Deliverables</div>
+                        <span class="x-small text-muted d-block">Audit code integrations</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team availability board with mood and workload indicators -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-users-viewfinder text-indigo me-2"></i>Developer
+                    Workload Monitor</h5>
+                <p class="text-muted x-small mb-0">Track engineering bandwidth allocation and real-time developer moods
+                </p>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for dev in tl_team_members %}
+                <div class="d-flex align-items-center justify-content-between p-2 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="position-relative">
+                            <img src="{{ dev.avatar }}" class="rounded-circle border" width="40" height="40">
+                            <span
+                                class="position-absolute bottom-0 end-0 p-1 border border-white rounded-circle bg-{% if dev.status == 'Online' %}success{% elif dev.status == 'Busy' %}danger{% elif dev.status == 'In Meeting' %}warning{% else %}secondary{% endif %}"
+                                style="width: 12px; height: 12px;"></span>
+                        </div>
+                        <div>
+                            <div class="small fw-bold text-main">{{ dev.name }}</div>
+                            <span class="x-small text-muted">{{ dev.role }} | {{ dev.tasks }} Active Tasks</span>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <div class="d-flex gap-2 align-items-center justify-content-end mb-1">
+                            <span
+                                class="badge bg-{% if dev.workload == 'Overloaded' %}danger-subtle text-danger{% elif dev.workload == 'Balanced' %}success-subtle text-success{% else %}info-subtle text-info{% endif %} px-2.5 py-0.5 rounded-2 x-small text-uppercase">
+                                {{ dev.workload }}
+                            </span>
+                            <span class="x-small font-monospace text-main" title="Team Mood Indicator">{{ dev.mood
+                                }}</span>
+                        </div>
+                        <div class="x-small text-muted" style="font-size: 0.65rem;">Last Login: Today 9:30 AM</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Standup Board Widget (Unique Feature) -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-handshake-simple text-indigo me-2"></i>Daily Scrum
+                    Standup Log</h5>
+                <p class="text-muted x-small mb-0">Instantly submit daily progress logs for the entire team to see in
+                    active workspaces</p>
+            </div>
+
+            <form onsubmit="submitStandupForm(event)">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">1. Yesterday's Achievements</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                            placeholder="What parts of code were merged or finalized?" required></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">2. Today's Core Plan</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                            placeholder="What backlog tasks will you resolve today?" required></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">3. Blockers / Obstacles</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                            placeholder="Any blockers, missing contracts, API errors?"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-indigo rounded-pill px-4">Submit Daily Standup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Assigned to Me Section -->
+<div class="row g-4 mt-4">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0">Projects Assigned to Me by Project Manager</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr class="bg-light">
+                                <th class="px-4 py-3 border-0">Project Title</th>
+                                <th class="py-3 border-0">Client</th>
+                                <th class="py-3 border-0">Assigned By</th>
+                                <th class="py-3 border-0 text-center">Deadline</th>
+                                <th class="py-3 border-0 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assigned_projects %}
+                            <tr>
+                                <td class="px-4 fw-bold">{{ assignment.project.title }}</td>
+                                <td>{{ assignment.project.client.name|default:"N/A" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name={{ assignment.assigned_by.username }}&size=24&background=random" class="rounded-circle me-2">
+                                        {{ assignment.assigned_by.username }}
+                                    </div>
+                                </td>
+                                <td class="text-center">{{ assignment.project.deadline|date:"M d, Y" }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-{% if assignment.status == 'pending' %}warning{% elif assignment.status == 'accepted' %}success{% else %}danger{% endif %}">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-4 text-muted">No projects assigned yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

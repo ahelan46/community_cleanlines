@@ -276,58 +276,76 @@
     </div>
 </div>
 
-<!-- Team Overview Section -->
-<div class="row">
+<!-- Row 3: Quick Actions Panel & Team Availability Widget -->
+<div class="row g-4">
+    <!-- Quick Actions Panel -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-bolt text-warning me-2"></i>Quick Action Suite</h5>
+                <p class="text-muted x-small mb-0">Instantly execute workspace management workflows with one-click triggers</p>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="{% url 'create_project' %}" class="btn btn-outline-primary w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-briefcase fa-lg mb-2 text-primary"></i>
+                        <div class="fw-bold small">Create Project</div>
+                        <span class="x-small text-muted d-block">Setup workspace and milestones</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'task_list' %}" class="btn btn-outline-warning w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-tasks fa-lg mb-2 text-warning"></i>
+                        <div class="fw-bold small">Assign Task</div>
+                        <span class="x-small text-muted d-block">Dispatch actions to engineers</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'client_files' %}" class="btn btn-outline-success w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-cloud-upload-alt fa-lg mb-2 text-success"></i>
+                        <div class="fw-bold small">Upload File</div>
+                        <span class="x-small text-muted d-block">Upload blueprints & reports</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'messages' %}" class="btn btn-outline-info w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-comments fa-lg mb-2 text-info"></i>
+                        <div class="fw-bold small">Send Message</div>
+                        <span class="x-small text-muted d-block">Open communication tunnels</span>
+                    </a>
+<!-- Clients Overview Section -->
+<div class="row g-4 mt-4">
     <div class="col-12">
         <div class="card border-0 shadow-sm" style="border-radius: 12px;">
             <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">Team Overview</h5>
+                <h5 class="fw-bold mb-0"><i class="fas fa-users me-2"></i>All Clients & Their Projects</h5>
             </div>
-            <div class="card-body px-4">
+            <div class="card-body p-0">
+                {% if all_clients %}
                 <div class="table-responsive">
-                    <table class="table table-borderless align-middle">
-                        <thead>
-                            <tr class="text-muted small text-uppercase">
-                                <th>Member</th>
-                                <th>Role</th>
-                                <th>Active Tasks</th>
-                                <th>Efficiency</th>
-                                <th class="text-end">Actions</th>
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="px-4 py-3 border-0">Client Name</th>
+                                <th class="py-3 border-0">Email</th>
+                                <th class="py-3 border-0">Phone</th>
+                                <th class="py-3 border-0 text-center">Projects</th>
+                                <th class="py-3 border-0">Address</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for client in all_clients %}
                             <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=3b82f6&color=fff" class="rounded-circle me-2" width="32" height="32">
-                                        <div class="fw-bold small">Alex Johnson</div>
-                                    </div>
+                                <td class="px-4 fw-bold">{{ client.name }}</td>
+                                <td>{{ client.email|default:"N/A" }}</td>
+                                <td>{{ client.phone|default:"N/A" }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">{{ client.project_count }}</span>
                                 </td>
-                                <td><span class="badge bg-light text-dark small">Team Leader</span></td>
-                                <td><div class="small fw-bold">4 Tasks</div></td>
-                                <td>
-                                    <div class="progress" style="height: 6px; width: 100px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 85%"></div>
-                                    </div>
-                                </td>
-                                <td class="text-end"><button class="btn btn-sm btn-light">View</button></td>
+                                <td class="text-muted small">{{ client.address|truncatewords:5|default:"N/A" }}</td>
                             </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Sarah+Smith&background=random" class="rounded-circle me-2" width="32" height="32">
-                                        <div class="fw-bold small">Sarah Smith</div>
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-light text-dark small">Team Member</span></td>
-                                <td><div class="small fw-bold">7 Tasks</div></td>
-                                <td>
-                                    <div class="progress" style="height: 6px; width: 100px;">
-                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 65%"></div>
-                                    </div>
-                                </td>
-                                <td class="text-end"><button class="btn btn-sm btn-light">View</button></td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

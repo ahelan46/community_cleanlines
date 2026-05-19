@@ -36,5 +36,12 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('feedback/<int:pk>/edit/', views.edit_feedback, name='edit_feedback'),
+    path('payments/', views.payments_view, name='payments'),
+    path('settings/', views.settings_view, name='settings'),
+    path('projects/<int:project_id>/assign/', views.assign_project_to_leader, name='assign_project_to_leader'),
+    path('team-leader/projects/', views.team_leader_projects, name='team_leader_projects'),
+    path('assignment/<int:assignment_id>/accept/', views.accept_project_assignment, name='accept_project_assignment'),
+    path('assignment/<int:assignment_id>/reject/', views.reject_project_assignment, name='reject_project_assignment'),
+    path('projects/<int:project_id>/assign-to/<int:team_leader_id>/', views.quick_assign_project, name='quick_assign_project'),
 
 ]

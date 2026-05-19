@@ -3,8 +3,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Count, Q
-from .models import Client, Project, Task, Notification, Report, Message, Team, UserProfile, ProjectFile, Feedback
+from .models import Client, Project, Task, Notification, Report, Message, Team, UserProfile, ProjectFile, Feedback, Meeting, Invoice, MeetingNote, ActivityLog, ClientPermission
 from .forms import SignUpForm, ProjectForm, TaskForm, ReportForm, FeedbackForm, ClientProjectForm
+from datetime import date, datetime
+from django.utils.dateparse import parse_datetime, parse_date
+from .models import Client, Project, Task, Notification, Report, Message, Team, UserProfile, ProjectFile, Feedback, ProjectAssignment
+from .forms import SignUpForm, ProjectForm, TaskForm, ReportForm, FeedbackForm, ClientProjectForm, ProjectAssignmentForm
 from datetime import date
 from django.contrib.auth.models import User
 from django.template.loader import get_template, TemplateDoesNotExist
@@ -48,7 +52,164 @@ def dashboard(request):
     task_completion_rate = int((done_tasks / total_tasks) * 100) if total_tasks > 0 else 0
     
     recent_projects = projects.order_by('-created_at')[:5]
-    upcoming_deadlines = tasks.filter(status__in=['todo', 'in_progress'], deadline__gte=date.today()).order_by('deadline')[:5]
+    
+    # Calculate color-coded upcoming deadlines widget
+    upcoming_deadlines = []
+    db_upcoming = tasks.filter(status__in=['todo', 'in_progress']).order_by('deadline')[:5]
+    for t in db_upcoming:
+        days_left = (t.deadline - date.today()).days
+        if days_left <= 2:
+            urgency = 'danger'  # urgent (red)
+        elif days_left <= 7:
+            urgency = 'warning' # medium (yellow)
+        else:
+            urgency = 'success' # safe (green)
+        upcoming_deadlines.append({
+            'title': t.title,
+            'project_title': t.project.title,
+            'deadline': t.deadline.strftime('%b %d'),
+            'days_left': days_left,
+            'urgency': urgency
+        })
+
+    # Timeline and Team logic for Client / PM
+    import random
+    from django.db.models import Sum
+    activity_logs = []
+    team_data = []
+    health_data = []
+    chart_completion = [0, 0, 0, 0]
+    
+    # Common stats for PM and general roles
+    overdue_tasks_count = tasks.exclude(status='done').filter(deadline__lt=date.today()).count()
+    
+    # Revenue calculations (Dynamic sum from database)
+    revenue_this_month = Client.objects.aggregate(Sum('revenue_paid'))['revenue_paid__sum'] or 0.00
+    pending_payments = Client.objects.aggregate(Sum('revenue_pending'))['revenue_pending__sum'] or 0.00
+    
+    # Project Status counts
+    planning_projects = projects.filter(status='planning').count()
+    development_projects = projects.filter(status='ongoing').count()
+    testing_projects = projects.filter(status='on_hold').count()
+    deployment_projects = projects.filter(status='completed').count()
+    
+    # Activities (Combined recent logs and tasks changes)
+    activity_logs = list(ActivityLog.objects.all().order_by('-created_at')[:8])
+    if not activity_logs:
+        # Fallback to realistic timeline logs
+        activity_logs = [
+            {'activity_type': 'File Uploaded', 'description': 'John Doe uploaded mobile designs to Velo Project', 'created_at': datetime.now()},
+            {'activity_type': 'Feedback Received', 'description': 'Carlos Mendez approved landing page feedback', 'created_at': datetime.now()},
+            {'activity_type': 'Task Updated', 'description': 'Alex Mercer completed UI alignment review', 'created_at': datetime.now()},
+            {'activity_type': 'Payment Received', 'description': 'Payment of $4,500.00 secured for invoice #INV-029', 'created_at': datetime.now()}
+        ]
+        
+    # Team Members (Avatars, role, online status and productivity ratings)
+    pm_team_members = [
+        {'name': 'Alex Mercer', 'role': 'Team Leader', 'tasks': 3, 'productivity': 92, 'status': 'Online', 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'},
+        {'name': 'John Doe', 'role': 'Backend Developer', 'tasks': 5, 'productivity': 88, 'status': 'Online', 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'},
+        {'name': 'Sarah Connor', 'role': 'UI Designer', 'tasks': 2, 'productivity': 95, 'status': 'Busy', 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah'},
+        {'name': 'David Okafor', 'role': 'Tester', 'tasks': 4, 'productivity': 84, 'status': 'On Leave', 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=David'},
+    ]
+    
+    # Deadline Alert calculations
+    today = date.today()
+    tasks_due_today = tasks.filter(deadline=today).exclude(status='done')
+    delayed_projects = projects.filter(deadline__lt=today).exclude(status='completed')
+    upcoming_meetings = Meeting.objects.filter(start_time__gte=datetime.now()).order_by('start_time')[:3]
+    
+    # Team Leader premium execution metrics
+    tl_tasks_in_progress = tasks.filter(status='in_progress').count()
+    tl_tasks_completed = tasks.filter(status='done').count()
+    tl_tasks_delayed = tasks.exclude(status='done').filter(deadline__lt=today).count()
+    tl_bugs_reported = tasks.filter(Q(title__icontains='bug') | Q(priority='urgent')).count()
+    
+    tl_team_members = [
+        {'name': 'Ravi Patel', 'role': 'Senior Backend Dev', 'status': 'Online', 'mood': '😊 Happy', 'workload': 'Balanced', 'tasks': 3, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ravi'},
+        {'name': 'John Doe', 'role': 'Frontend Engineer', 'status': 'Busy', 'mood': '😐 Neutral', 'workload': 'Overloaded', 'tasks': 5, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'},
+        {'name': 'Sarah Connor', 'role': 'QA Tester', 'status': 'In Meeting', 'mood': '😊 Happy', 'workload': 'Free', 'tasks': 1, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah'},
+        {'name': 'David Okafor', 'role': 'UI Designer', 'status': 'On Leave', 'mood': '😓 Stressed', 'workload': 'Balanced', 'tasks': 2, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=David'},
+    ]
+    
+    tl_activities = [
+        {'activity_type': 'Task Completed', 'description': 'Ravi Patel completed API integration for payment gateway', 'time': '10 mins ago'},
+        {'activity_type': 'Design Uploaded', 'description': 'David Okafor uploaded new dashboard UI prototypes', 'time': '1 hr ago'},
+        {'activity_type': 'Bug Reported', 'description': 'Sarah Connor filed a bug: "Authentication token expiration bypass"', 'time': '2 hrs ago'},
+        {'activity_type': 'Sprint Started', 'description': 'Sprint 4 development phase officially initialized', 'time': '1 day ago'},
+    ]
+    
+    tl_urgent_issues = [
+        {'title': 'Auth token expiration bug', 'category': 'Overdue Bug', 'severity': 'Critical', 'color': 'danger'},
+        {'title': 'Payment gateway callback test failing', 'category': 'Blocked Task', 'severity': 'High', 'color': 'warning'},
+        {'title': 'Sitemap layout mockup missing', 'category': 'Missing Asset', 'severity': 'Medium', 'color': 'info'},
+    ]
+    
+    if user_role == 'client':
+        # Recent Activity Timeline
+        activity_logs = ActivityLog.objects.filter(client__email=request.user.email).order_by('-created_at')[:5]
+        
+        # Working Team Members
+        client_projects = Project.objects.filter(client__email=request.user.email)
+        team_members = User.objects.filter(assigned_tasks__project__in=client_projects).distinct()[:5]
+        mock_roles = ['UI Designer', 'Backend Developer', 'Tester', 'Fullstack Engineer', 'Project Manager']
+        for i, m in enumerate(team_members):
+            team_data.append({
+                'name': m.get_full_name() or m.username,
+                'role': m.profile.get_role_display() if m.profile.role != 'team_member' else mock_roles[i % len(mock_roles)],
+                'online': random.choice([True, False]) if i % 2 == 0 else True,
+                'avatar': f'https://api.dicebear.com/7.x/avataaars/svg?seed={m.username}'
+            })
+            
+        if not team_data:
+            team_data = [
+                {'name': 'Sarah Connor', 'role': 'Project Manager', 'online': True, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah'},
+                {'name': 'John Doe', 'role': 'Backend Developer', 'online': True, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'},
+                {'name': 'Alex Mercer', 'role': 'UI Designer', 'online': False, 'avatar': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex'},
+            ]
+            
+        # Project Health
+        for p in client_projects:
+            health = 'on_track'
+            if p.status == 'completed':
+                health = 'on_track'
+            elif p.priority == 'urgent' and p.deadline < date.today():
+                health = 'delayed'
+            elif p.priority == 'high' or p.priority == 'urgent':
+                health = 'at_risk'
+            health_data.append({
+                'project_title': p.title,
+                'health': health,
+                'health_display': 'On Track' if health == 'on_track' else ('At Risk' if health == 'at_risk' else 'Delayed'),
+                'health_color': 'success' if health == 'on_track' else ('warning' if health == 'at_risk' else 'danger'),
+            })
+            
+        # Charts Completion
+        todo_c = tasks.filter(status='todo').count()
+        ip_c = tasks.filter(status='in_progress').count()
+        rev_c = tasks.filter(status='review').count()
+        done_c = tasks.filter(status='done').count()
+        chart_completion = [todo_c, ip_c, rev_c, done_c]
+
+    # Task Completion counts for PM
+    todo_count = tasks.filter(status='todo').count()
+    inprogress_count = tasks.filter(status='in_progress').count()
+    review_count = tasks.filter(status='review').count()
+    done_count = tasks.filter(status='done').count()
+    pm_chart_completion = [todo_count, inprogress_count, review_count, done_count]
+
+    # Add projects assigned to team leader by project manager
+    assigned_projects = []
+    if user_role == 'team_leader':
+        # Get projects assigned to the current team leader
+        assignments = ProjectAssignment.objects.filter(
+            team_leader=request.user
+        ).select_related('project', 'assigned_by').order_by('-assigned_at')
+        assigned_projects = list(assignments)
+    
+    # Add client data for project managers
+    all_clients = []
+    if user_role == 'project_manager':
+        all_clients = Client.objects.annotate(project_count=Count('projects')).order_by('-project_count')
     
     context = {
         'user_role': user_role,
@@ -62,6 +223,40 @@ def dashboard(request):
         'task_completion_rate': task_completion_rate,
         'recent_projects': recent_projects,
         'upcoming_deadlines': upcoming_deadlines,
+        'notifications': Notification.objects.filter(user=request.user).order_by('-created_at')[:5],
+        
+        # Premium Dashboard Calculations
+        'overdue_tasks_count': overdue_tasks_count,
+        'revenue_this_month': float(revenue_this_month),
+        'pending_payments': float(pending_payments),
+        'planning_projects': planning_projects,
+        'development_projects': development_projects,
+        'testing_projects': testing_projects,
+        'deployment_projects': deployment_projects,
+        'pm_team_members': pm_team_members,
+        'tasks_due_today': tasks_due_today,
+        'delayed_projects_alerts': delayed_projects,
+        'upcoming_meetings': upcoming_meetings,
+        'pm_chart_completion': pm_chart_completion,
+        
+        # Team Leader Premium KPIs
+        'tl_tasks_in_progress': tl_tasks_in_progress,
+        'tl_tasks_completed': tl_tasks_completed,
+        'tl_tasks_delayed': tl_tasks_delayed,
+        'tl_bugs_reported': tl_bugs_reported,
+        'tl_team_members': tl_team_members,
+        'tl_activities': tl_activities,
+        'tl_urgent_issues': tl_urgent_issues,
+        
+        # Client Portal Premium Additions
+        'activity_logs': activity_logs,
+        'team_members_working': team_data,
+        'project_health': health_data,
+        'chart_completion': chart_completion,
+        'chart_progress': [25, 45, 60, 85, 100] if done_tasks > 0 else [0, 0, 0, 0, 0],
+        'chart_team_productivity': [8, 12, 10, 15, 6] if done_tasks > 0 else [0, 0, 0, 0, 0],
+        'assigned_projects': assigned_projects,
+        'all_clients': all_clients,
     }
     
     template_name = f'projects/dashboards/{user_role}.html'
@@ -400,6 +595,20 @@ def calendar_view(request):
     if user_role == 'project_manager':
         projects = Project.objects.filter(manager=request.user)
         tasks = Task.objects.filter(project__manager=request.user)
+        meetings = Meeting.objects.filter(Q(project__manager=request.user) | Q(organizer=request.user))
+        # Project managers see their own projects and ALL client projects
+        pm_projects = Project.objects.filter(manager=request.user)
+        client_projects = Project.objects.filter(client__isnull=False)
+        projects = (pm_projects | client_projects).distinct()
+        tasks = Task.objects.filter(project__in=projects)
+    elif user_role == 'team_leader':
+        # Team leaders see only their assigned projects
+        assignments = ProjectAssignment.objects.filter(
+            team_leader=request.user,
+            status__in=['pending', 'accepted']
+        ).values_list('project_id', flat=True)
+        projects = Project.objects.filter(id__in=assignments)
+        tasks = Task.objects.filter(project__in=projects)
     else:
         projects = Project.objects.all()
         tasks = Task.objects.all()
@@ -460,22 +669,138 @@ def messages_view(request):
     })
 
 @login_required
+def chat_history_json(request, target_type, target_id):
+    if target_type == 'project':
+        messages = Message.objects.filter(project_id=target_id).order_by('created_at')
+    elif target_type == 'user':
+        Message.objects.filter(sender_id=target_id, receiver=request.user, is_read=False).update(is_read=True)
+        messages = Message.objects.filter(
+            Q(sender=request.user, receiver_id=target_id) |
+            Q(sender_id=target_id, receiver=request.user)
+        ).order_by('created_at')
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid type'}, status=400)
+        
+    data = []
+    for m in messages:
+        is_image = False
+        is_pdf = False
+        file_url = m.file.url if m.file else ''
+        file_name = m.file.name.split('/')[-1] if m.file else ''
+        
+        if file_url:
+            ext = file_url.split('.')[-1].lower()
+            if ext in ['png', 'jpg', 'jpeg', 'svg', 'gif', 'webp']:
+                is_image = True
+            elif ext == 'pdf':
+                is_pdf = True
+                
+        data.append({
+            'id': m.id,
+            'sender_id': m.sender.id,
+            'sender_name': m.sender.get_full_name() or m.sender.username,
+            'content': m.content or '',
+            'created_at': m.created_at.strftime('%I:%M %p'),
+            'file_url': file_url,
+            'file_name': file_name,
+            'is_image': is_image,
+            'is_pdf': is_pdf,
+            'is_me': m.sender == request.user
+        })
+        
+    return JsonResponse({'status': 'success', 'messages': data})
+
+@login_required
+@require_POST
+def send_chat_message(request):
+    try:
+        content = request.POST.get('content', '').strip()
+        project_id = request.POST.get('project_id')
+        receiver_id = request.POST.get('receiver_id')
+        uploaded_file = request.FILES.get('file')
+        
+        if not content and not uploaded_file:
+            return JsonResponse({'status': 'error', 'message': 'Empty message'}, status=400)
+            
+        project = None
+        if project_id:
+            project = get_object_or_404(Project, id=project_id)
+            
+        receiver = None
+        if receiver_id:
+            receiver = get_object_or_404(User, id=receiver_id)
+            
+        message = Message.objects.create(
+            sender=request.user,
+            receiver=receiver,
+            project=project,
+            content=content,
+            file=uploaded_file
+        )
+        
+        is_image = False
+        is_pdf = False
+        file_url = message.file.url if message.file else ''
+        file_name = message.file.name.split('/')[-1] if message.file else ''
+        
+        if file_url:
+            ext = file_url.split('.')[-1].lower()
+            if ext in ['png', 'jpg', 'jpeg', 'svg', 'gif', 'webp']:
+                is_image = True
+            elif ext == 'pdf':
+                is_pdf = True
+                
+        return JsonResponse({
+            'status': 'success',
+            'message': {
+                'id': message.id,
+                'sender_id': message.sender.id,
+                'sender_name': message.sender.get_full_name() or message.sender.username,
+                'content': message.content or '',
+                'created_at': message.created_at.strftime('%I:%M %p'),
+                'file_url': file_url,
+                'file_name': file_name,
+                'is_image': is_image,
+                'is_pdf': is_pdf,
+                'is_me': True
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required
 def messages_view(request):
     user_role = request.user.profile.role
     if user_role == 'project_manager':
         managed_projects = Project.objects.filter(manager=request.user)
         messages = Message.objects.filter(Q(project__in=managed_projects) | Q(sender=request.user) | Q(receiver=request.user)).order_by('-created_at')
+        projects = Project.objects.filter(manager=request.user)
+    elif user_role == 'team_leader':
+        # Team leaders can only have conversations with project managers and clients
+        project_managers = User.objects.filter(profile__role='project_manager')
+        clients = User.objects.filter(profile__role='client')
+        allowed_users = project_managers | clients
+        messages = Message.objects.filter(
+            Q(sender=request.user, receiver__in=allowed_users) |
+            Q(receiver=request.user, sender__in=allowed_users)
+        ).order_by('-created_at')
+        projects = Project.objects.none()
     else:
         messages = Message.objects.filter(Q(sender=request.user) | Q(receiver=request.user)).order_by('-created_at')
+        projects = Project.objects.all()
 
     if request.method == 'POST':
         content = request.POST.get('content')
         project_id = request.POST.get('project')
+        receiver_id = request.POST.get('receiver')
         if content:
+            receiver = None
+            if receiver_id:
+                receiver = User.objects.get(pk=receiver_id)
             project = Project.objects.get(pk=project_id) if project_id else None
-            Message.objects.create(sender=request.user, content=content, project=project)
+            Message.objects.create(sender=request.user, receiver=receiver, content=content, project=project)
             return redirect('messages')
-    projects = Project.objects.filter(manager=request.user) if user_role == 'project_manager' else Project.objects.all()
+    
     return render(request, 'projects/messages.html', {'messages': messages, 'projects': projects})
 
 @login_required
@@ -560,3 +885,417 @@ def edit_feedback(request, pk):
         form = FeedbackForm(instance=feedback)
         form.fields['project'].queryset = Project.objects.filter(client__email=request.user.email)
     return render(request, 'projects/edit_feedback.html', {'form': form})
+
+@login_required
+def task_detail_json(request, pk):
+    from .models import TaskComment, TaskFile
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Comments
+    comments = []
+    for c in task.comments.all().order_by('-created_at'):
+        comments.append({
+            'author': c.author.get_full_name() or c.author.username,
+            'content': c.content,
+            'created_at': c.created_at.strftime('%b %d, %Y %I:%M %p')
+        })
+        
+    # Files
+    files = []
+    for f in task.files.all():
+        files.append({
+            'id': f.id,
+            'name': f.name,
+            'url': f.file.url if f.file else '',
+            'uploaded_at': f.uploaded_at.strftime('%b %d, %Y %I:%M %p')
+        })
+        
+    # Check if overdue
+    today = date.today()
+    is_overdue = task.status != 'done' and task.deadline < today
+    
+    data = {
+        'id': task.id,
+        'title': task.title,
+        'description': task.description or 'No description provided.',
+        'project_title': task.project.title,
+        'project_id': task.project.id,
+        'assignee': task.assigned_to.get_full_name() or task.assigned_to.username if task.assigned_to else 'Unassigned',
+        'status': task.get_status_display(),
+        'status_code': task.status,
+        'priority': task.get_priority_display(),
+        'priority_code': task.priority,
+        'deadline': task.deadline.strftime('%b %d, %Y') if task.deadline else 'N/A',
+        'deadline_raw': task.deadline.strftime('%Y-%m-%d') if task.deadline else '',
+        'is_overdue': is_overdue,
+        'comments': comments,
+        'files': files
+    }
+    return JsonResponse(data)
+
+@login_required
+@require_POST
+def update_task_status(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        if new_status in ['todo', 'in_progress', 'review', 'done']:
+            task.status = new_status
+            task.save()
+            return JsonResponse({'status': 'success', 'new_status': task.status})
+        return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required
+@require_POST
+def add_task_comment(request, pk):
+    from .models import TaskComment
+    task = get_object_or_404(Task, pk=pk)
+    try:
+        data = json.loads(request.body)
+        content = data.get('content')
+        if content and content.strip():
+            comment = TaskComment.objects.create(
+                task=task,
+                author=request.user,
+                content=content.strip()
+            )
+            return JsonResponse({
+                'status': 'success',
+                'comment': {
+                    'author': comment.author.get_full_name() or comment.author.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.strftime('%b %d, %Y %I:%M %p')
+                }
+            })
+        return JsonResponse({'status': 'error', 'message': 'Empty comment'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required
+@require_POST
+def add_task_attachment(request, pk):
+    from .models import TaskFile
+    task = get_object_or_404(Task, pk=pk)
+    try:
+        uploaded_file = request.FILES.get('file')
+        if uploaded_file:
+            task_file = TaskFile.objects.create(
+                task=task,
+                name=uploaded_file.name,
+                file=uploaded_file
+            )
+            return JsonResponse({
+                'status': 'success',
+                'file': {
+                    'id': task_file.id,
+                    'name': task_file.name,
+                    'url': task_file.file.url,
+                    'uploaded_at': task_file.uploaded_at.strftime('%b %d, %Y %I:%M %p')
+                }
+            })
+        return JsonResponse({'status': 'error', 'message': 'No file provided'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required
+def calendar_events_json(request):
+    events = []
+    
+    # 1. Projects
+    projects = Project.objects.all()
+    try:
+        user_role = request.user.profile.role
+    except UserProfile.DoesNotExist:
+        user_role = 'team_member'
+        
+    if user_role == 'project_manager':
+        projects = projects.filter(manager=request.user)
+    elif user_role == 'team_leader':
+        projects = projects.filter(Q(manager=request.user) | Q(tasks__assigned_to=request.user)).distinct()
+    elif user_role == 'team_member':
+        projects = projects.filter(tasks__assigned_to=request.user).distinct()
+    elif user_role == 'client':
+        projects = projects.filter(client__email=request.user.email)
+        
+    for project in projects:
+        if project.deadline:
+            events.append({
+                'id': f"project_{project.id}",
+                'title': f"📋 Project: {project.title}",
+                'start': project.deadline.isoformat(),
+                'allDay': True,
+                'backgroundColor': '#4f46e5',
+                'extendedProps': {
+                    'type': 'project',
+                    'client': project.client.name,
+                    'manager': project.manager.get_full_name() or project.manager.username if project.manager else 'Unassigned',
+                    'status': project.get_status_display()
+                }
+            })
+            
+    # 2. Tasks
+    tasks = Task.objects.all()
+    if user_role == 'project_manager':
+        tasks = tasks.filter(project__manager=request.user)
+    elif user_role == 'team_leader':
+        tasks = tasks.filter(project__in=projects)
+    elif user_role == 'team_member':
+        tasks = tasks.filter(assigned_to=request.user)
+    elif user_role == 'client':
+        tasks = tasks.filter(project__client__email=request.user.email)
+        
+    for task in tasks:
+        if task.deadline:
+            color = '#64748b'
+            if task.status == 'in_progress':
+                color = '#2563eb'
+            elif task.status == 'review':
+                color = '#ea580c'
+            elif task.status == 'done':
+                color = '#16a34a'
+                
+            events.append({
+                'id': f"task_{task.id}",
+                'title': f"✓ Task: {task.title}",
+                'start': task.deadline.isoformat(),
+                'allDay': True,
+                'backgroundColor': color,
+                'extendedProps': {
+                    'type': 'task',
+                    'project': task.project.title,
+                    'assignee': task.assigned_to.get_full_name() or task.assigned_to.username if task.assigned_to else 'Unassigned',
+                    'status': task.get_status_display(),
+                    'priority': task.get_priority_display()
+                }
+            })
+            
+    # 3. Meetings
+    meetings = Meeting.objects.all()
+    if user_role == 'project_manager':
+        meetings = meetings.filter(Q(project__manager=request.user) | Q(organizer=request.user))
+    elif user_role == 'team_leader':
+        meetings = meetings.filter(Q(project__in=projects) | Q(organizer=request.user))
+    elif user_role == 'team_member':
+        meetings = meetings.filter(Q(project__in=projects) | Q(organizer=request.user))
+    elif user_role == 'client':
+        meetings = meetings.filter(project__client__email=request.user.email)
+        
+    for meeting in meetings:
+        events.append({
+            'id': f"meeting_{meeting.id}",
+            'title': f"🤝 Meeting: {meeting.title}",
+            'start': meeting.start_time.isoformat(),
+            'end': meeting.end_time.isoformat() if meeting.end_time else None,
+            'allDay': False,
+            'backgroundColor': '#db2777',
+            'extendedProps': {
+                'type': 'meeting',
+                'project': meeting.project.title if meeting.project else 'General',
+                'organizer': meeting.organizer.get_full_name() or meeting.organizer.username,
+                'description': meeting.description or ''
+            }
+        })
+        
+    return JsonResponse(events, safe=False)
+
+@login_required
+@require_POST
+def update_calendar_event(request, type, pk):
+    try:
+        data = json.loads(request.body)
+        start_str = data.get('start')
+        end_str = data.get('end')
+        
+        if type == 'project':
+            project = get_object_or_404(Project, pk=pk)
+            if 'T' in start_str:
+                dt = parse_datetime(start_str)
+                project.deadline = dt.date()
+            else:
+                project.deadline = parse_date(start_str) or project.deadline
+            project.save()
+            return JsonResponse({'status': 'success'})
+        elif type == 'task':
+            task = get_object_or_404(Task, pk=pk)
+            if 'T' in start_str:
+                dt = parse_datetime(start_str)
+                task.deadline = dt.date()
+            else:
+                task.deadline = parse_date(start_str) or task.deadline
+            task.save()
+            return JsonResponse({'status': 'success'})
+        elif type == 'meeting':
+            meeting = get_object_or_404(Meeting, pk=pk)
+            if start_str:
+                meeting.start_time = parse_datetime(start_str) or meeting.start_time
+            if end_str:
+                meeting.end_time = parse_datetime(end_str) or meeting.end_time
+            meeting.save()
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid event type'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required
+@require_POST
+def create_meeting_json(request):
+    try:
+        data = json.loads(request.body)
+        title = data.get('title')
+        project_id = data.get('project_id')
+        start_str = data.get('start')
+        end_str = data.get('end')
+        description = data.get('description')
+        
+        if not title or not start_str or not end_str:
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+            
+        project = None
+        if project_id:
+            project = get_object_or_404(Project, id=project_id)
+            
+        meeting = Meeting.objects.create(
+            title=title,
+            project=project,
+            organizer=request.user,
+            start_time=parse_datetime(start_str),
+            end_time=parse_datetime(end_str),
+            description=description
+        )
+        return JsonResponse({'status': 'success', 'id': meeting.id})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required
+def payments_view(request):
+    try:
+        user_role = request.user.profile.role
+    except UserProfile.DoesNotExist:
+        user_role = 'team_member'
+        
+    if user_role == 'client':
+        invoices = Invoice.objects.filter(client__email=request.user.email).order_by('-created_at')
+    else:
+        invoices = Invoice.objects.all().order_by('-created_at')
+        
+    return render(request, 'projects/payments.html', {'invoices': invoices, 'user_role': user_role})
+
+@login_required
+def settings_view(request):
+    try:
+        user_role = request.user.profile.role
+    except UserProfile.DoesNotExist:
+        user_role = 'team_member'
+        
+    client = None
+    if user_role == 'client':
+        client = Client.objects.filter(email=request.user.email).first()
+        
+    if request.method == 'POST':
+        user = request.user
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name = request.POST.get('last_name', user.last_name)
+        user.email = request.POST.get('email', user.email)
+        user.save()
+        
+        profile = user.profile
+        profile.phone = request.POST.get('phone', profile.phone)
+        profile.save()
+        
+        if client and user_role == 'client':
+            client.address = request.POST.get('address', client.address)
+            client.save()
+            
+        return redirect('settings')
+        
+    return render(request, 'projects/settings.html', {'user_role': user_role, 'client': client})
+# Project Assignment Views for Team Leaders
+@login_required
+def assign_project_to_leader(request, project_id):
+    """Project Manager assigns a project to a team leader"""
+    project = get_object_or_404(Project, pk=project_id)
+    
+    # Check if user is the project manager
+    if request.user != project.manager:
+        return redirect('project_detail', pk=project_id)
+    
+    if request.method == 'POST':
+        form = ProjectAssignmentForm(request.POST)
+        if form.is_valid():
+            team_leader = form.cleaned_data['team_leader']
+            # Create or update assignment
+            assignment, created = ProjectAssignment.objects.get_or_create(
+                project=project,
+                team_leader=team_leader,
+                defaults={'assigned_by': request.user, 'status': 'pending'}
+            )
+            if not created:
+                assignment.status = 'pending'
+                assignment.assigned_by = request.user
+                assignment.save()
+            return redirect('project_detail', pk=project_id)
+    else:
+        form = ProjectAssignmentForm()
+    
+    return render(request, 'projects/assign_project.html', {'form': form, 'project': project})
+
+@login_required
+def team_leader_projects(request):
+    """Team Leader sees all projects assigned to him"""
+    # Get all project assignments for this team leader
+    assignments = ProjectAssignment.objects.filter(team_leader=request.user)
+    
+    pending_assignments = assignments.filter(status='pending')
+    accepted_assignments = assignments.filter(status='accepted')
+    rejected_assignments = assignments.filter(status='rejected')
+    
+    context = {
+        'pending_assignments': pending_assignments,
+        'accepted_assignments': accepted_assignments,
+        'rejected_assignments': rejected_assignments,
+    }
+    return render(request, 'projects/team_leader_projects.html', context)
+
+@login_required
+def accept_project_assignment(request, assignment_id):
+    """Team Leader accepts a project assignment"""
+    assignment = get_object_or_404(ProjectAssignment, pk=assignment_id, team_leader=request.user)
+    assignment.status = 'accepted'
+    assignment.save()
+    return redirect('team_leader_projects')
+
+@login_required
+def reject_project_assignment(request, assignment_id):
+    """Team Leader rejects a project assignment"""
+    assignment = get_object_or_404(ProjectAssignment, pk=assignment_id, team_leader=request.user)
+    assignment.status = 'rejected'
+    assignment.save()
+    return redirect('team_leader_projects')
+
+@login_required
+def quick_assign_project(request, project_id, team_leader_id):
+    """Project Manager quickly assigns a project to a team leader from Teams page"""
+    # Check that user is a project manager
+    if request.user.profile.role != 'project_manager':
+        return redirect('teams')
+    
+    project = get_object_or_404(Project, pk=project_id)
+    team_leader = get_object_or_404(User, pk=team_leader_id, profile__role='team_leader')
+    
+    # Create or update assignment
+    assignment, created = ProjectAssignment.objects.get_or_create(
+        project=project,
+        team_leader=team_leader,
+        defaults={'assigned_by': request.user, 'status': 'pending'}
+    )
+    
+    if not created and assignment.status != 'pending':
+        assignment.status = 'pending'
+        assignment.assigned_by = request.user
+        assignment.save()
+    
+    return redirect('teams')
