@@ -29,7 +29,6 @@ class Team(models.Model):
     def __str__(self):
         return self.name
 
-
 # Signals to automatically create UserProfile
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -44,11 +43,26 @@ def save_user_profile(sender, instance, **kwargs):
         UserProfile.objects.get_or_create(user=instance)
 
 class Client(models.Model):
+    PRIORITY_CHOICES = [
+        ('vip', 'VIP'),
+        ('premium', 'Premium'),
+        ('regular', 'Regular'),
+    ]
     name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Professional Additions
+    client_id = models.CharField(max_length=50, blank=True, null=True)
+    revenue_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    revenue_pending = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='regular')
+    satisfaction = models.DecimalField(max_digits=3, decimal_places=1, default=5.0)
+    notes = models.TextField(blank=True, null=True)
+    last_message_date = models.DateField(blank=True, null=True)
+    last_meeting_date = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -66,6 +80,23 @@ class Project(models.Model):
         ('high', 'High'),
         ('urgent', 'Urgent'),
     ]
+    APPROVAL_CHOICES = [
+        ('pending', 'Waiting for approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('revision', 'Revision requested'),
+    ]
+    STAGE_CHOICES = [
+        ('planning', 'Planning'),
+        ('design', 'Design'),
+        ('development', 'Development'),
+        ('testing', 'Testing'),
+        ('deployment', 'Deployment'),
+    ]
+    BUDGET_CHOICES = [
+        ('fixed', 'Fixed'),
+        ('hourly', 'Hourly'),
+    ]
     title = models.CharField(max_length=200)
     description = models.TextField()
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='projects')
@@ -74,6 +105,15 @@ class Project(models.Model):
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     deadline = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Professional Additions
+    estimated_hours = models.PositiveIntegerField(default=100)
+    worked_hours = models.PositiveIntegerField(default=0)
+    approval_status = models.CharField(max_length=30, choices=APPROVAL_CHOICES, default='pending')
+    current_stage = models.CharField(max_length=30, choices=STAGE_CHOICES, default='planning')
+    tags = models.CharField(max_length=200, default='UI/UX, Django')
+    budget_type = models.CharField(max_length=20, choices=BUDGET_CHOICES, default='fixed')
+    budget_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def get_progress(self):
         total_tasks = self.tasks.count()
@@ -157,12 +197,30 @@ class ProjectFile(models.Model):
         return self.name
 
 class Feedback(models.Model):
+    CATEGORY_CHOICES = [
+        ('ui_design', 'UI Design'),
+        ('bug', 'Bug'),
+        ('performance', 'Performance'),
+        ('communication', 'Communication'),
+        ('feature_request', 'Feature Request'),
+    ]
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+    ]
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='feedbacks')
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='given_feedback')
     subject = models.CharField(max_length=200)
     message = models.TextField()
     rating = models.PositiveSmallIntegerField(default=0)  
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Professional Additions
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='ui_design')
+    attachment = models.FileField(upload_to='feedback_attachments/', null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    reply = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Feedback from {self.client.username} on {self.project.title}"
@@ -195,3 +253,50 @@ class Meeting(models.Model):
 
     def __str__(self):
         return self.title
+
+# New Models for the Enterprise Level Features
+class Invoice(models.Model):
+    STATUS_CHOICES = [
+        ('paid', 'Paid'),
+        ('pending', 'Pending'),
+    ]
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invoices')
+    invoice_number = models.CharField(max_length=50, unique=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    due_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Invoice {self.invoice_number} - {self.client.name}"
+
+class MeetingNote(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='meeting_notes')
+    title = models.CharField(max_length=200)
+    summary = models.TextField()
+    discussion_points = models.TextField()
+    next_actions = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Meeting Note: {self.title} ({self.client.name})"
+
+class ActivityLog(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='activity_logs', null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs')
+    activity_type = models.CharField(max_length=100)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.activity_type} - {self.user.username} at {self.created_at}"
+
+class ClientPermission(models.Model):
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='permissions')
+    can_upload = models.BooleanField(default=True)
+    can_comment = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Permissions for {self.client.name}"

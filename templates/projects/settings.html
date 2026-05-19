@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings | Client Portal{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0 text-main"><i class="fas fa-cog text-primary me-2"></i>Account & Portal Settings</h3>
+        <p class="text-muted small mb-0">Configure your workspace preferences, profile information, and alert frequencies</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left column: Profile Details Form -->
+    <div class="col-lg-8">
+        <div class="card border-0 glass-card p-4">
+            <h5 class="fw-bold mb-4 text-main"><i class="far fa-user-circle text-primary me-2"></i>Profile Information</h5>
+            
+            <form method="POST" action="{% url 'settings' %}" onsubmit="alert('Profile details updated successfully!');">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" placeholder="e.g. John" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" placeholder="e.g. Doe" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent text-muted"><i class="far fa-envelope"></i></span>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}" placeholder="e.g. john.doe@company.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent text-muted"><i class="fas fa-phone-alt"></i></span>
+                        <input type="text" name="phone" class="form-control" value="{{ user.profile.phone|default:'' }}" placeholder="e.g. +1 (555) 019-2834">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Company Address / Info</label>
+                    <textarea name="address" class="form-control" rows="3" placeholder="Enter company details, billing location or shipping tags...">{{ client.address|default:'' }}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-2 fw-semibold">Save Profile Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right column: Notification Switches and Security -->
+    <div class="col-lg-4">
+        <div class="row g-4">
+            <!-- Notification Preferences -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <h5 class="fw-bold mb-4 text-main"><i class="far fa-bell text-warning me-2"></i>Alert Preferences</h5>
+                    
+                    <div class="d-grid gap-3">
+                        <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                            <div>
+                                <label class="form-check-label fw-bold text-main" style="font-size: 0.9rem;">Email Notifications</label>
+                                <span class="d-block text-muted x-small" style="font-size: 0.75rem;">Get updates on files, tasks, messages</span>
+                            </div>
+                            <input class="form-check-input ms-0" type="checkbox" role="switch" checked>
+                        </div>
+
+                        <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                            <div>
+                                <label class="form-check-label fw-bold text-main" style="font-size: 0.9rem;">SMS Updates</label>
+                                <span class="d-block text-muted x-small" style="font-size: 0.75rem;">Urgent deadlines alerts via SMS text</span>
+                            </div>
+                            <input class="form-check-input ms-0" type="checkbox" role="switch">
+                        </div>
+
+                        <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                            <div>
+                                <label class="form-check-label fw-bold text-main" style="font-size: 0.9rem;">Weekly Progress Reports</label>
+                                <span class="d-block text-muted x-small" style="font-size: 0.75rem;">Receive automated digest of weekly milestones</span>
+                            </div>
+                            <input class="form-check-input ms-0" type="checkbox" role="switch" checked>
+                        </div>
+
+                        <div class="form-check form-switch d-flex justify-content-between align-items-center p-0">
+                            <div>
+                                <label class="form-check-label fw-bold text-main" style="font-size: 0.9rem;">Real-time Chats</label>
+                                <span class="d-block text-muted x-small" style="font-size: 0.75rem;">Notification rings for incoming inbox messages</span>
+                            </div>
+                            <input class="form-check-input ms-0" type="checkbox" role="switch" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portal Security Card -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <h5 class="fw-bold mb-3 text-main"><i class="fas fa-shield-alt text-success me-2"></i>Portal Access Security</h5>
+                    <p class="text-muted small">Update your account authentication details or configure two-factor logins.</p>
+                    
+                    <button class="btn btn-outline-danger w-100 rounded-2 fw-semibold" onclick="alert('Simulated password reset email sent to: {{ user.email }}')">
+                        Request Password Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -225,3 +225,253 @@ body {
 }
 
 .btn-primary:hover { background-color: #2563eb; }
+
+/* --- PREMIUM INDUSTRY LEVEL CUSTOM CSS ADDITIONS --- */
+
+/* Root HSL Color Customizations */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.25);
+    --neon-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+}
+
+[data-theme="dark"] {
+    --glass-bg: rgba(15, 23, 42, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    --neon-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Glassmorphism Premium Cards */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--neon-shadow);
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Timeline Custom Activity Style */
+.timeline-track {
+    position: relative;
+    padding-left: 2rem;
+    border-left: 2px solid var(--border-color);
+    margin-left: 0.75rem;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: calc(-2rem - 6px);
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    border: 2px solid var(--card-bg);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    transition: all 0.3s;
+}
+
+.timeline-item:hover::before {
+    background-color: var(--secondary-color);
+    transform: scale(1.2);
+}
+
+/* Dynamic Urgency / Color indicator badges */
+.badge-urgent { background: rgba(239, 68, 68, 0.1) !important; color: #ef4444 !important; border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-medium { background: rgba(245, 158, 11, 0.1) !important; color: #f59e0b !important; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-safe { background: rgba(16, 185, 129, 0.1) !important; color: #10b981 !important; border: 1px solid rgba(16, 185, 129, 0.2); }
+
+/* Online Pulsing indicator */
+.online-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse 1.6s infinite;
+}
+
+.offline-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #94a3b8;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Stage Roadmap Indicators */
+.stage-roadmap-track {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 1.5rem 0;
+}
+
+.stage-roadmap-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    right: 5%;
+    height: 4px;
+    background-color: var(--border-color);
+    z-index: 1;
+    transform: translateY(-50%);
+}
+
+.stage-node {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 0 0.5rem;
+}
+
+.stage-icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: 2px solid var(--card-bg);
+}
+
+.stage-node.active .stage-icon-circle {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.stage-node.completed .stage-icon-circle {
+    background-color: #10b981;
+    color: #ffffff;
+}
+
+.stage-node-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+}
+
+.stage-node.active .stage-node-label {
+    color: var(--primary-color);
+}
+
+.stage-node.completed .stage-node-label {
+    color: #10b981;
+}
+
+/* Skeleton Loading Screens Animations */
+.skeleton {
+    background: linear-gradient(90deg, var(--border-color) 25%, var(--sidebar-bg) 50%, var(--border-color) 75%);
+    background-size: 200% 100%;
+    animation: loading-wave 1.5s infinite;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+@keyframes loading-wave {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Floating Card Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+
+.floating-card {
+    animation: float 4s ease-in-out infinite;
+}
+
+/* Satisfaction Star System */
+.satisfaction-meter {
+    font-size: 1.1rem;
+    color: #fbbf24;
+}
+
+/* Chat & Messages Premium Components */
+.chat-window {
+    height: 480px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    background: var(--sidebar-bg);
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 0.85rem 1.25rem;
+    border-radius: 18px;
+    margin-bottom: 1rem;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.message-sent {
+    background: var(--primary-color);
+    color: #ffffff;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.message-received {
+    background: var(--card-bg);
+    color: var(--text-main);
+    margin-right: auto;
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.file-preview-card {
+    border-radius: 12px;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.file-preview-card:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(59, 130, 246, 0.03);
+    transform: translateY(-2px);
+}

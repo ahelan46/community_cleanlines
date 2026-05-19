@@ -3,84 +3,119 @@
 {% block title %}My Projects | Client Portal{% endblock %}
 
 {% block content %}
-<!-- <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold mb-0">My Projects</h3>
-        <p class="text-muted small mb-0">Overview of all your projects with us</p>
-    </div>
-    <a href="{% url 'client_form' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i> Add Project
-    </a>
-</div> -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold mb-0">My Projects</h3>
-        <p class="text-muted small mb-0">Overview of all your projects with us</p>
+        <h3 class="fw-bold mb-0 text-main"><i class="fas fa-briefcase text-primary me-2"></i>My Project Workspaces</h3>
+        <p class="text-muted small mb-0">Track visual roadmap stages, milestones, and details for each project engagement</p>
     </div>
-    <a href="{% url 'client_form' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i> Add Project
+    <a href="{% url 'client_form' %}" class="btn btn-primary px-4 py-2 shadow-sm border-0 d-flex align-items-center gap-2">
+        <i class="fas fa-plus"></i> Initiate New Project Request
     </a>
 </div>
 
 <div class="row g-4">
     {% for project in projects %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-body p-4">
+    <div class="col-lg-6 col-xl-4">
+        <div class="card border-0 glass-card p-4 h-100 position-relative d-flex flex-column justify-content-between">
+            <div>
+                <!-- Top Tags and Date -->
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <span class="badge bg-{{ project.priority }}-subtle text-{{ project.priority }} border border-{{ project.priority }}-subtle px-3">{{ project.get_priority_display }}</span>
-                    <span class="text-muted small"><i class="far fa-calendar me-1"></i> {{ project.deadline|date:"M d, Y" }}</span>
+                    <span class="badge bg-{{ project.priority }}-subtle text-{{ project.priority }} border border-{{ project.priority }}-subtle px-3 py-1 text-uppercase" style="font-size: 0.65rem;">
+                        {{ project.get_priority_display }} Priority
+                    </span>
+                    <span class="text-muted small"><i class="far fa-calendar-alt me-1"></i> Due {{ project.deadline|date:"M d, Y" }}</span>
                 </div>
-                <h5 class="fw-bold mb-2">{{ project.title }}</h5>
-                <p class="text-muted small mb-4 line-clamp-2">{{ project.description }}</p>
+
+                <!-- Title & Description -->
+                <h5 class="fw-bold mb-2 text-main text-truncate" title="{{ project.title }}">{{ project.title }}</h5>
+                <p class="text-muted small mb-4 line-clamp-3" style="min-height: 54px;">{{ project.description }}</p>
                 
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="small fw-bold">Progress</span>
-                        <span class="small text-muted">{{ project.get_progress }}%</span>
+                <!-- Financials / Scope -->
+                <div class="row g-2 mb-4 p-2 bg-light rounded-3 text-center">
+                    <div class="col-6 border-end">
+                        <span class="x-small text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Budget Scope</span>
+                        <span class="fw-bold text-main font-monospace" style="font-size: 0.95rem;">${{ project.budget_amount|default:"0.00" }}</span>
                     </div>
-                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                    <div class="col-6">
+                        <span class="x-small text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Task Allocation</span>
+                        <span class="fw-bold text-main font-monospace" style="font-size: 0.95rem;">{{ project.tasks.count }} Elements</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold text-main">Completion Velocity</span>
+                        <span class="small text-muted fw-semibold font-monospace">{{ project.get_progress }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 6px;">
                         <div class="progress-bar bg-success" role="progressbar" style="width: {{ project.get_progress }}%"></div>
                     </div>
                 </div>
-                
-                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-light p-2 rounded-circle me-2">
-                            <i class="fas fa-user-tie text-muted" style="font-size: 0.8rem;"></i>
+
+                <!-- 5-Stage Visual Roadmap Track -->
+                <div class="mb-4">
+                    <span class="small fw-bold text-main d-block mb-1">Engagement Stage Roadmap</span>
+                    <div class="stage-roadmap-track">
+                        <!-- Stage 1: Planning -->
+                        <div class="stage-node {% if project.status == 'planning' or project.status == 'ongoing' or project.status == 'completed' %}completed{% endif %}">
+                            <div class="stage-icon-circle"><i class="fas fa-search-dollar"></i></div>
+                            <span class="stage-node-label">Plan</span>
                         </div>
-                        <div>
-                            <div class="x-small text-muted">Manager</div>
-                            <div class="small fw-bold">{{ project.manager.username|default:"Unassigned" }}</div>
+                        <!-- Stage 2: Design -->
+                        <div class="stage-node {% if project.status == 'ongoing' or project.status == 'completed' %}completed{% endif %}">
+                            <div class="stage-icon-circle"><i class="fas fa-palette"></i></div>
+                            <span class="stage-node-label">Design</span>
+                        </div>
+                        <!-- Stage 3: Build -->
+                        <div class="stage-node {% if project.status == 'ongoing' %}active{% elif project.status == 'completed' %}completed{% endif %}">
+                            <div class="stage-icon-circle"><i class="fas fa-laptop-code"></i></div>
+                            <span class="stage-node-label">Build</span>
+                        </div>
+                        <!-- Stage 4: Test -->
+                        <div class="stage-node {% if project.status == 'completed' %}completed{% elif project.status == 'ongoing' and project.get_progress > 75 %}active{% endif %}">
+                            <div class="stage-icon-circle"><i class="fas fa-vial"></i></div>
+                            <span class="stage-node-label">Test</span>
+                        </div>
+                        <!-- Stage 5: Launch -->
+                        <div class="stage-node {% if project.status == 'completed' %}completed{% endif %}">
+                            <div class="stage-icon-circle"><i class="fas fa-rocket"></i></div>
+                            <span class="stage-node-label">Launch</span>
                         </div>
                     </div>
-                    <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-primary px-3">Details</a>
                 </div>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                <div class="d-flex align-items-center">
+                    <img src="https://ui-avatars.com/api/?name={{ project.manager.username|default:'Unassigned' }}&background=3b82f6&color=fff" class="rounded-circle border me-2" width="32" height="32">
+                    <div>
+                        <div class="x-small text-muted" style="font-size: 0.65rem;">Account Manager</div>
+                        <div class="small fw-bold text-main">{{ project.manager.get_full_name|default:project.manager.username|default:"Unassigned" }}</div>
+                    </div>
+                </div>
+                <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-primary px-3 rounded-2 fw-semibold">
+                    Workspace Details <i class="fas fa-chevron-right ms-1" style="font-size: 0.7rem;"></i>
+                </a>
             </div>
         </div>
     </div>
     {% empty %}
     <div class="col-12 text-center py-5">
-        <div class="text-muted">No projects found.</div>
+        <img src="https://cdni.iconscout.com/illustration/premium/thumb/no-project-selected-4286470-3575972.png" style="width: 180px;" class="mb-3 opacity-60">
+        <h5 class="fw-bold text-muted">No workspaces found</h5>
+        <p class="text-muted small">You don't have any active project tracks right now.</p>
     </div>
     {% endfor %}
 </div>
 
 <style>
-    .line-clamp-2 {
+    .line-clamp-3 {
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-
-    .btn.btn-primary {
-        opacity: 1;
-        background-color: rgb(32, 32, 154);
-    }
-    .d-flex:hover .btn.btn-primary {
-        opacity: 1;
-    }
-
 </style>
 {% endblock %}

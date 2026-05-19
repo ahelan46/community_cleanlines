@@ -1,21 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}Client Portal | Tracker{% endblock %}
+{% block title %}Client Portal Dashboard | Tracker{% endblock %}
 
 {% block content %}
 <!-- Welcome Banner -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+        <div class="card border-0 glass-card overflow-hidden" style="border-radius: 20px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
             <div class="card-body p-4 p-lg-5 text-white position-relative">
                 <div class="row align-items-center">
                     <div class="col-lg-8">
-                        <h2 class="fw-bold mb-2">Welcome Back!</h2>
-                        <p class="mb-0 opacity-75">Track your project's progress and access all your deliverables in one place.</p>
+                        <span class="badge bg-white bg-opacity-20 text-white mb-3 px-3 py-2 text-uppercase fw-semibold" style="letter-spacing: 1px;">Client Portal Access</span>
+                        <h1 class="fw-bold mb-2">Welcome to your Workspace Portal, {{ user.get_full_name|default:user.username }}!</h1>
+                        <p class="mb-0 opacity-75 fs-5">Monitor project completion, download deliverables, exchange feedback, and keep in touch with the team.</p>
                     </div>
                     <div class="col-lg-4 text-end d-none d-lg-block">
-                        <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                            <i class="fas fa-chart-pie fa-2x"></i>
+                        <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center floating-card" style="width: 110px; height: 110px; backdrop-filter: blur(8px);">
+                            <i class="fas fa-cubes fa-3x"></i>
                         </div>
                     </div>
                 </div>
@@ -26,103 +27,360 @@
 
 <!-- KPI Cards -->
 <div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-3">
+        <div class="card border-0 glass-card p-4 h-100">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">My Projects</div>
-                <div class="text-success bg-success bg-opacity-10 p-2 rounded-3"><i class="fas fa-briefcase"></i></div>
+                <div class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Engaged Projects</div>
+                <div class="text-primary bg-primary-subtle p-2 rounded-3"><i class="fas fa-briefcase"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ total_projects }}</h3>
-            <div class="text-muted x-small mt-2">Active project engagements</div>
+            <h2 class="fw-bold mb-0 text-main">{{ total_projects }}</h2>
+            <div class="text-muted x-small mt-2"><i class="fas fa-info-circle me-1"></i>Active project tracks</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-3">
+        <div class="card border-0 glass-card p-4 h-100">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Tasks in Progress</div>
-                <div class="text-primary bg-primary bg-opacity-10 p-2 rounded-3"><i class="fas fa-tasks"></i></div>
+                <div class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Active Tasks</div>
+                <div class="text-warning bg-warning-subtle p-2 rounded-3"><i class="fas fa-tasks"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ total_tasks }}</h3>
-            <div class="text-muted x-small mt-2">Items currently being worked on</div>
+            <h2 class="fw-bold mb-0 text-main">{{ total_tasks }}</h2>
+            <div class="text-muted x-small mt-2"><i class="fas fa-spinner fa-spin me-1"></i>Tasks in process</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-3">
+        <div class="card border-0 glass-card p-4 h-100">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Completion Rate</div>
-                <div class="text-info bg-info bg-opacity-10 p-2 rounded-3"><i class="fas fa-check-double"></i></div>
+                <div class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Completed Tasks</div>
+                <div class="text-success bg-success-subtle p-2 rounded-3"><i class="fas fa-check-double"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ task_completion_rate }}%</h3>
-            <div class="text-muted x-small mt-2">Across all active projects</div>
+            <h2 class="fw-bold mb-0 text-main">{{ done_tasks }}</h2>
+            <div class="text-muted x-small mt-2"><i class="fas fa-check-circle me-1"></i>Tasks completed</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 glass-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase" style="letter-spacing: 0.5px;">Completion Rate</div>
+                <div class="text-info bg-info-subtle p-2 rounded-3"><i class="fas fa-pie-chart"></i></div>
+            </div>
+            <h2 class="fw-bold mb-0 text-main">{{ task_completion_rate }}%</h2>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-info" role="progressbar" style="width: {{ task_completion_rate }}%"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0">Project Summary</h5>
-                <a href="{% url 'client_projects' %}" class="small text-decoration-none">View All</a>
-            </div>
-            <div class="card-body px-4">
-                {% for project in recent_projects %}
-                <div class="p-3 bg-light rounded-3 mb-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-5">
-                            <h6 class="fw-bold mb-1">{{ project.title }}</h6>
-                            <div class="x-small text-muted">Deadline: {{ project.deadline|date:"M d, Y" }}</div>
+<!-- Project Health Status Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 glass-card p-4">
+            <h5 class="fw-bold mb-3"><i class="fas fa-heartbeat text-danger me-2"></i>Project Health Status</h5>
+            <div class="row g-3">
+                {% for health in project_health %}
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 d-flex align-items-center justify-content-between bg-light-subtle">
+                        <div>
+                            <span class="x-small text-muted d-block text-uppercase fw-semibold" style="font-size: 0.7rem;">Project</span>
+                            <span class="fw-bold text-main" style="font-size: 0.95rem;">{{ health.project_title }}</span>
                         </div>
-                        <div class="col-md-5">
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ project.get_progress }}%"></div>
-                            </div>
-                            <div class="text-end x-small mt-1 text-muted">{{ project.get_progress }}% Completed</div>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <span class="badge bg-{{ project.status }} x-small">{{ project.get_status_display }}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="online-dot bg-{{ health.health_color }}"></span>
+                            <span class="badge badge-{{ health.health }} text-uppercase font-monospace text-{{ health.health_color }}" style="font-size: 0.7rem;">{{ health.health_display }}</span>
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center py-5 text-muted">No projects found.</div>
+                <div class="col-12 text-center text-muted py-2">No active projects found.</div>
                 {% endfor %}
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">Quick Actions</h5>
+</div>
+
+<!-- Core Dashboard Row -->
+<div class="row g-4 mb-4">
+    <!-- Left Section: Timeline and Charts -->
+    <div class="col-lg-8">
+        <div class="row g-4">
+            <!-- Timeline Activity Widget -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-stream text-primary me-2"></i>Recent Activity Timeline</h5>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Live Updates</span>
+                    </div>
+                    <div class="timeline-track">
+                        {% for log in activity_logs %}
+                        <div class="timeline-item">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-main">{{ log.activity_type }}</h6>
+                                    <p class="text-muted small mb-0">{{ log.description }}</p>
+                                </div>
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">{{ log.created_at|date:"D d, I:M A" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-state-card-4286469-3575971.png" style="width: 120px;" class="mb-3 opacity-60">
+                            <div class="small">No recent activities found for your projects.</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-            <div class="card-body px-4">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'client_feedback' %}" class="btn btn-light text-start p-3 border-0" style="border-radius: 12px;">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-3 text-primary">
-                                <i class="fas fa-comment-alt"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold small">Send Feedback</div>
-                                <div class="x-small text-muted">Let us know your thoughts</div>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="{% url 'client_files' %}" class="btn btn-light text-start p-3 border-0" style="border-radius: 12px;">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-success bg-opacity-10 p-2 rounded-3 me-3 text-success">
-                                <i class="fas fa-file-download"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold small">Download Files</div>
-                                <div class="x-small text-muted">Get your deliverables</div>
+
+            <!-- Charts Section -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-chart-line text-info me-2"></i>Performance & Productivity Analytics</h5>
+                    <div class="row g-4">
+                        <!-- Task Completion Doughnut -->
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded-3 text-center bg-light-subtle h-100">
+                                <h6 class="fw-bold mb-3 text-muted">Task Completion Ratio</h6>
+                                <div style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <canvas id="taskCompletionChart"></canvas>
+                                </div>
                             </div>
                         </div>
-                    </a>
+                        <!-- Team Productivity Bar -->
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded-3 text-center bg-light-subtle h-100">
+                                <h6 class="fw-bold mb-3 text-muted">Sprint Progress Velocity</h6>
+                                <div style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                    <canvas id="weeklyProgressChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Team workload radar or custom -->
+                        <div class="col-12">
+                            <div class="p-3 border rounded-3 text-center bg-light-subtle">
+                                <h6 class="fw-bold mb-3 text-muted">Team Workload Allocation (Hours/Week)</h6>
+                                <div style="height: 220px; width: 100%;">
+                                    <canvas id="teamProductivityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Section: Deadlines and Active Team members -->
+    <div class="col-lg-4">
+        <div class="row g-4">
+            <!-- Upcoming Deadlines Widget -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <h5 class="fw-bold mb-4"><i class="far fa-calendar-times text-warning me-2"></i>Upcoming Deadlines</h5>
+                    <div class="d-grid gap-3">
+                        {% for item in upcoming_deadlines %}
+                        <div class="p-3 border rounded-3 bg-light-subtle d-flex align-items-center justify-content-between transition-all hover-translate">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-main" style="font-size: 0.9rem;">{{ item.title }}</h6>
+                                <span class="x-small text-muted" style="font-size: 0.75rem;">{{ item.project_title }}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge badge-{{ item.urgency }} text-uppercase fw-bold font-monospace d-block mb-1" style="font-size: 0.65rem;">
+                                    Due {{ item.deadline }}
+                                </span>
+                                <span class="x-small text-{{ item.urgency }}" style="font-size: 0.7rem; font-weight: 600;">
+                                    {% if item.days_left < 0 %}
+                                        Overdue
+                                    {% elif item.days_left == 0 %}
+                                        Due today
+                                    {% elif item.days_left == 1 %}
+                                        Due tomorrow
+                                    {% else %}
+                                        In {{ item.days_left }} days
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted small">No upcoming deadlines found.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Members Working Widget -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-user-friends text-success me-2"></i>Active Team Members</h5>
+                    <div class="d-grid gap-3">
+                        {% for member in team_members_working %}
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 hover-bg">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="position-relative">
+                                    <img src="{{ member.avatar }}" class="rounded-circle border" width="40" height="40">
+                                    <span class="position-absolute bottom-0 end-0 border border-white rounded-circle p-1 {% if member.online %}online-dot{% else %}offline-dot{% endif %}" style="width: 10px; height: 10px;"></span>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-main" style="font-size: 0.9rem;">{{ member.name }}</h6>
+                                    <span class="x-small text-muted" style="font-size: 0.75rem;">{{ member.role }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="badge {% if member.online %}bg-success-subtle text-success{% else %}bg-light text-muted{% endif %} px-2 py-1 text-uppercase" style="font-size: 0.6rem;">
+                                    {% if member.online %}Active{% else %}Offline{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Links -->
+            <div class="col-12">
+                <div class="card border-0 glass-card p-4">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-bolt text-danger me-2"></i>Quick Actions</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'client_feedback' %}" class="btn btn-light text-start p-3 border border-light-subtle shadow-sm bg-white" style="border-radius: 12px; transition: transform 0.2s;">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary-subtle text-primary p-2 rounded-3 me-3">
+                                    <i class="fas fa-comment-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold small text-main">Send Feedback Ticket</div>
+                                    <div class="x-small text-muted">Request changes or updates</div>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="{% url 'client_files' %}" class="btn btn-light text-start p-3 border border-light-subtle shadow-sm bg-white" style="border-radius: 12px; transition: transform 0.2s;">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success-subtle text-success p-2 rounded-3 me-3">
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold small text-main">Download Deliverables</div>
+                                    <div class="x-small text-muted">Access PDF summaries, designs, ZIP files</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Chart 1: Task Completion Ratio (Doughnut)
+        const ctx1 = document.getElementById('taskCompletionChart').getContext('2d');
+        const data1 = {{ chart_completion|safe }};
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['To Do', 'In Progress', 'Review', 'Completed'],
+                datasets: [{
+                    data: data1.length ? data1 : [1, 2, 1, 4],
+                    backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#10b981'],
+                    borderWidth: 2,
+                    borderColor: 'var(--card-bg)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'var(--text-muted)',
+                            boxWidth: 12,
+                            font: { size: 11, family: 'Inter' }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+
+        // Chart 2: Weekly Progress (Line)
+        const ctx2 = document.getElementById('weeklyProgressChart').getContext('2d');
+        const data2 = {{ chart_progress|safe }};
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+                datasets: [{
+                    label: 'Completion Progress %',
+                    data: data2.length ? data2 : [10, 30, 50, 75, 100],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#6366f1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: 'var(--text-muted)' },
+                        grid: { color: 'rgba(0,0,0,0.03)' }
+                    },
+                    x: {
+                        ticks: { color: 'var(--text-muted)' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Chart 3: Team Workload (Bar)
+        const ctx3 = document.getElementById('teamProductivityChart').getContext('2d');
+        const data3 = {{ chart_team_productivity|safe }};
+        new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: ['Sarah Connor (PM)', 'John Doe (Backend)', 'Alex Mercer (Design)', 'David Okafor (Tester)', 'Sophie (Admin)'],
+                datasets: [{
+                    label: 'Allocated Hours',
+                    data: data3.length ? data3 : [10, 25, 18, 12, 5],
+                    backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                    borderRadius: 8,
+                    borderWidth: 0,
+                    barThickness: 24
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: 'var(--text-muted)' },
+                        grid: { color: 'rgba(0,0,0,0.03)' }
+                    },
+                    x: {
+                        ticks: { color: 'var(--text-muted)' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

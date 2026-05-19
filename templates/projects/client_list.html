@@ -300,11 +300,15 @@
             </div>
 
             <!-- Tab Navigation -->
-            <nav class="nav modal-tab-nav bg-light" id="modalTabs">
+            <nav class="nav modal-tab-nav bg-light" id="modalTabs" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap;">
                 <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview">Overview</button>
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-projects">Projects</button>
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-files">Files</button>
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-communication">Communication History</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-communication">Communication</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-invoices">Invoices</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-meetings">Meetings</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-logs">Timeline</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-permissions">Permissions</button>
             </nav>
 
             <!-- Tab Contents -->
@@ -398,6 +402,66 @@
                 <div class="tab-pane fade" id="tab-communication">
                     <div id="modalCommunicationList" class="timeline-container px-2" style="max-height: 400px; overflow-y: auto;">
                         <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Invoices Tab -->
+                <div class="tab-pane fade" id="tab-invoices">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Invoice No</th>
+                                    <th class="border-0">Amount</th>
+                                    <th class="border-0">Status</th>
+                                    <th class="border-0">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalInvoicesList">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Meetings Tab -->
+                <div class="tab-pane fade" id="tab-meetings">
+                    <div id="modalMeetingsList" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Logs Timeline Tab -->
+                <div class="tab-pane fade" id="tab-logs">
+                    <div id="modalLogsList" class="timeline-container px-2" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Permissions Tab -->
+                <div class="tab-pane fade" id="tab-permissions">
+                    <div class="p-3 bg-light rounded-3">
+                        <h6 class="fw-bold text-main mb-3">Client Self-Service Privileges</h6>
+                        <form id="permissionForm" onsubmit="event.preventDefault(); alert('Self-service permissions updated on Workspace servers!');">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="permUpload">
+                                <label class="form-check-label fw-semibold text-main" for="permUpload">Can upload deliverables/documents</label>
+                                <span class="d-block text-muted x-small">Allows clients to submit files in their project boards</span>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="permComment">
+                                <label class="form-check-label fw-semibold text-main" for="permComment">Can post comments & reviews</label>
+                                <span class="d-block text-muted x-small">Allows clients to participate in tasks thread reviews</span>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="permEdit">
+                                <label class="form-check-label fw-semibold text-main" for="permEdit">Can request project scope edits</label>
+                                <span class="d-block text-muted x-small">Grants permissions to propose roadmap deviations</span>
+                            </div>
+                            <div class="text-end mt-4">
+                                <button type="submit" class="btn btn-primary btn-sm px-4 rounded-2">Save Permissions</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -622,6 +686,14 @@
         modalProjectsList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching projects...</td></tr>';
         modalFilesList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching files...</td></tr>';
         modalCommunicationList.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading conversation logs...</div>';
+        
+        const modalInvoicesList = document.getElementById('modalInvoicesList');
+        const modalMeetingsList = document.getElementById('modalMeetingsList');
+        const modalLogsList = document.getElementById('modalLogsList');
+        
+        modalInvoicesList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching invoices...</td></tr>';
+        modalMeetingsList.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching meeting notes...</div>';
+        modalLogsList.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Fetching activity logs...</div>';
 
         // Switch to the first tab (Overview)
         const firstTab = document.querySelector('#modalTabs button:first-child');
@@ -730,6 +802,68 @@
                         </div>
                     `).join('');
                 }
+
+                // Render Invoices Table
+                if (data.invoices.length === 0) {
+                    modalInvoicesList.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No invoices found.</td></tr>';
+                } else {
+                    modalInvoicesList.innerHTML = data.invoices.map(inv => `
+                        <tr>
+                            <td class="font-monospace fw-bold text-main">${inv.invoice_number}</td>
+                            <td class="font-monospace fw-semibold">$${inv.amount.toFixed(2)}</td>
+                            <td><span class="badge bg-${inv.status_code === 'paid' ? 'success' : 'warning'} px-2.5 py-1 rounded-pill">${inv.status}</span></td>
+                            <td class="text-muted small">${inv.due_date}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Render Meeting Notes
+                if (data.meeting_notes.length === 0) {
+                    modalMeetingsList.innerHTML = '<div class="text-center py-4 text-muted">No kickoff or review meeting logs found.</div>';
+                } else {
+                    modalMeetingsList.innerHTML = data.meeting_notes.map(note => `
+                        <div class="p-3 border rounded-3 mb-3 bg-light-subtle">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-main">${note.title}</h6>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle small">${note.created_at}</span>
+                            </div>
+                            <p class="small text-main mb-2"><strong>Summary:</strong> ${note.summary}</p>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <span class="x-small text-muted d-block fw-bold text-uppercase" style="font-size: 0.65rem;">Discussion Points</span>
+                                    <div class="small p-2 border rounded bg-white font-monospace" style="white-space: pre-wrap; font-size: 0.75rem;">${note.discussion_points}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="x-small text-muted d-block fw-bold text-uppercase" style="font-size: 0.65rem;">Next Action Items</span>
+                                    <div class="small p-2 border rounded bg-white font-monospace" style="white-space: pre-wrap; font-size: 0.75rem;">${note.next_actions}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Activity Logs
+                if (data.activity_logs.length === 0) {
+                    modalLogsList.innerHTML = '<div class="text-center py-4 text-muted">No logged actions recorded.</div>';
+                } else {
+                    modalLogsList.innerHTML = data.activity_logs.map(log => `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="bg-light p-3 rounded-3 border-0">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong class="text-main">${log.activity_type}</strong>
+                                    <span class="x-small text-muted font-monospace">${log.created_at}</span>
+                                </div>
+                                <p class="small text-muted mb-0">${log.description}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Setup Permissions Switches
+                document.getElementById('permUpload').checked = data.permissions.can_upload;
+                document.getElementById('permComment').checked = data.permissions.can_comment;
+                document.getElementById('permEdit').checked = data.permissions.can_edit;
             })
             .catch(err => {
                 console.error(err);

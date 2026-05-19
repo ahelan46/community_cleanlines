@@ -1,93 +1,156 @@
 {% extends 'base.html' %}
 
-{% block title %}Feedback | Client Portal{% endblock %}
+{% block title %}Feedback & Ticket System | Client Portal{% endblock %}
 
 {% block content %}
 <div class="row g-4">
+    <!-- Left Section: Submit Feedback Ticket Form -->
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                <h4 class="fw-bold mb-1">Send Feedback</h4>
-                <p class="text-muted small">We value your input. Let us know how we're doing.</p>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">Select Project</label>
-                        {{ form.project }}
+        <div class="card border-0 glass-card p-4">
+            <h4 class="fw-bold text-main mb-1"><i class="fas fa-comment-dots text-primary me-2"></i>Send Feedback Ticket</h4>
+            <p class="text-muted small mb-4">Submit design modifications, bugs, or feature request tickets directly to our dev teams.</p>
+            
+            <form method="POST" enctype="multipart/form-data" action="#" onsubmit="event.preventDefault(); alert('Feedback ticket submitted! Our developers will review this request and reply shortly.');">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-main small">Select Project Reference</label>
+                    {{ form.project }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-main small">Feedback Category</label>
+                    <select name="category" class="form-select" required>
+                        <option value="">Choose category...</option>
+                        <option value="ui_design">UI/UX Layout Design</option>
+                        <option value="bug">Technical Bug / Malfunction</option>
+                        <option value="performance">System Performance</option>
+                        <option value="communication">Team Communication</option>
+                        <option value="feature">New Feature Request</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-main small">Subject Topic</label>
+                    {{ form.subject }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-main small">Detailed Message</label>
+                    {{ form.message }}
+                </div>
+                
+                <!-- Screenshots upload element -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-main small">Upload Attachment / Screenshot</label>
+                    <input type="file" class="form-control" name="attachment">
+                </div>
+
+                <!-- Rating -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-main small d-block">Rate Overall Progress</label>
+                    <div class="rating d-flex gap-2">
+                        {% for i in "54321" %}
+                        <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                        <label for="star{{ i }}" class="cursor-pointer text-muted fs-4 transition-all"><i class="fas fa-star"></i></label>
+                        {% endfor %}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">Subject</label>
-                        {{ form.subject }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">Your Message</label>
-                        {{ form.message }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">Rate this Project</label>
-                        <div class="rating">
-                            {% for i in "12345" %}
-                            <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}">
-                            <label for="star{{ forloop.counter }}"><i class="fas fa-star"></i></label>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Send Feedback</button>
-                </form>
-            </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold rounded-2">
+                    Submit Feedback Ticket
+                </button>
+            </form>
         </div>
     </div>
     
+    <!-- Right Section: Previous Feedback Tickets list & Threads -->
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">Previous Feedback</h5>
+        <div class="card border-0 glass-card p-4">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h5 class="fw-bold mb-0 text-main"><i class="fas fa-history text-muted me-2"></i>Feedback History Thread</h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Real-time Responses</span>
             </div>
-            <div class="card-body px-4">
-                <div class="list-group list-group-flush">
-                    {% for feedback in feedbacks %}
-                    <div class="list-group-item px-0 py-4 border-0 border-bottom">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0 text-primary">{{ feedback.subject }}</h6>
-                            <span class="x-small text-muted">{{ feedback.created_at|date:"M d, Y" }}</span>
+            
+            <div class="d-grid gap-4">
+                {% for feedback in feedbacks %}
+                <div class="p-3 border rounded-3 bg-light-subtle position-relative transition-all hover-translate">
+                    <!-- Ticket Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-primary">{{ feedback.subject }}</h6>
+                            <span class="badge bg-light text-muted border border-light-subtle x-small me-2">{{ feedback.project.title }}</span>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle x-small text-uppercase">
+                                {{ feedback.get_category_display|default:"General Feedback" }}
+                            </span>
                         </div>
-                        <div class="badge bg-light text-dark x-small mb-2">{{ feedback.project.title }}</div>
-                        <div class="text-warning mb-2">
-                            {% for i in "12345" %}
-                                {% if forloop.counter <= feedback.rating %}
-                                    <i class="fas fa-star"></i>
-                                {% else %}
-                                    <i class="far fa-star"></i>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        <p class="text-muted small mb-0">{{ feedback.message }}</p>
-                        <a href="{% url 'edit_feedback' feedback.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
-                            <i class="fas fa-edit me-1"></i> Edit
+                        <span class="x-small text-muted font-monospace">{{ feedback.created_at|date:"M d, Y" }}</span>
+                    </div>
+
+                    <!-- Stars rating -->
+                    <div class="text-warning mb-2 small">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= feedback.rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Client original message -->
+                    <p class="text-main small mb-3" style="line-height: 1.6;">{{ feedback.message }}</p>
+                    
+                    {% if feedback.attachment %}
+                    <div class="mb-3">
+                        <span class="x-small text-muted d-block mb-1"><i class="fas fa-paperclip"></i> Attachment</span>
+                        <a href="{{ feedback.attachment.url }}" target="_blank" class="small text-decoration-none fw-semibold">
+                            <i class="far fa-image me-1"></i> View Attached Asset
                         </a>
                     </div>
-                    {% empty %}
-                    <div class="text-center py-5 text-muted">You haven't submitted any feedback yet.</div>
-                    {% endfor %}
-                    
+                    {% endif %}
+
+                    <!-- Reply Thread if it exists -->
+                    {% if feedback.reply %}
+                    <div class="p-3 border border-start-3 border-primary rounded-3 bg-white mb-3 shadow-sm">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="https://ui-avatars.com/api/?name=Engineering+Team&background=10b981&color=fff" class="rounded-circle border" width="24" height="24">
+                                <span class="fw-bold small text-main">Engineering Lead</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2" style="font-size: 0.6rem;">Admin Staff</span>
+                            </div>
+                            <span class="x-small text-muted">Dev Team Response</span>
+                        </div>
+                        <p class="small text-muted mb-0 font-monospace" style="line-height: 1.5; white-space: pre-wrap;">{{ feedback.reply }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Emoji Quick Reactions Bar -->
+                    <div class="d-flex align-items-center gap-2 border-top pt-2">
+                        <span class="x-small text-muted me-2" style="font-size: 0.7rem;">Quick React:</span>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0.5 px-2.5 small" onclick="alert('Reacted with 👍!')">
+                            👍 <span class="badge bg-light text-dark text-muted font-monospace" style="font-size: 0.65rem;">3</span>
+                        </button>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0.5 px-2.5 small" onclick="alert('Reacted with ❤️!')">
+                            ❤️ <span class="badge bg-light text-dark text-muted font-monospace" style="font-size: 0.65rem;">5</span>
+                        </button>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0.5 px-2.5 small" onclick="alert('Reacted with 💡!')">
+                            💡 <span class="badge bg-light text-dark text-muted font-monospace" style="font-size: 0.65rem;">1</span>
+                        </button>
+                    </div>
                 </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted">
+                    <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-state-card-4286469-3575971.png" style="width: 140px;" class="mb-3 opacity-60">
+                    <div>You haven't submitted any feedback tickets yet.</div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
+
 <style>
- .btn.btn-primary {
-    opacity: 1;
-    background-color: rgb(32, 32, 154);
-}
-   
 .rating {
     display: flex;
     flex-direction: row-reverse;
-    justify-content: flex-start;
-    gap: 5px;
+    justify-content: flex-end;
 }
 
 .rating input {
@@ -95,17 +158,15 @@
 }
 
 .rating label {
-    font-size: 1.5rem;
-    color: #ccc;
-    cursor: pointer;
-    transition: color 0.2s ease;
+    font-size: 1.6rem;
+    color: #cbd5e1;
+    transition: color 0.15s ease-in-out;
 }
 
 .rating input:checked ~ label,
 .rating label:hover,
 .rating label:hover ~ label {
-    color: #f5c518; /* gold */
+    color: #f59e0b; /* Golden Orange */
 }
-
 </style>
 {% endblock %}

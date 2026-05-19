@@ -1,98 +1,533 @@
 {% extends 'base.html' %}
 
-{% block title %}Team Leader Dashboard | Tracker{% endblock %}
+{% block title %}TL Sprint Console | Tracker{% endblock %}
 
 {% block content %}
 <!-- Welcome Banner -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+        <div class="card border-0 shadow-sm overflow-hidden"
+            style="border-radius: 16px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
             <div class="card-body p-4 p-lg-5 text-white position-relative">
+                <div class="position-absolute top-0 end-0 p-3 opacity-10 d-none d-lg-block">
+                    <i class="fas fa-users-gear fa-10x"></i>
+                </div>
                 <div class="row align-items-center">
                     <div class="col-lg-8">
-                        <h2 class="fw-bold mb-2">Welcome Leader!</h2>
-                        <p class="mb-0 opacity-75">You have {{ total_tasks }} team tasks under your supervision.</p>
+                        <span class="badge bg-white bg-opacity-20 px-3 py-2 mb-3 text-uppercase fw-bold"
+                            style="letter-spacing: 1px; font-size: 0.75rem;">Sprint Operations</span>
+                        <h2 class="fw-bold mb-2">Team Execution Console</h2>
+                        <p class="mb-0 opacity-75">Welcome back, Lead {{ user.username }}. You have {{ total_tasks }}
+                            team deliverables active in Sprint 4.</p>
                     </div>
-                    <div class="col-lg-4 text-end d-none d-lg-block">
-                        <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                            <i class="fas fa-users-cog fa-2x"></i>
+                    <div class="col-lg-4 text-end mt-3 mt-lg-0">
+                        <a href="{% url 'task_list' %}"
+                            class="btn btn-light text-indigo fw-bold px-4 py-2.5 transition-all hover-scale"
+                            style="border-radius: 10px; box-shadow: 0 4px 12px rgba(255,255,255,0.15);">
+                            <i class="fas fa-plus-circle me-2 text-indigo"></i> Assign Task
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 6 Agile & Sprint KPI Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate"
+            style="border-radius: 14px; border-left: 4px solid #4f46e5 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Team Members</div>
+                <div class="text-indigo bg-indigo bg-opacity-10 p-2 rounded-3"><i class="fas fa-users"></i></div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">4 Active</h3>
+            <span class="x-small text-success fw-bold"><i class="fas fa-circle me-1"
+                    style="font-size: 0.5rem; vertical-align: middle;"></i> 3 Online</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate"
+            style="border-radius: 14px; border-left: 4px solid #f59e0b !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">In Progress</div>
+                <div class="text-warning bg-warning bg-opacity-10 p-2 rounded-3"><i class="fas fa-spinner"></i></div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ tl_tasks_in_progress }} Tasks</h3>
+            <span class="x-small text-muted fw-semibold">Active code sandbox</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate"
+            style="border-radius: 14px; border-left: 4px solid #10b981 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Done Sprints</div>
+                <div class="text-success bg-success bg-opacity-10 p-2 rounded-3"><i class="fas fa-circle-check"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ tl_tasks_completed }} Tasks</h3>
+            <span class="x-small text-success fw-bold"><i class="fas fa-check-double me-1"></i>Ready to ship</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate"
+            style="border-radius: 14px; border-left: 4px solid #ef4444 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Delayed Tasks</div>
+                <div class="text-danger bg-danger bg-opacity-10 p-2 rounded-3"><i class="fas fa-clock-rotate-left"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ tl_tasks_delayed }} Tasks</h3>
+            <span class="x-small text-danger fw-bold"><i class="fas fa-triangle-exclamation me-1"></i>Overdue</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate"
+            style="border-radius: 14px; border-left: 4px solid #06b6d4 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Sprint Velocity</div>
+                <div class="text-info bg-info bg-opacity-10 p-2 rounded-3"><i class="fas fa-gauge-high"></i></div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">72% Completed</h3>
+            <span class="x-small text-info fw-bold">Sprint 4 target</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate"
+            style="border-radius: 14px; border-left: 4px solid #ec4899 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Bugs Tracked</div>
+                <div class="text-pink bg-pink bg-opacity-10 p-2 rounded-3"><i class="fas fa-bug"></i></div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ tl_bugs_reported }} reported</h3>
+            <span class="x-small text-pink fw-bold"><i class="fas fa-fire me-1"></i>Hot fixes required</span>
+        </div>
+    </div>
+</div>
+
+<!-- Row 1: Team Workload Chart & Sprint Goals checklist -->
+<div class="row g-4 mb-4">
+    <!-- Daily completions & sprint velocity Chart.js -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h5 class="fw-bold mb-1 text-main"><i class="fas fa-chart-line text-indigo me-2"></i>Sprint Delivery
+                        & Workload Velocity</h5>
+                    <p class="text-muted x-small mb-0">Compares estimated workload units versus actual tasks resolved by
+                        your developers</p>
+                </div>
+                <span class="badge bg-light text-muted border py-2 px-3 font-monospace">Burndown Stats</span>
+            </div>
+            <div style="position: relative; height: 320px;">
+                <canvas id="tlWorkloadChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sprint goals -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-bullseye text-indigo me-2"></i>Sprint 4 Scope &
+                    Goals</h5>
+                <p class="text-muted x-small mb-0">Core engineering targets and deliverables mapped to standard
+                    milestones</p>
+            </div>
+
+            <div class="d-grid gap-3">
+                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" checked disabled
+                                style="width: 20px; height: 20px;">
+                        </div>
+                        <div>
+                            <strong class="text-main small d-block">Setup Authentication Module</strong>
+                            <span class="x-small text-muted">Sprint Backlog Item #TL-209 | Complete</span>
                         </div>
                     </div>
+                    <span class="badge bg-success">100%</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" checked disabled
+                                style="width: 20px; height: 20px;">
+                        </div>
+                        <div>
+                            <strong class="text-main small d-block">Payment Gateways Callback API</strong>
+                            <span class="x-small text-muted">Sprint Backlog Item #TL-214 | Complete</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-success">100%</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" disabled style="width: 20px; height: 20px;">
+                        </div>
+                        <div>
+                            <strong class="text-main small d-block">Dashboard Analytical Graphics</strong>
+                            <span class="x-small text-muted">Sprint Backlog Item #TL-228 | In Development</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-warning text-dark">45%</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" disabled style="width: 20px; height: 20px;">
+                        </div>
+                        <div>
+                            <strong class="text-main small d-block">Beta Sandboxing & QA Audits</strong>
+                            <span class="x-small text-muted">Sprint Backlog Item #TL-240 | Planning</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-secondary">0%</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <span class="small fw-semibold text-muted">Total Sprint Progress</span>
+                    <strong class="text-indigo small">72% Completed</strong>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                    <div class="progress-bar bg-indigo" role="progressbar" style="width: 72%"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- KPI Cards -->
+<!-- Row 2: Blocker Alerts & Recent Activities Timeline -->
 <div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Active Projects</div>
-                <div class="text-primary bg-primary bg-opacity-10 p-2 rounded-3"><i class="fas fa-layer-group"></i></div>
+    <!-- Urgent Blocker Alerts -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-triangle-exclamation text-danger me-2"></i>Sprint
+                    Blocker Alerts</h5>
+                <p class="text-muted x-small mb-0">High-priority operational hurdles and software bugs requiring lead
+                    mitigation</p>
             </div>
-            <h3 class="fw-bold mb-0">{{ total_projects }}</h3>
+
+            <div class="d-grid gap-3">
+                {% for issue in tl_urgent_issues %}
+                <div
+                    class="p-3 rounded-3 bg-{{ issue.color }} bg-opacity-10 text-{{ issue.color }} border border-{{ issue.color }}-subtle d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-{{ issue.color }} text-white rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 36px; height: 36px;"><i class="fas fa-circle-exclamation"></i></div>
+                        <div>
+                            <div class="small fw-bold text-main">{{ issue.title }}</div>
+                            <span class="x-small text-muted">{{ issue.category }} | Severity: <strong>{{ issue.severity
+                                    }}</strong></span>
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ issue.color }}">{{ issue.severity }}</span>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-clipboard-check fa-3x mb-3 opacity-25"></i>
+                    <div class="small fw-bold">Clean Workspace!</div>
+                    <span class="x-small text-muted">No unresolved blockers in ongoing sprints.</span>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Team Tasks</div>
-                <div class="text-info bg-info bg-opacity-10 p-2 rounded-3"><i class="fas fa-clipboard-list"></i></div>
+
+    <!-- Recent Team Activities Timeline -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-history text-indigo me-2"></i>Developer Activity
+                    Feed</h5>
+                <p class="text-muted x-small mb-0">Sprints work log tracking commit triggers, task modifications and
+                    deployments</p>
             </div>
-            <h3 class="fw-bold mb-0">{{ total_tasks }}</h3>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Completed Tasks</div>
-                <div class="text-success bg-success bg-opacity-10 p-2 rounded-3"><i class="fas fa-check-circle"></i></div>
+
+            <div class="timeline-container px-2" style="max-height: 280px; overflow-y: auto;">
+                {% for act in tl_activities %}
+                <div class="d-flex mb-3 position-relative tl-timeline-row">
+                    <div class="me-3 text-center position-relative" style="z-index: 2;">
+                        <div class="p-2 rounded-circle text-indigo bg-indigo bg-opacity-10 d-inline-flex align-items-center justify-content-center"
+                            style="width: 36px; height: 36px;">
+                            {% if 'Complete' in act.activity_type or 'Completed' in act.activity_type %}
+                            <i class="fas fa-circle-check text-success"></i>
+                            {% elif 'Bug' in act.activity_type %}
+                            <i class="fas fa-bug text-danger"></i>
+                            {% elif 'Upload' in act.activity_type or 'Design' in act.activity_type %}
+                            <i class="fas fa-cloud-upload-alt text-info"></i>
+                            {% else %}
+                            <i class="fas fa-flag text-indigo"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="small fw-bold text-main">{{ act.activity_type }}</div>
+                        <p class="text-muted x-small mb-0">{{ act.description }}</p>
+                        <span class="x-small text-muted font-monospace" style="font-size: 0.65rem;">{{ act.time
+                            }}</span>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <h3 class="fw-bold mb-0">{{ done_tasks }}</h3>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-12">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                <h5 class="fw-bold mb-0">Team Tasks Overview</h5>
+<!-- Row 3: Actions & Team Workload/Mood Status -->
+<div class="row g-4 mb-4">
+    <!-- Quick Actions Panel -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-bolt text-warning me-2"></i>Sprint Workflow Suite
+                </h5>
+                <p class="text-muted x-small mb-0">Trigger core sprint management actions instantly</p>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr class="bg-light">
-                                <th class="px-4 py-3 border-0">Task</th>
-                                <th class="py-3 border-0">Project</th>
-                                <th class="py-3 border-0">Assigned To</th>
-                                <th class="py-3 border-0 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for task in upcoming_deadlines %}
-                            <tr>
-                                <td class="px-4 fw-bold">{{ task.title }}</td>
-                                <td>{{ task.project.title }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name={{ task.assigned_to.username }}&size=24&background=random" class="rounded-circle me-2">
-                                        {{ task.assigned_to.username|default:"Unassigned" }}
-                                    </div>
-                                </td>
-                                <td class="text-center"><span class="badge bg-{{ task.status }}">{{ task.get_status_display }}</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4" class="text-center py-4 text-muted">No tasks in your projects.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="{% url 'task_list' %}"
+                        class="btn btn-outline-indigo w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-tasks fa-lg mb-2 text-indigo"></i>
+                        <div class="fw-bold small">Assign Task</div>
+                        <span class="x-small text-muted d-block">Dispatch tickets to staff</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'task_list' %}"
+                        class="btn btn-outline-warning w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-cubes-stacked fa-lg mb-2 text-warning"></i>
+                        <div class="fw-bold small">Create Sprint</div>
+                        <span class="x-small text-muted d-block">Initialize future scope</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'calendar' %}"
+                        class="btn btn-outline-success w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-clock fa-lg mb-2 text-success"></i>
+                        <div class="fw-bold small">Start Meeting</div>
+                        <span class="x-small text-muted d-block">Initialize daily standups</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'client_files' %}"
+                        class="btn btn-outline-info w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-circle-nodes fa-lg mb-2 text-info"></i>
+                        <div class="fw-bold small">Review Deliverables</div>
+                        <span class="x-small text-muted d-block">Audit code integrations</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Team availability board with mood and workload indicators -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-users-viewfinder text-indigo me-2"></i>Developer
+                    Workload Monitor</h5>
+                <p class="text-muted x-small mb-0">Track engineering bandwidth allocation and real-time developer moods
+                </p>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for dev in tl_team_members %}
+                <div class="d-flex align-items-center justify-content-between p-2 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="position-relative">
+                            <img src="{{ dev.avatar }}" class="rounded-circle border" width="40" height="40">
+                            <span
+                                class="position-absolute bottom-0 end-0 p-1 border border-white rounded-circle bg-{% if dev.status == 'Online' %}success{% elif dev.status == 'Busy' %}danger{% elif dev.status == 'In Meeting' %}warning{% else %}secondary{% endif %}"
+                                style="width: 12px; height: 12px;"></span>
+                        </div>
+                        <div>
+                            <div class="small fw-bold text-main">{{ dev.name }}</div>
+                            <span class="x-small text-muted">{{ dev.role }} | {{ dev.tasks }} Active Tasks</span>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <div class="d-flex gap-2 align-items-center justify-content-end mb-1">
+                            <span
+                                class="badge bg-{% if dev.workload == 'Overloaded' %}danger-subtle text-danger{% elif dev.workload == 'Balanced' %}success-subtle text-success{% else %}info-subtle text-info{% endif %} px-2.5 py-0.5 rounded-2 x-small text-uppercase">
+                                {{ dev.workload }}
+                            </span>
+                            <span class="x-small font-monospace text-main" title="Team Mood Indicator">{{ dev.mood
+                                }}</span>
+                        </div>
+                        <div class="x-small text-muted" style="font-size: 0.65rem;">Last Login: Today 9:30 AM</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Daily Standup Board Widget (Unique Feature) -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-handshake-simple text-indigo me-2"></i>Daily Scrum
+                    Standup Log</h5>
+                <p class="text-muted x-small mb-0">Instantly submit daily progress logs for the entire team to see in
+                    active workspaces</p>
+            </div>
+
+            <form onsubmit="submitStandupForm(event)">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">1. Yesterday's Achievements</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                            placeholder="What parts of code were merged or finalized?" required></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">2. Today's Core Plan</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                            placeholder="What backlog tasks will you resolve today?" required></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">3. Blockers / Obstacles</label>
+                        <textarea class="form-control form-control-sm" rows="3"
+                            placeholder="Any blockers, missing contracts, API errors?"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-indigo rounded-pill px-4">Submit Daily Standup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Render Burndown & Workload Chart.js Line Graph
+        const ctx = document.getElementById('tlWorkloadChart').getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const labelColor = isDark ? '#94a3b8' : '#64748b';
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                datasets: [
+                    {
+                        label: 'Estimated Workload (Units)',
+                        data: [20, 16, 12, 8, 4],
+                        borderColor: 'rgba(79, 70, 229, 0.4)',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0.1,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Actual Workload (Resolved)',
+                        data: [20, 15, 13, 9, 3],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: labelColor,
+                            font: {
+                                family: 'Inter',
+                                size: 11,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: labelColor,
+                            font: {
+                                family: 'Inter',
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+                        },
+                        ticks: {
+                            color: labelColor,
+                            font: {
+                                family: 'Inter',
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    window.submitStandupForm = function (event) {
+        event.preventDefault();
+        alert("Daily standup log registered successfully! Your team members will receive notifications inside their active dashboards.");
+        event.target.reset();
+    }
+</script>
+<style>
+    .timeline-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .timeline-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+    }
+
+    .tl-timeline-row::after {
+        content: '';
+        position: absolute;
+        top: 36px;
+        left: 17px;
+        bottom: -24px;
+        width: 2px;
+        background: rgba(79, 70, 229, 0.15);
+        z-index: 1;
+    }
+
+    .tl-timeline-row:last-child::after {
+        display: none;
+    }
+</style>
 {% endblock %}

@@ -1,306 +1,391 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client & Project Form | Tracker</title>
-    <!-- Google Fonts (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap & Font Awesome -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+{% extends 'base.html' %}
 
-        .form-card {
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            border: none;
-            overflow: hidden;
-            background-color: #ffffff;
-        }
+{% block title %}Initiate Project Setup | Client Portal{% endblock %}
 
-        .form-header {
-            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-            color: #ffffff;
-            padding: 2.5rem;
-            text-align: center;
-        }
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <!-- Main Form Card -->
+        <div class="card border-0 glass-card overflow-hidden">
+            <!-- Header banner -->
+            <div class="p-4 p-lg-5 text-white position-relative" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+                <div class="mb-2"><i class="fas fa-layer-group fa-3x floating-card"></i></div>
+                <h3 class="fw-bold mb-1">New Client & Project Setup Wizard</h3>
+                <p class="mb-0 opacity-75 small">Follow the steps below to configure your corporate account and project timeline parameters.</p>
+            </div>
 
-        .form-body {
-            padding: 2.5rem;
-        }
+            <!-- Multi-Step Progress Tracker Bar -->
+            <div class="bg-light border-bottom p-4">
+                <div class="d-flex justify-content-between position-relative" style="max-width: 500px; margin: 0 auto;">
+                    <!-- Line behind circles -->
+                    <div class="position-absolute top-50 start-0 end-0 translate-middle-y bg-secondary bg-opacity-25" style="height: 3px; z-index: 1;"></div>
+                    <div class="position-absolute top-50 start-0 bg-primary" id="wizardProgressLine" style="height: 3px; width: 0%; z-index: 1; transition: width 0.3s ease;"></div>
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #1e3a8a;
-            margin-bottom: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 1px solid #d1d5db;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-        }
-
-        .input-group-text {
-            border-radius: 0 10px 10px 0 !important;
-            background-color: #f3f4f6;
-            border-color: #d1d5db;
-            color: #6b7280;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #4b5563;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        hr {
-            border-color: #e5e7eb;
-            margin: 2rem 0;
-            opacity: 0.6;
-        }
-
-        .btn-submit {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: #ffffff;
-            border: none;
-            padding: 0.8rem 2rem;
-            font-weight: 600;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-submit:hover {
-            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-            color: #ffffff;
-        }
-
-        .btn-cancel {
-            background-color: #f3f4f6;
-            color: #4b5563;
-            border: none;
-            padding: 0.8rem 2rem;
-            font-weight: 600;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-cancel:hover {
-            background-color: #e5e7eb;
-            color: #1f2937;
-            transform: translateY(-2px);
-        }
-    </style>
-</head>
-<body>
-    <main class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-xl-7">
-                <div class="card form-card">
-                    <div class="form-header">
-                        <div class="mb-2">
-                            <i class="fas fa-layer-group fa-3x"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1">New Client & Project Setup</h2>
-                        <p class="mb-0 opacity-80 small">Provide client information and project details to initialize your workspace.</p>
+                    <!-- Step 1 Circle -->
+                    <div class="wizard-step-circle active" data-step="1" style="z-index: 2;">
+                        <span class="step-num">1</span>
+                        <span class="step-label">Account</span>
                     </div>
-                    
-                    <div class="form-body">
-                        <form method="POST" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            
-                            <!-- Client Information Section -->
-                            <div class="mb-4">
-                                <h5 class="section-title">
-                                    <i class="fas fa-user-tie"></i> Client Information
-                                </h5>
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Client Name</label>
-                                        {{ form.client_name }}
-                                        {% if form.client_name.errors %}
-                                            <div class="text-danger small mt-1">
-                                                {% for error in form.client_name.errors %}
-                                                    {{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Phone Number</label>
-                                        {{ form.phone }}
-                                        {% if form.phone.errors %}
-                                            <div class="text-danger small mt-1">
-                                                {% for error in form.phone.errors %}
-                                                    {{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Email Address</label>
-                                        {{ form.email }}
-                                        {% if form.email.errors %}
-                                            <div class="text-danger small mt-1">
-                                                {% for error in form.email.errors %}
-                                                    {{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr>
-
-                            <!-- Project Details Section -->
-                            <div class="mb-4">
-                                <h5 class="section-title">
-                                    <i class="fas fa-briefcase"></i> Project Details
-                                </h5>
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Project Title</label>
-                                        {{ form.project_title }}
-                                        {% if form.project_title.errors %}
-                                            <div class="text-danger small mt-1">
-                                                {% for error in form.project_title.errors %}
-                                                    {{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr>
-
-                            <!-- Project Deadline Section -->
-                            <div class="mb-4">
-                                <h5 class="section-title">
-                                    <i class="fas fa-calendar-check"></i> Project Deadline
-                                </h5>
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Select Deadline Date</label>
-                                        <p class="text-muted small mb-2"><i class="fas fa-info-circle"></i> Deadline must be at least 1.5 months from today</p>
-                                        {{ form.deadline }}
-                                        {% if form.deadline.errors %}
-                                            <div class="text-danger small mt-1">
-                                                {% for error in form.deadline.errors %}
-                                                    {{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <!-- File Upload Section -->
-                            <div class="mb-4">
-                                <h5 class="section-title">
-                                    <i class="fas fa-paperclip"></i> Brief / Additional Files
-                                </h5>
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Upload File (Optional - PDF, Word, Excel, Images, etc.)</label>
-                                        <div class="input-group">
-                                            {{ form.file_upload }}
-                                            <span class="input-group-text">
-                                                <i class="fas fa-cloud-upload-alt"></i>
-                                            </span>
-                                        </div>
-                                        <small class="text-muted d-block mt-2">
-                                            <i class="fas fa-info-circle me-1"></i> Max upload size: 10MB. Leave blank if not required.
-                                        </small>
-                                        {% if form.file_upload.errors %}
-                                            <div class="text-danger small mt-1">
-                                                {% for error in form.file_upload.errors %}
-                                                    {{ error }}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Form Actions -->
-                            <div class="mt-5 d-flex justify-content-end gap-3">
-                                <a href="{% url 'dashboard' %}" class="btn-cancel">
-                                    <i class="fas fa-times me-2"></i>Cancel
-                                </a>
-                                <button type="submit" class="btn-submit">
-                                    <i class="fas fa-check me-2"></i>Complete Setup
-                                </button>
-                            </div>
-                        </form>
+                    <!-- Step 2 Circle -->
+                    <div class="wizard-step-circle" data-step="2" style="z-index: 2;">
+                        <span class="step-num">2</span>
+                        <span class="step-label">Scope</span>
+                    </div>
+                    <!-- Step 3 Circle -->
+                    <div class="wizard-step-circle" data-step="3" style="z-index: 2;">
+                        <span class="step-num">3</span>
+                        <span class="step-label">Timeline</span>
+                    </div>
+                    <!-- Step 4 Circle -->
+                    <div class="wizard-step-circle" data-step="4" style="z-index: 2;">
+                        <span class="step-num">4</span>
+                        <span class="step-label">Review</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
 
-    <script>
-        // Set minimum deadline date to 1.5 months (45 days) from today
-        document.addEventListener('DOMContentLoaded', function() {
-            const deadlineField = document.getElementById('deadline_field');
-            if (deadlineField) {
-                // Calculate minimum date: today + 45 days
-                const today = new Date();
-                const minDate = new Date(today);
-                minDate.setDate(minDate.getDate() + 45);
-                
-                // Format date as YYYY-MM-DD for the input field
-                const year = minDate.getFullYear();
-                const month = String(minDate.getMonth() + 1).padStart(2, '0');
-                const date = String(minDate.getDate()).padStart(2, '0');
-                const minDateString = `${year}-${month}-${date}`;
-                
-                deadlineField.setAttribute('min', minDateString);
-                
-                // Add validation on form submission
-                const form = deadlineField.closest('form');
-                form.addEventListener('submit', function(e) {
-                    const selectedDate = new Date(deadlineField.value);
-                    if (selectedDate < minDate) {
-                        e.preventDefault();
-                        alert(`Deadline must be at least 1.5 months from today (minimum: ${minDateString})`);
+            <!-- Wizard Body -->
+            <div class="card-body p-4 p-lg-5">
+                <form method="POST" enctype="multipart/form-data" id="wizardForm">
+                    {% csrf_token %}
+
+                    <!-- STEP 1: CLIENT INFORMATION -->
+                    <div class="wizard-step-pane active" id="paneStep1">
+                        <h5 class="fw-bold text-main mb-3"><i class="fas fa-user-tie text-primary me-2"></i>Step 1: Contact Information</h5>
+                        <p class="text-muted small mb-4">Provide key organizational contact information below to register your workspace profile.</p>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label text-main">Contact / Client Name</label>
+                                {{ form.client_name }}
+                                <div class="invalid-feedback">Please enter your contact name.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-main">Direct Phone Number</label>
+                                {{ form.phone }}
+                                <div class="invalid-feedback">Please provide a valid phone contact.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-main">Email Address</label>
+                                {{ form.email }}
+                                <div class="invalid-feedback">Please enter a valid email address.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PROJECT SCOPE & DETAILS -->
+                    <div class="wizard-step-pane" id="paneStep2">
+                        <h5 class="fw-bold text-main mb-3"><i class="fas fa-briefcase text-primary me-2"></i>Step 2: Project Parameters</h5>
+                        <p class="text-muted small mb-4">Describe the title, categories, and priority metrics for the desired work engagement.</p>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label text-main">Project Title / Name</label>
+                                {{ form.project_title }}
+                                <div class="invalid-feedback">Please specify the project title.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-main">Priority Urgency</label>
+                                <select class="form-select" id="wizardPriority">
+                                    <option value="low">Low Priority</option>
+                                    <option value="medium" selected>Medium Priority</option>
+                                    <option value="high">High Priority</option>
+                                    <option value="urgent">Urgent Priority</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-main">Estimated Budget Range</label>
+                                <select class="form-select" id="wizardBudget">
+                                    <option value="small">$1,000 - $5,000</option>
+                                    <option value="medium" selected>$5,000 - $15,000</option>
+                                    <option value="large">$15,000 - $50,000</option>
+                                    <option value="enterprise">$50,000+</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: SCHEDULING & TIMELINE -->
+                    <div class="wizard-step-pane" id="paneStep3">
+                        <h5 class="fw-bold text-main mb-3"><i class="fas fa-calendar-check text-primary me-2"></i>Step 3: Timeline & Schedule</h5>
+                        <p class="text-muted small mb-4">Select the deadline date. The system requires setup requests to be at least 1.5 months (45 days) in the future.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label text-main">Deadline Delivery Date</label>
+                            {{ form.deadline }}
+                            <div class="invalid-feedback" id="deadlineFeedback">Deadline must be at least 45 days in future.</div>
+                            <small class="text-muted d-block mt-2"><i class="fas fa-info-circle"></i> Minimum acceptable deadline date is computed dynamically on load.</small>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: DELIVERABLE ATTACHMENTS & REVIEW -->
+                    <div class="wizard-step-pane" id="paneStep4">
+                        <h5 class="fw-bold text-main mb-3"><i class="fas fa-paperclip text-primary me-2"></i>Step 4: Attachments & Review</h5>
+                        <p class="text-muted small mb-4">Attach specifications briefs and review your workspace details before finalizing registration.</p>
+
+                        <div class="mb-4">
+                            <label class="form-label text-main">Upload Brief Files (Optional - Max 10MB)</label>
+                            <div class="input-group">
+                                {{ form.file_upload }}
+                                <span class="input-group-text"><i class="fas fa-cloud-upload-alt"></i></span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border rounded-3 bg-light">
+                            <h6 class="fw-bold text-main mb-3 border-bottom pb-2">Workspace Summary Review</h6>
+                            <div class="row g-3 small">
+                                <div class="col-md-6">
+                                    <span class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Client Details</span>
+                                    <span class="d-block text-main fw-bold" id="revClientName">--</span>
+                                    <span class="d-block text-muted" id="revClientContact">--</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Project Focus</span>
+                                    <span class="d-block text-main fw-bold" id="revProjectTitle">--</span>
+                                    <span class="d-block text-muted" id="revProjectParams">--</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Target Deadline</span>
+                                    <span class="d-block text-main fw-bold" id="revDeadline">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Button Navigations -->
+                    <div class="mt-5 d-flex justify-content-between pt-4 border-top">
+                        <button type="button" class="btn btn-light px-4 border rounded-2 fw-semibold" id="prevBtn" style="display: none;"><i class="fas fa-chevron-left me-2"></i> Back</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-light px-4 border rounded-2 fw-semibold" id="cancelBtn"><i class="fas fa-times me-2"></i> Cancel</a>
+                        
+                        <button type="button" class="btn btn-primary px-4 rounded-2 fw-semibold ms-auto" id="nextBtn">Continue <i class="fas fa-chevron-right ms-2"></i></button>
+                        <button type="submit" class="btn btn-success px-4 rounded-2 fw-semibold ms-auto" id="submitBtn" style="display: none;"><i class="fas fa-check-circle me-2"></i> Finalize Setup</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Wizard Circle Style */
+.wizard-step-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    cursor: default;
+}
+
+.wizard-step-circle .step-num {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #cbd5e1;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px #cbd5e1;
+}
+
+.wizard-step-circle .step-label {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.wizard-step-circle.active .step-num {
+    background-color: #3b82f6;
+    color: #fff;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.wizard-step-circle.active .step-label {
+    color: #1e3a8a;
+    font-weight: 700;
+}
+
+.wizard-step-circle.completed .step-num {
+    background-color: #10b981;
+    color: #fff;
+    box-shadow: 0 0 0 1px #10b981;
+}
+
+/* Pane Visibility */
+.wizard-step-pane {
+    display: none;
+}
+.wizard-step-pane.active {
+    display: block;
+}
+</style>
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const nextBtn = document.getElementById("nextBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const submitBtn = document.getElementById("submitBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const form = document.getElementById("wizardForm");
+
+        // Input Fields Reference
+        const nameField = document.getElementById("id_client_name") || document.querySelector("input[name='client_name']");
+        const phoneField = document.getElementById("id_phone") || document.querySelector("input[name='phone']");
+        const emailField = document.getElementById("id_email") || document.querySelector("input[name='email']");
+        const projectTitleField = document.getElementById("id_project_title") || document.querySelector("input[name='project_title']");
+        const deadlineField = document.getElementById("deadline_field") || document.querySelector("input[name='deadline']");
+
+        // Set min acceptable deadline
+        const today = new Date();
+        const minDate = new Date(today);
+        minDate.setDate(minDate.getDate() + 45);
+        const year = minDate.getFullYear();
+        const month = String(minDate.getMonth() + 1).padStart(2, '0');
+        const dateStr = String(minDate.getDate()).padStart(2, '0');
+        const minDateString = `${year}-${month}-${dateStr}`;
+        if (deadlineField) {
+            deadlineField.setAttribute("min", minDateString);
+        }
+
+        // Show specific step
+        function showStep(step) {
+            // Update pane visibility
+            document.querySelectorAll(".wizard-step-pane").forEach(pane => pane.classList.remove("active"));
+            document.getElementById(`paneStep${step}`).classList.add("active");
+
+            // Update circles progress
+            document.querySelectorAll(".wizard-step-circle").forEach(circle => {
+                const s = parseInt(circle.dataset.step);
+                circle.classList.remove("active", "completed");
+                if (s === step) {
+                    circle.classList.add("active");
+                } else if (s < step) {
+                    circle.classList.add("completed");
+                }
+            });
+
+            // Update progress line width
+            const linePercent = ((step - 1) / (totalSteps - 1)) * 100;
+            document.getElementById("wizardProgressLine").style.width = `${linePercent}%`;
+
+            // Adjust button layouts
+            if (step === 1) {
+                prevBtn.style.display = "none";
+                cancelBtn.style.display = "inline-block";
+            } else {
+                prevBtn.style.display = "inline-block";
+                cancelBtn.style.display = "none";
+            }
+
+            if (step === totalSteps) {
+                nextBtn.style.display = "none";
+                submitBtn.style.display = "inline-block";
+                populateReview();
+            } else {
+                nextBtn.style.display = "inline-block";
+                submitBtn.style.display = "none";
+            }
+        }
+
+        // Populate summary elements inside Step 4 review panel
+        function populateReview() {
+            document.getElementById("revClientName").textContent = nameField ? nameField.value : "--";
+            document.getElementById("revClientContact").textContent = `${emailField ? emailField.value : "--"} • ${phoneField ? phoneField.value : "--"}`;
+            document.getElementById("revProjectTitle").textContent = projectTitleField ? projectTitleField.value : "--";
+            
+            const prio = document.getElementById("wizardPriority");
+            const budg = document.getElementById("wizardBudget");
+            document.getElementById("revProjectParams").textContent = `${prio ? prio.options[prio.selectedIndex].text : "--"} • Estimated: ${budg ? budg.options[budg.selectedIndex].text : "--"}`;
+            
+            document.getElementById("revDeadline").textContent = deadlineField ? deadlineField.value : "--";
+        }
+
+        // Validate inputs before advancing
+        function validateStep(step) {
+            let isValid = true;
+            if (step === 1) {
+                // Validate Name
+                if (!nameField || nameField.value.trim() === "") {
+                    nameField.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    nameField.classList.remove("is-invalid");
+                }
+
+                // Validate Phone
+                if (!phoneField || phoneField.value.trim() === "") {
+                    phoneField.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    phoneField.classList.remove("is-invalid");
+                }
+
+                // Validate Email
+                const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailField || !emailReg.test(emailField.value)) {
+                    emailField.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    emailField.classList.remove("is-invalid");
+                }
+            } else if (step === 2) {
+                // Validate project title
+                if (!projectTitleField || projectTitleField.value.trim() === "") {
+                    projectTitleField.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    projectTitleField.classList.remove("is-invalid");
+                }
+            } else if (step === 3) {
+                // Validate deadline date is min 45 days in future
+                if (!deadlineField || deadlineField.value === "") {
+                    deadlineField.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    const sel = new Date(deadlineField.value);
+                    if (sel < minDate) {
+                        deadlineField.classList.add("is-invalid");
+                        isValid = false;
+                    } else {
+                        deadlineField.classList.remove("is-invalid");
                     }
-                });
+                }
+            }
+            return isValid;
+        }
+
+        // Event listeners
+        nextBtn.addEventListener("click", function () {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                showStep(currentStep);
             }
         });
-    </script>
-</body>
-</html>
+
+        prevBtn.addEventListener("click", function () {
+            currentStep--;
+            showStep(currentStep);
+        });
+
+        // Intercept submit
+        form.addEventListener("submit", function (e) {
+            if (!validateStep(currentStep)) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

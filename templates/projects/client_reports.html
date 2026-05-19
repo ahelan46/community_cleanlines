@@ -5,78 +5,91 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold mb-0">Progress Reports</h3>
-        <p class="text-muted small mb-0">Track the latest updates from our team</p>
+        <h3 class="fw-bold mb-0 text-main"><i class="fas fa-chart-line text-primary me-2"></i>Progress Reports</h3>
+        <p class="text-muted small mb-0">Track formal, validated status updates and reviews from our team</p>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm" style="border-radius: 16px;">
+<div class="card border-0 glass-card">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="border-0 px-4 py-3">Project</th>
-                        <th class="border-0 py-3">Report Title</th>
-                        <th class="border-0 py-3">Date</th>
-                        <th class="border-0 py-3">Status</th>
-                        <th class="border-0 px-4 py-3 text-end">Action</th>
+                <thead>
+                    <tr class="bg-light">
+                        <th class="border-0 px-4 py-3 text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Project</th>
+                        <th class="border-0 py-3 text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Report Title</th>
+                        <th class="border-0 py-3 text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Date Published</th>
+                        <th class="border-0 py-3 text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Verification Status</th>
+                        <th class="border-0 px-4 py-3 text-end text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; width: 160px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for report in reports %}
-                    <tr>
+                    <tr style="border-bottom: 1px solid var(--border-color);">
                         <td class="px-4">
-                            <span class="badge bg-light text-dark small fw-medium">{{ report.project.title }}</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 font-monospace" style="font-size: 0.7rem;">{{ report.project.title }}</span>
                         </td>
-                        <td><div class="small fw-bold">{{ report.title }}</div></td>
-                        <td><div class="text-muted small">{{ report.created_at|date:"M d, Y" }}</div></td>
+                        <td>
+                            <div class="fw-bold text-main" style="font-size: 0.95rem;">{{ report.title }}</div>
+                        </td>
+                        <td>
+                            <div class="text-muted small"><i class="far fa-calendar-alt me-1"></i> {{ report.created_at|date:"M d, Y" }}</div>
+                        </td>
                         <td>
                             {% if report.status == 'approved' %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3">Verified</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 text-uppercase" style="font-size: 0.65rem;">
+                                    <i class="fas fa-check-circle me-1"></i> Verified
+                                </span>
                             {% else %}
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3">Under Review</span>
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 text-uppercase" style="font-size: 0.65rem;">
+                                    <i class="fas fa-hourglass-half me-1"></i> Under Review
+                                </span>
                             {% endif %}
                         </td>
                         <td class="px-4 text-end">
-                            <button class="btn btn-sm btn-light px-3" data-bs-toggle="modal" data-bs-target="#reportModal{{ report.id }}">View Report</button>
+                            <button class="btn btn-sm btn-light border border-light-subtle px-3 rounded-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#reportModal{{ report.id }}">
+                                Inspect Report
+                            </button>
                         </td>
                     </tr>
 
                     <!-- Report Detail Modal -->
                     <div class="modal fade" id="reportModal{{ report.id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                                <div class="modal-header border-0 pt-4 px-4">
-                                    <h5 class="fw-bold">Progress Update</h5>
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content glass-card border-0 shadow-lg" style="border-radius: 20px;">
+                                <div class="modal-header border-0 pt-4 px-4 pb-0">
+                                    <h5 class="fw-bold text-main mb-0"><i class="fas fa-file-invoice text-primary me-2"></i>Status Report</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body p-4">
                                     <div class="mb-3">
-                                        <label class="text-muted x-small text-uppercase fw-bold">Project</label>
-                                        <div class="fw-bold">{{ report.project.title }}</div>
+                                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1" style="font-size: 0.7rem;">Project Context</span>
+                                        <div class="fw-bold text-main">{{ report.project.title }}</div>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="text-muted x-small text-uppercase fw-bold">Title</label>
-                                        <div>{{ report.title }}</div>
+                                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1" style="font-size: 0.7rem;">Deliverable Title</span>
+                                        <div class="text-main fw-semibold">{{ report.title }}</div>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="text-muted x-small text-uppercase fw-bold">Content</label>
-                                        <div class="p-3 bg-light rounded-3 small" style="white-space: pre-wrap;">{{ report.content }}</div>
+                                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1" style="font-size: 0.7rem;">Validated Update Content</span>
+                                        <div class="p-3 border rounded-3 small text-main" style="white-space: pre-wrap; background: var(--sidebar-bg); line-height: 1.6;">{{ report.content }}</div>
                                     </div>
-                                    <div class="small text-muted mt-4">Published on {{ report.created_at|date:"F d, Y H:i" }}</div>
+                                    <div class="x-small text-muted mt-4"><i class="far fa-clock me-1"></i> Published on {{ report.created_at|date:"F d, Y \a\t H:i A" }}</div>
                                 </div>
-                                <div class="modal-footer border-0 pb-4 px-4">
-                                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
-                                    <button type="button" class="btn btn-primary px-4"><i class="fas fa-download me-2"></i>Download PDF</button>
+                                <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                                    <button type="button" class="btn btn-light px-4 rounded-2 border" data-bs-dismiss="modal">Dismiss</button>
+                                    <button type="button" class="btn btn-primary px-4 rounded-2" onclick="alert('Simulated PDF Download initiated for: {{ report.title }}')">
+                                        <i class="fas fa-file-pdf me-2"></i>Export PDF
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <div class="text-muted">No reports found for your projects.</div>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-state-card-4286469-3575971.png" style="width: 140px;" class="mb-3 opacity-60">
+                            <div>No formal reports published yet for your active projects.</div>
                         </td>
                     </tr>
                     {% endfor %}

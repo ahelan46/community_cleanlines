@@ -30,11 +30,12 @@ urlpatterns = [
     path('messages/send/', views.send_chat_message, name='send_chat_message'),
     path('client-projects/', views.client_projects, name='client_projects'),
     path('client-reports/', views.client_reports, name='client_reports'),
-    path('client-files/', views.client_files, name='client_files'),
     path('client-feedback/', views.client_feedback, name='client_feedback'),
+    path('client-files/', views.client_files, name='client_files'),
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('feedback/<int:pk>/edit/', views.edit_feedback, name='edit_feedback'),
-
+    path('payments/', views.payments_view, name='payments'),
+    path('settings/', views.settings_view, name='settings'),
 ]

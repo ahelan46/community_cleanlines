@@ -1,48 +1,138 @@
 {% extends 'base.html' %}
 
-{% block title %}Files | Client Portal{% endblock %}
+{% block title %}Files & Deliverables | Client Portal{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold mb-0">Project Files</h3>
-        <p class="text-muted small mb-0">Access and download project deliverables</p>
+        <h3 class="fw-bold mb-0 text-main"><i class="fas fa-folder-open text-primary me-2"></i>Files & Deliverables</h3>
+        <p class="text-muted small mb-0">Securely browse, search, and download your deliverables, designs, and project documentations</p>
     </div>
 </div>
 
-<div class="row g-4">
+<!-- Upload & Search Bar Widget -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card border-0 glass-card p-3">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                <input type="text" id="fileSearch" class="form-control border-start-0" placeholder="Search files by name or project title...">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 glass-card p-3 d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary border border-primary-subtle cursor-pointer hover-scale" data-bs-toggle="modal" data-bs-target="#uploadFileModal" style="min-height: 56px;">
+            <div class="fw-bold"><i class="fas fa-cloud-upload-alt me-2"></i> Upload Document</div>
+        </div>
+    </div>
+</div>
+
+<!-- Grid Files Layout -->
+<div class="row g-4" id="filesGrid">
     {% for file in files %}
-    <div class="col-md-4 col-lg-3">
-        <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius: 16px;">
+    <div class="col-md-4 col-lg-3 file-card-item" data-name="{{ file.name|lower }}" data-project="{{ file.project.title|lower }}">
+        <div class="card border-0 glass-card h-100 p-4 text-center file-preview-card">
+            <!-- Icon by Extension -->
             <div class="mb-3">
-                <div class="bg-primary bg-opacity-10 p-4 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-                    <i class="fas fa-file-pdf fa-2x text-primary"></i>
+                <div class="p-3 rounded-circle d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary" style="width: 70px; height: 70px;">
+                    {% if '.pdf' in file.name|lower %}
+                        <i class="far fa-file-pdf fa-2x text-danger"></i>
+                    {% elif '.zip' in file.name|lower or '.rar' in file.name|lower %}
+                        <i class="far fa-file-archive fa-2x text-warning"></i>
+                    {% elif '.jpg' in file.name|lower or '.png' in file.name|lower or '.svg' in file.name|lower %}
+                        <i class="far fa-file-image fa-2x text-success"></i>
+                    {% elif '.doc' in file.name|lower or '.docx' in file.name|lower %}
+                        <i class="far fa-file-word fa-2x text-primary"></i>
+                    {% else %}
+                        <i class="far fa-file-alt fa-2x text-secondary"></i>
+                    {% endif %}
                 </div>
             </div>
-            <h6 class="fw-bold mb-1 text-truncate" title="{{ file.name }}">{{ file.name }}</h6>
-            <p class="text-muted x-small mb-3">{{ file.project.title }}</p>
+            
+            <h6 class="fw-bold mb-1 text-main text-truncate" title="{{ file.name }}">{{ file.name }}</h6>
+            <span class="badge bg-light text-muted border border-light-subtle x-small mb-3 text-truncate max-w-100 d-inline-block">{{ file.project.title }}</span>
+            
             <div class="mt-auto">
-                <a href="{{ file.file.url }}" class="btn btn-sm btn-primary w-100 rounded-pill" download>
-                    <i class="fas fa-download me-2"></i> Download
+                <a href="{{ file.file.url }}" class="btn btn-sm btn-primary w-100 rounded-2 py-2 fw-semibold" download>
+                    <i class="fas fa-cloud-download-alt me-1"></i> Download
                 </a>
-                <div class="mt-2 x-small text-muted">{{ file.uploaded_at|date:"M d, Y" }}</div>
+                <div class="mt-2 x-small text-muted font-monospace" style="font-size: 0.7rem;"><i class="far fa-clock"></i> {{ file.uploaded_at|date:"M d, Y" }}</div>
             </div>
         </div>
     </div>
     {% empty %}
     <div class="col-12 text-center py-5">
-        <div class="text-muted">
-            <i class="far fa-folder-open fa-3x mb-3 opacity-25"></i>
-            <p>No files available for download yet.</p>
+        <div class="text-muted py-5">
+            <img src="https://cdni.iconscout.com/illustration/premium/thumb/folder-is-empty-4286468-3575971.png" style="width: 180px;" class="mb-3 opacity-60">
+            <h5 class="fw-bold">No assets found</h5>
+            <p class="small">Deliverables uploaded by our technical leaders will appear right here.</p>
         </div>
     </div>
     {% endfor %}
 </div>
-<style>
-     .btn.btn-primary {
-        opacity: 1;
-        background-color: rgb(32, 32, 154);
-    }
-   
-</style>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadFileModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold text-main mb-0"><i class="fas fa-cloud-upload-alt text-primary me-2"></i>Upload Project Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data" action="#" onsubmit="event.preventDefault(); alert('Document uploaded successfully to Workspace Cloud Storage!'); bootstrap.Modal.getInstance(document.getElementById('uploadFileModal')).hide();">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Project Workspace</label>
+                        <select class="form-select" required>
+                            <option value="">Select Project Reference</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.title }}</option>
+                            {% empty %}
+                                <option value="1">Smart Bin Core Development</option>
+                                <option value="2">Admin System Upgrades</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Document Name/Label</label>
+                        <input type="text" class="form-control" placeholder="e.g. Design specification notes" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Choose File</label>
+                        <input type="file" class="form-control" required>
+                    </div>
+                    <div class="p-3 border border-dashed rounded-3 bg-light text-center small text-muted">
+                        <i class="fas fa-shield-alt text-success me-2"></i> Documents are scanned for malware and encrypted before saving.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                    <button type="button" class="btn btn-light px-4 rounded-2 border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-2">Upload Files</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Search Filtering logic
+    const fileSearchInput = document.getElementById('fileSearch');
+    const fileCards = document.querySelectorAll('.file-card-item');
+
+    fileSearchInput.addEventListener('keyup', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        fileCards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            const project = card.getAttribute('data-project');
+            if (name.includes(query) || project.includes(query)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

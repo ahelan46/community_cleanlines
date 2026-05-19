@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}PM Dashboard | Tracker{% endblock %}
+{% block title %}PM Command Console | Tracker{% endblock %}
 
 {% block content %}
 <!-- Welcome Banner -->
@@ -8,14 +8,18 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 16px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
             <div class="card-body p-4 p-lg-5 text-white position-relative">
+                <div class="position-absolute top-0 end-0 p-3 opacity-10 d-none d-lg-block">
+                    <i class="fas fa-cubes fa-10x"></i>
+                </div>
                 <div class="row align-items-center">
                     <div class="col-lg-8">
-                        <h2 class="fw-bold mb-2">Project Management Console</h2>
-                        <p class="mb-0 opacity-75">Welcome, {{ user.username }}. You are managing {{ total_projects }} active projects.</p>
+                        <span class="badge bg-primary px-3 py-2 mb-3 text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Command Console</span>
+                        <h2 class="fw-bold mb-2">Project Management Suite</h2>
+                        <p class="mb-0 opacity-75">Welcome back, {{ user.get_full_name|default:user.username }}. You are coordinating {{ total_projects }} projects across technical pipelines.</p>
                     </div>
-                    <div class="col-lg-4 text-end">
-                        <a href="{% url 'create_project' %}" class="btn btn-light text-primary fw-bold px-4 py-2" style="border-radius: 10px;">
-                            <i class="fas fa-plus-circle me-2"></i> Create Project
+                    <div class="col-lg-4 text-end mt-3 mt-lg-0">
+                        <a href="{% url 'create_project' %}" class="btn btn-light text-slate fw-bold px-4 py-2.5 transition-all hover-scale" style="border-radius: 10px; box-shadow: 0 4px 12px rgba(255,255,255,0.15);">
+                            <i class="fas fa-plus-circle me-2 text-primary"></i> Create Project
                         </a>
                     </div>
                 </div>
@@ -24,148 +28,425 @@
     </div>
 </div>
 
-<!-- KPI Cards -->
+<!-- 6 Enterprise KPI Cards -->
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate" style="border-radius: 14px; border-left: 4px solid #3b82f6 !important;">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">My Projects</div>
+                <div class="small fw-bold text-muted text-uppercase">Total Projects</div>
                 <div class="text-primary bg-primary bg-opacity-10 p-2 rounded-3"><i class="fas fa-briefcase"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ total_projects }}</h3>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ total_projects }}</h3>
+            <span class="x-small text-success fw-bold"><i class="fas fa-arrow-trend-up me-1"></i>Active scope</span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate" style="border-radius: 14px; border-left: 4px solid #f59e0b !important;">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Project Tasks</div>
+                <div class="small fw-bold text-muted text-uppercase">Active Tasks</div>
                 <div class="text-warning bg-warning bg-opacity-10 p-2 rounded-3"><i class="fas fa-list-check"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ total_tasks }}</h3>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ total_tasks }}</h3>
+            <span class="x-small text-muted fw-semibold">{{ pending_tasks }} ongoing</span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate" style="border-radius: 14px; border-left: 4px solid #10b981 !important;">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Pending Tasks</div>
-                <div class="text-danger bg-danger bg-opacity-10 p-2 rounded-3"><i class="fas fa-clock"></i></div>
+                <div class="small fw-bold text-muted text-uppercase">Staff Online</div>
+                <div class="text-success bg-success bg-opacity-10 p-2 rounded-3"><i class="fas fa-users-viewfinder"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ pending_tasks }}</h3>
+            <h3 class="fw-bold mb-1 text-main font-monospace">3 Members</h3>
+            <span class="x-small text-success fw-bold"><i class="fas fa-circle me-1" style="font-size: 0.5rem; vertical-align: middle;"></i> Available</span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 12px; border: 1px solid var(--border-color) !important;">
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate" style="border-radius: 14px; border-left: 4px solid #ef4444 !important;">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="small fw-bold text-muted text-uppercase">Progress</div>
-                <div class="text-success bg-success bg-opacity-10 p-2 rounded-3"><i class="fas fa-chart-line"></i></div>
+                <div class="small fw-bold text-muted text-uppercase">Overdue Tasks</div>
+                <div class="text-danger bg-danger bg-opacity-10 p-2 rounded-3"><i class="fas fa-circle-exclamation"></i></div>
             </div>
-            <h3 class="fw-bold mb-0">{{ done_tasks }} Done</h3>
+            <h3 class="fw-bold mb-1 text-main font-monospace">{{ overdue_tasks_count }} Tasks</h3>
+            <span class="x-small text-danger fw-bold"><i class="fas fa-triangle-exclamation me-1"></i>Requires review</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate" style="border-radius: 14px; border-left: 4px solid #a855f7 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Paid Revenue</div>
+                <div class="text-purple bg-purple bg-opacity-10 p-2 rounded-3"><i class="fas fa-wallet"></i></div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">${{ revenue_this_month|floatformat:0 }}</h3>
+            <span class="x-small text-success fw-bold"><i class="fas fa-circle-check me-1"></i>Cleared invoices</span>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm p-4 h-100 transition-all hover-translate" style="border-radius: 14px; border-left: 4px solid #6366f1 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="small fw-bold text-muted text-uppercase">Pending Invoices</div>
+                <div class="text-indigo bg-indigo bg-opacity-10 p-2 rounded-3"><i class="fas fa-file-invoice-dollar"></i></div>
+            </div>
+            <h3 class="fw-bold mb-1 text-main font-monospace">${{ pending_payments|floatformat:0 }}</h3>
+            <span class="x-small text-warning fw-bold"><i class="fas fa-clock me-1"></i>Outstanding sum</span>
         </div>
     </div>
 </div>
 
+<!-- Row 1: Team Productivity Chart & Project Status Overview -->
 <div class="row g-4 mb-4">
+    <!-- Team Productivity Analytics Chart -->
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                <h5 class="fw-bold mb-0">My Projects Status</h5>
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h5 class="fw-bold mb-1 text-main"><i class="fas fa-chart-bar text-primary me-2"></i>Task Completion & Delivery Metric</h5>
+                    <p class="text-muted x-small mb-0">Visual summary of ongoing engineering milestones and complete sprints</p>
+                </div>
+                <span class="badge bg-light text-muted border py-2 px-3 font-monospace">Real-time Stats</span>
             </div>
-            <div class="card-body">
-                {% for project in recent_projects %}
-                <div class="mb-4">
+            <div style="position: relative; height: 320px;">
+                <canvas id="pmProductivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Status Overview -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-network-wired text-primary me-2"></i>Engagement Pipeline Stages</h5>
+                <p class="text-muted x-small mb-0">Distribution of workspaces across standard pipeline stages</p>
+            </div>
+            
+            <div class="d-grid gap-4">
+                <div>
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-bold">{{ project.title }}</span>
-                        <span class="small text-muted">{{ project.get_progress }}%</span>
+                        <span class="small fw-bold text-muted text-uppercase">1. Discovery & Planning</span>
+                        <span class="small fw-bold font-monospace text-main">{{ planning_projects }} Projects</span>
                     </div>
-                    <div class="progress" style="height: 8px; border-radius: 4px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ project.get_progress }}%"></div>
+                    <div class="progress" style="height: 10px; border-radius: 6px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {% widthratio planning_projects total_projects 100 %}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold text-muted text-uppercase">2. Design & Development</span>
+                        <span class="small fw-bold font-monospace text-main">{{ development_projects }} Projects</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 6px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {% widthratio development_projects total_projects 100 %}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold text-muted text-uppercase">3. Verification & Testing</span>
+                        <span class="small fw-bold font-monospace text-main">{{ testing_projects }} Projects</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {% widthratio testing_projects total_projects 100 %}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold text-muted text-uppercase">4. Deployment & Launch</span>
+                        <span class="small fw-bold font-monospace text-main">{{ deployment_projects }} Projects</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio deployment_projects total_projects 100 %}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 bg-light rounded-3 d-flex align-items-center gap-3">
+                <div class="bg-success bg-opacity-10 p-2 rounded-circle text-success"><i class="fas fa-check-double"></i></div>
+                <div>
+                    <div class="small fw-bold text-main">Operational Success Velocity</div>
+                    <div class="x-small text-muted">Sprint deployment and milestone releases are moving perfectly within guidelines.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Deadline Alerts Widget & Recent Activities Timeline -->
+<div class="row g-4 mb-4">
+    <!-- Deadline Alerts -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-triangle-exclamation text-danger me-2"></i>Workspace Critical Alerts</h5>
+                <p class="text-muted x-small mb-0">High-priority operational action items and deadlines requiring immediate leader attention</p>
+            </div>
+            
+            <div class="d-grid gap-3">
+                <!-- Alerts for tasks due today -->
+                {% for task in tasks_due_today %}
+                <div class="p-3 rounded-3 bg-danger bg-opacity-10 text-danger border border-danger-subtle d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="fas fa-clock"></i></div>
+                        <div>
+                            <div class="small fw-bold">Task Due Today: {{ task.title }}</div>
+                            <span class="x-small text-muted">Project: {{ task.project.title }} | Assigned: {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-danger">Critical</span>
+                </div>
+                {% empty %}
+                <div class="p-3 rounded-3 bg-success bg-opacity-10 text-success border border-success-subtle d-flex align-items-center gap-3">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="fas fa-circle-check"></i></div>
+                    <div>
+                        <div class="small fw-bold">No tasks due today</div>
+                        <span class="x-small text-muted">All team activities are well-scheduled inside core milestone timelines.</span>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Alerts for delayed projects -->
+                {% for project in delayed_projects_alerts %}
+                <div class="p-3 rounded-3 bg-warning bg-opacity-10 text-warning border border-warning-subtle d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="fas fa-briefcase"></i></div>
+                        <div>
+                            <div class="small fw-bold">Delayed Project: {{ project.title }}</div>
+                            <span class="x-small text-muted">Deadline: {{ project.deadline|date:"M d, Y" }} | Budget: ${{ project.budget_amount }}</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-warning text-dark">Overdue</span>
+                </div>
+                {% endfor %}
+                
+                <!-- Alerts for upcoming meetings -->
+                {% for meeting in upcoming_meetings %}
+                <div class="p-3 rounded-3 bg-primary bg-opacity-10 text-primary border border-primary-subtle d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="far fa-calendar-alt"></i></div>
+                    <div>
+                        <div class="small fw-bold">Meeting: {{ meeting.title }}</div>
+                        <span class="x-small text-muted">Schedule: {{ meeting.start_time|date:"M d, I:M p" }} | Project: {{ meeting.project.title }}</span>
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center py-4">No projects assigned to you.</div>
+                <div class="p-3 rounded-3 bg-light text-muted border d-flex align-items-center gap-3">
+                    <div class="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-secondary" style="width: 32px; height: 32px;"><i class="far fa-handshake"></i></div>
+                    <div>
+                        <div class="small fw-bold">No client syncs scheduled today</div>
+                        <span class="x-small">Book a sync to track operational metrics.</span>
+                    </div>
+                </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                <h5 class="fw-bold mb-0">Upcoming Tasks</h5>
+    
+    <!-- Recent Activities Timeline -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-history text-primary me-2"></i>Workspace Activity Feed</h5>
+                <p class="text-muted x-small mb-0">Live audit stream of all completed tasks, deliverables, payments and feedbacks</p>
             </div>
-            <div class="card-body px-4 pt-3">
-                {% for task in upcoming_deadlines %}
-                <div class="d-flex align-items-center mb-3 p-2 border-bottom border-light">
-                    <div class="flex-grow-1">
-                        <div class="fw-bold small">{{ task.title }}</div>
-                        <div class="text-muted x-small">Project: {{ task.project.title }}</div>
+            
+            <div class="timeline-container px-2" style="max-height: 310px; overflow-y: auto;">
+                {% for log in activity_logs %}
+                <div class="d-flex mb-3 position-relative timeline-item-row">
+                    <div class="me-3 text-center position-relative" style="z-index: 2;">
+                        <div class="p-2 rounded-circle text-primary bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            {% if 'File' in log.activity_type or 'Design' in log.activity_type %}
+                                <i class="fas fa-cloud-upload-alt text-primary"></i>
+                            {% elif 'Payment' in log.activity_type or 'Invoice' in log.activity_type %}
+                                <i class="fas fa-circle-dollar-to-slot text-success"></i>
+                            {% elif 'Feedback' in log.activity_type or 'Approved' in log.activity_type %}
+                                <i class="fas fa-message text-info"></i>
+                            {% else %}
+                                <i class="fas fa-layer-group text-warning"></i>
+                            {% endif %}
+                        </div>
                     </div>
-                    <span class="badge bg-{{ task.priority }} small">{{ task.get_priority_display }}</span>
+                    <div>
+                        <div class="small fw-bold text-main">{{ log.activity_type }}</div>
+                        <p class="text-muted x-small mb-0">{{ log.description }}</p>
+                        <span class="x-small text-muted font-monospace" style="font-size: 0.65rem;">{{ log.created_at|date:"M d, g:i A"|default:"Today" }}</span>
+                    </div>
                 </div>
-                {% empty %}
-                <div class="text-center py-4 text-muted small">No pending tasks for your projects.</div>
                 {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Team Overview Section -->
-<div class="row">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="fw-bold mb-0">Team Overview</h5>
+<!-- Row 3: Quick Actions Panel & Team Availability Widget -->
+<div class="row g-4">
+    <!-- Quick Actions Panel -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-bolt text-warning me-2"></i>Quick Action Suite</h5>
+                <p class="text-muted x-small mb-0">Instantly execute workspace management workflows with one-click triggers</p>
             </div>
-            <div class="card-body px-4">
-                <div class="table-responsive">
-                    <table class="table table-borderless align-middle">
-                        <thead>
-                            <tr class="text-muted small text-uppercase">
-                                <th>Member</th>
-                                <th>Role</th>
-                                <th>Active Tasks</th>
-                                <th>Efficiency</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=3b82f6&color=fff" class="rounded-circle me-2" width="32" height="32">
-                                        <div class="fw-bold small">Alex Johnson</div>
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-light text-dark small">Team Leader</span></td>
-                                <td><div class="small fw-bold">4 Tasks</div></td>
-                                <td>
-                                    <div class="progress" style="height: 6px; width: 100px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 85%"></div>
-                                    </div>
-                                </td>
-                                <td class="text-end"><button class="btn btn-sm btn-light">View</button></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Sarah+Smith&background=random" class="rounded-circle me-2" width="32" height="32">
-                                        <div class="fw-bold small">Sarah Smith</div>
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-light text-dark small">Team Member</span></td>
-                                <td><div class="small fw-bold">7 Tasks</div></td>
-                                <td>
-                                    <div class="progress" style="height: 6px; width: 100px;">
-                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 65%"></div>
-                                    </div>
-                                </td>
-                                <td class="text-end"><button class="btn btn-sm btn-light">View</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
+            
+            <div class="row g-3">
+                <div class="col-6">
+                    <a href="{% url 'create_project' %}" class="btn btn-outline-primary w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-briefcase fa-lg mb-2 text-primary"></i>
+                        <div class="fw-bold small">Create Project</div>
+                        <span class="x-small text-muted d-block">Setup workspace and milestones</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'task_list' %}" class="btn btn-outline-warning w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-tasks fa-lg mb-2 text-warning"></i>
+                        <div class="fw-bold small">Assign Task</div>
+                        <span class="x-small text-muted d-block">Dispatch actions to engineers</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'client_files' %}" class="btn btn-outline-success w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-cloud-upload-alt fa-lg mb-2 text-success"></i>
+                        <div class="fw-bold small">Upload File</div>
+                        <span class="x-small text-muted d-block">Upload blueprints & reports</span>
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'messages' %}" class="btn btn-outline-info w-100 p-3 rounded-3 text-start transition-all hover-translate hover-scale">
+                        <i class="fas fa-comments fa-lg mb-2 text-info"></i>
+                        <div class="fw-bold small">Send Message</div>
+                        <span class="x-small text-muted d-block">Open communication tunnels</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Team Availability Widget -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius: 16px;">
+            <div class="mb-4">
+                <h5 class="fw-bold mb-1 text-main"><i class="fas fa-users-rectangle text-primary me-2"></i>Staff Status Board</h5>
+                <p class="text-muted x-small mb-0">Track workspace workload distribution and real-time team online statuses</p>
+            </div>
+            
+            <div class="d-grid gap-3">
+                {% for member in pm_team_members %}
+                <div class="d-flex align-items-center justify-content-between p-2 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="position-relative">
+                            <img src="{{ member.avatar }}" class="rounded-circle border" width="40" height="40">
+                            <span class="position-absolute bottom-0 end-0 p-1 border border-white rounded-circle bg-{% if member.status == 'Online' %}success{% elif member.status == 'Busy' %}danger{% else %}warning{% endif %}" style="width: 12px; height: 12px;"></span>
+                        </div>
+                        <div>
+                            <div class="small fw-bold text-main">{{ member.name }}</div>
+                            <span class="x-small text-muted">{{ member.role }} | {{ member.tasks }} Active Tasks</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end">
+                        <span class="badge bg-{% if member.status == 'Online' %}success-subtle text-success{% elif member.status == 'Busy' %}danger-subtle text-danger{% else %}warning-subtle text-warning{% endif %} border rounded-2 px-2.5 py-1 text-uppercase x-small">
+                            {{ member.status }}
+                        </span>
+                        <div class="x-small text-muted font-monospace mt-1" style="font-size: 0.65rem;">Productivity: {{ member.productivity }}%</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Render Productivity Chart.js Bar Graph
+        const ctx = document.getElementById('pmProductivityChart').getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const labelColor = isDark ? '#94a3b8' : '#64748b';
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['To Do', 'In Progress', 'In Review', 'Completed'],
+                datasets: [{
+                    label: 'Workflow Deliverables',
+                    data: {{ pm_chart_completion|safe }},
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.85)', // primary (blue)
+                        'rgba(245, 158, 11, 0.85)', // warning (yellow)
+                        'rgba(99, 102, 241, 0.85)',  // indigo
+                        'rgba(16, 185, 129, 0.85)'  // success (green)
+                    ],
+                    borderRadius: 8,
+                    borderWidth: 0,
+                    barThickness: 32
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: labelColor,
+                            font: {
+                                family: 'Inter',
+                                size: 11,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+                        },
+                        ticks: {
+                            color: labelColor,
+                            font: {
+                                family: 'Inter',
+                                size: 11
+                            },
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+<style>
+    .timeline-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    .timeline-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+    }
+    .timeline-item-row::after {
+        content: '';
+        position: absolute;
+        top: 36px;
+        left: 17px;
+        bottom: -24px;
+        width: 2px;
+        background: rgba(59, 130, 246, 0.15);
+        z-index: 1;
+    }
+    .timeline-item-row:last-child::after {
+        display: none;
+    }
+</style>
 {% endblock %}
