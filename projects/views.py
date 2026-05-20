@@ -503,6 +503,15 @@ def create_project(request):
 
 @login_required
 def client_form(request):
+    # Only clients can access this form
+    try:
+        user_role = request.user.profile.role
+    except UserProfile.DoesNotExist:
+        user_role = 'team_member'
+
+    if user_role != 'client':
+        return redirect('dashboard')
+
     if request.method == 'POST':
         form = ClientProjectForm(request.POST, request.FILES)
         if form.is_valid():
@@ -903,12 +912,29 @@ def teams(request):
 
 # Auth Views
 def signup_view(request):
+    # Roles that can only have ONE account system-wide
+    SINGLE_INSTANCE_ROLES = ['admin', 'project_manager']
+
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
+            selected_role = form.cleaned_data.get('role')
+
+            # Block duplicate admin / project_manager registrations
+            if selected_role in SINGLE_INSTANCE_ROLES:
+                already_exists = UserProfile.objects.filter(role=selected_role).exists()
+                if already_exists:
+                    role_label = dict(UserProfile.ROLE_CHOICES).get(selected_role, selected_role)
+                    form.add_error('role', f'A "{role_label}" account already exists. Only one account is allowed for this role.')
+                    return render(request, 'registration/signup.html', {'form': form, 'hide_sidebar': True})
+
             user = form.save()
             login(request, user)
-            return redirect('client_form')
+
+            # Redirect clients to the client intake form; everyone else to dashboard
+            if selected_role == 'client':
+                return redirect('client_form')
+            return redirect('dashboard')
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form, 'hide_sidebar': True})

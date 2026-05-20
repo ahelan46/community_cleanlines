@@ -17,17 +17,19 @@
                 <label class="form-label">{{ field.label }}</label>
                 {{ field.errors }}
                 {% if field.field.widget.input_type == "password" %}
-                <input 
-                    type="password" 
-                    name="{{ field.name }}" 
-                    class="form-control" 
-                    placeholder="{{ field.label }}" 
-                    id="id_{{ field.name }}" 
-                >
-                <span class="position-absolute top-50 end-0 translate-middle-y px-3" style="cursor:pointer;"
-                      onclick="togglePassword('{{ field.name }}')">
-                    <i id="icon_{{ field.name }}" class="bi bi-eye"></i>
-                </span>
+                <div class="position-relative">
+                    <input 
+                        type="password" 
+                        name="{{ field.name }}" 
+                        class="form-control pe-5" 
+                        placeholder="{{ field.label }}" 
+                        id="id_{{ field.name }}" 
+                    >
+                    <span class="position-absolute top-50 end-0 translate-middle-y px-3" style="cursor:pointer; z-index:10;"
+                          onclick="togglePassword('{{ field.name }}')">
+                        <i id="icon_{{ field.name }}" class="bi bi-eye fs-5 text-secondary"></i>
+                    </span>
+                </div>
                 {% else %}
                 <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="form-control" placeholder="{{ field.label }}">
                 {% endif %}
