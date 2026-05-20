@@ -199,12 +199,24 @@ def dashboard(request):
 
     # Add projects assigned to team leader by project manager
     assigned_projects = []
+    tl_clients = Client.objects.none()
     if user_role == 'team_leader':
         # Get projects assigned to the current team leader
         assignments = ProjectAssignment.objects.filter(
             team_leader=request.user
         ).select_related('project', 'assigned_by').order_by('-assigned_at')
         assigned_projects = list(assignments)
+        
+        # Get unique clients whose projects are assigned to this team leader
+        if assignments.exists():
+            assigned_project_ids = list(assignments.values_list('project_id', flat=True))
+            tl_clients = Client.objects.filter(
+                projects__id__in=assigned_project_ids
+            ).annotate(
+                project_count=Count('projects', filter=Q(projects__id__in=assigned_project_ids))
+            ).distinct().order_by('-project_count')
+        else:
+            tl_clients = Client.objects.none()
     
     # Add client data for project managers
     all_clients = []
@@ -257,6 +269,7 @@ def dashboard(request):
         'chart_team_productivity': [8, 12, 10, 15, 6] if done_tasks > 0 else [0, 0, 0, 0, 0],
         'assigned_projects': assigned_projects,
         'all_clients': all_clients,
+        'tl_clients': tl_clients,
     }
     
     template_name = f'projects/dashboards/{user_role}.html'
@@ -272,10 +285,29 @@ from django.http import JsonResponse
 
 @login_required
 def client_list(request):
-    clients = Client.objects.annotate(
-        project_count=Count('projects'),
-        active_project_count=Count('projects', filter=Q(projects__status__in=['planning', 'ongoing', 'on_hold']))
-    )
+    try:
+        user_role = request.user.profile.role
+    except UserProfile.DoesNotExist:
+        user_role = 'team_member'
+    
+    if user_role == 'team_leader':
+        # For team leaders, show only clients whose projects are assigned to them
+        assigned_projects = ProjectAssignment.objects.filter(
+            team_leader=request.user
+        ).values_list('project_id', flat=True)
+        clients = Client.objects.filter(
+            projects__id__in=assigned_projects
+        ).annotate(
+            project_count=Count('projects', filter=Q(projects__id__in=assigned_projects)),
+            active_project_count=Count('projects', filter=Q(projects__status__in=['planning', 'ongoing', 'on_hold'], projects__id__in=assigned_projects))
+        ).distinct()
+    else:
+        # For all other roles, show all clients
+        clients = Client.objects.annotate(
+            project_count=Count('projects'),
+            active_project_count=Count('projects', filter=Q(projects__status__in=['planning', 'ongoing', 'on_hold']))
+        )
+    
     return render(request, 'projects/client_list.html', {'clients': clients})
 
 @login_required
@@ -584,8 +616,13 @@ def task_board(request):
         ).values_list('project_id', flat=True)
         allowed_projects = Project.objects.filter(id__in=assigned_project_ids)
         
+        # Show all team members, or team members from teams if teams exist
         allowed_teams = Team.objects.filter(leaders=request.user)
-        allowed_members = User.objects.filter(teams_joined__in=allowed_teams, profile__role='team_member').distinct()
+        if allowed_teams.exists():
+            allowed_members = User.objects.filter(teams_joined__in=allowed_teams, profile__role='team_member').distinct()
+        else:
+            # If no teams are configured, show all team members
+            allowed_members = User.objects.filter(profile__role='team_member')
 
     if request.method == 'POST':
         # Only team leaders can add tasks

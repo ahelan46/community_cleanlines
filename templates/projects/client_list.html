@@ -220,7 +220,7 @@
                     data-email="{{ client.email|lower }}"
                     data-phone="{{ client.phone|lower }}"
                     data-status="{% if client.active_project_count > 0 %}active{% else %}inactive{% endif %}"
-                    onclick="openClientDetails({{ client.pk }})">
+                    onclick='openClientDetails({{ client.pk }})'>
                     <td class="px-4">
                         <div class="d-flex align-items-center gap-3">
                             <div class="avatar-circle bg-primary bg-opacity-10 text-primary">
