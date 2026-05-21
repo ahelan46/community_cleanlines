@@ -1,0 +1,1797 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance Management | Tracker{% endblock %}
+
+{% block content %}
+<!-- FullCalendar and Chart.js CDN -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="attendance-wrapper">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-1 text-main text-gradient">Team Member Attendance Management</h2>
+            <p class="text-muted small mb-0"><i class="far fa-calendar-alt me-2"></i>{{ current_date_str }} | Real-Time Productivity & Log Tracker</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-glass px-3 py-2 btn-sm" id="btnSync" title="Sync dashboard data">
+                <i class="fas fa-sync-alt"></i> Sync
+            </button>
+            <a href="{% url 'download_attendance_report' %}" class="btn btn-primary px-3 py-2 btn-sm shadow-sm" id="btnExport">
+                <i class="fas fa-file-export me-2"></i> Export Monthly Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Django Messages -->
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm glass-alert" role="alert">
+            <i class="{% if message.tags == 'error' %}fas fa-exclamation-triangle{% else %}fas fa-check-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Role Selection Tabs (Only for PM, TL, Admin) -->
+    {% if user_role != 'team_member' %}
+    <div class="glass-tabs mb-4">
+        <button class="tab-btn active" onclick="switchMainTab('my-attendance')">
+            <i class="fas fa-user me-2"></i> My Attendance
+        </button>
+        <button class="tab-btn" onclick="switchMainTab('team-attendance')">
+            <i class="fas fa-users me-2"></i> {% if user_role == 'team_leader' %}Team Attendance{% elif user_role == 'project_manager' %}Department Overview{% else %}Company-Wide Logs{% endif %}
+        </button>
+        <button class="tab-btn position-relative" onclick="switchMainTab('leave-approvals')">
+            <i class="fas fa-clipboard-check me-2"></i> Leave Approvals
+            {% if pending_leaves %}
+            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 0.65rem;">
+                {{ pending_leaves|length }}
+            </span>
+            {% endif %}
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Tab Contents Wrapper -->
+    <div id="my-attendance-content" class="main-tab-content active-content">
+        
+        <!-- SECTION 1: TOP PANEL (KPI & Smart Check-In Card) -->
+        <div class="row g-4 mb-4">
+            <!-- 1.1 KPI Dashboard Cards (Left) -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="row g-3">
+                    <!-- Circular KPI -->
+                    <div class="col-md-6 col-sm-12">
+                        <div class="glass-card kpi-card height-equal d-flex align-items-center justify-content-between p-4">
+                            <div class="kpi-text">
+                                <span class="text-muted small d-block">Monthly Attendance %</span>
+                                <h2 class="fw-bold mt-1 text-main mb-0">{{ attendance_pct }}%</h2>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle mt-2 d-inline-block">🟢 {{ present_days }} Days Active</span>
+                            </div>
+                            <div class="kpi-circle-progress">
+                                <svg width="100" height="100" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--border-color)" stroke-width="8"></circle>
+                                    <circle id="kpiProgressCircle" cx="50" cy="50" r="40" fill="transparent" stroke="var(--primary-color)" stroke-width="8"
+                                            stroke-dasharray="251.2" stroke-dashoffset="251.2"
+                                            stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <span class="circle-val fw-bold">{{ attendance_pct }}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini KPI cards -->
+                    <div class="col-md-6">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="glass-card kpi-card-mini p-3">
+                                    <span class="text-muted x-small d-block text-uppercase fw-semibold">Present Days</span>
+                                    <h4 class="fw-bold text-main mt-1 mb-0">🟢 {{ present_days }} Days</h4>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="glass-card kpi-card-mini p-3 text-danger-kpi">
+                                    <span class="text-muted x-small d-block text-uppercase fw-semibold">Absent Days</span>
+                                    <h4 class="fw-bold text-danger-color mt-1 mb-0">🔴 {{ absent_days }} Days</h4>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="glass-card kpi-card-mini p-3 text-warning-kpi">
+                                    <span class="text-muted x-small d-block text-uppercase fw-semibold">Late Logins</span>
+                                    <h4 class="fw-bold text-warning-color mt-1 mb-0">🟡 {{ late_logins }} Times</h4>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="glass-card kpi-card-mini p-3">
+                                    <span class="text-muted x-small d-block text-uppercase fw-semibold">Overtime Hours</span>
+                                    <h4 class="fw-bold text-success-color mt-1 mb-0">🔥 {{ overtime_hours }} Hours</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="row g-3">
+                            <div class="col-md-6 col-6">
+                                <div class="glass-card d-flex align-items-center justify-content-between p-3">
+                                    <div>
+                                        <span class="text-muted small d-block">Total Work Hours</span>
+                                        <h4 class="fw-bold text-main mt-1 mb-0">⏱ {{ total_work_hours }} Hours</h4>
+                                    </div>
+                                    <div class="bg-primary-subtle text-primary p-3 rounded-circle" style="font-size: 1.2rem;">
+                                        <i class="fas fa-hourglass-half"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-6">
+                                <div class="glass-card d-flex align-items-center justify-content-between p-3">
+                                    <div>
+                                        <span class="text-muted small d-block">Active Streak</span>
+                                        <h4 class="fw-bold text-main mt-1 mb-0">⚡ {{ streak }} Days</h4>
+                                    </div>
+                                    <div class="bg-warning-subtle text-warning p-3 rounded-circle" style="font-size: 1.2rem;">
+                                        <i class="fas fa-fire"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1.2 Smart Check-In/Check-Out Card (Right) -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="glass-card smart-card text-center p-4 h-100 d-flex flex-column justify-content-between">
+                    <div class="smart-card-header">
+                        <span class="badge bg-glass text-main px-3 py-2 border border-glass small">
+                            <i class="fas fa-wifi me-2"></i><span id="remoteBadgeText">Office Workspace</span>
+                        </span>
+                        <!-- Clock display -->
+                        <h1 class="display-5 fw-bold text-main my-3 font-monospace tracking-wide" id="smartTimer">00:00:00</h1>
+                        <span class="text-muted small d-block" id="currentFullDate">Wednesday, May 20, 2026</span>
+                    </div>
+
+                    <!-- Status Display -->
+                    <div class="my-4 py-3 bg-glass-dark rounded-3 px-3">
+                        <div class="d-flex justify-content-center align-items-center gap-2" id="statusMessage">
+                            {% if today_attendance %}
+                                {% if today_attendance.check_out %}
+                                    <span class="badge bg-danger rounded-circle p-1"><i class="fas fa-circle text-white"></i></span>
+                                    <span class="fw-bold text-main">Checked Out at {{ today_attendance.check_out|date:"g:i A" }}</span>
+                                {% elif active_break %}
+                                    <span class="pulse-dot-warning"></span>
+                                    <span class="fw-bold text-warning">On Break ({{ active_break.get_break_type_display }})</span>
+                                {% else %}
+                                    <span class="pulse-dot-success"></span>
+                                    <span class="fw-bold text-success">Checked In at {{ today_attendance.check_in|date:"g:i A" }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary rounded-circle p-1"><i class="fas fa-circle text-white"></i></span>
+                                <span class="fw-bold text-muted">Not Checked In Today</span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted mt-2 font-monospace" id="workingDuration">
+                            Work Timer: <span id="hoursWorkedVal">0.0h</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="action-buttons-group d-flex flex-column gap-2">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-success btn-lg w-100 shadow-sm border-0 py-3" id="btnCheckIn"
+                                    {% if today_attendance %}disabled{% endif %}>
+                                    <i class="fas fa-sign-in-alt me-2"></i> Check In
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-danger btn-lg w-100 shadow-sm border-0 py-3" id="btnCheckOut"
+                                    {% if not today_attendance or today_attendance.check_out or active_break %}disabled{% endif %}>
+                                    <i class="fas fa-sign-out-alt me-2"></i> Check Out
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Break Controls -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-warning w-100 py-2 border-0 shadow-sm" id="btnStartBreak"
+                                    {% if not today_attendance or today_attendance.check_out or active_break %}disabled{% endif %}>
+                                    <i class="fas fa-mug-hot me-2"></i> Start Break
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-primary w-100 py-2 border-0 shadow-sm" id="btnEndBreak"
+                                    {% if not active_break %}disabled{% endif %}>
+                                    <i class="fas fa-play me-2"></i> End Break
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Action Toggles -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 px-1">
+                            <div class="form-check form-switch text-start">
+                                <input class="form-check-input" type="checkbox" id="wfhSwitch">
+                                <label class="form-check-label text-muted small" for="wfhSwitch">Remote Work Mode</label>
+                            </div>
+                            <a href="#" class="text-primary text-decoration-none small" id="lnkFaceCheckIn">
+                                <i class="fas fa-portrait me-1"></i> Face Check-In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: MAIN WORKSPACE (Calendar, Timeline, Productivity, Leaves) -->
+        <div class="row g-4 mb-4">
+            <!-- Left 8 Columns: Heatmap, Calendar, Timeline -->
+            <div class="col-lg-8">
+                <!-- 2.1 GitHub Style Heatmap Grid -->
+                <div class="glass-card mb-4 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1 text-main">Monthly Attendance Heatmap</h5>
+                            <p class="text-muted x-small mb-0">Consistently track focus days, presence, late logins, and leave.</p>
+                        </div>
+                        <div class="d-flex gap-3 small text-muted align-items-center">
+                            <span>Less</span>
+                            <div class="d-flex gap-1">
+                                <span class="heatmap-legend border" style="background-color: var(--border-color);" title="No Record/Absent"></span>
+                                <span class="heatmap-legend border" style="background-color: #6366f1;" title="Leave"></span>
+                                <span class="heatmap-legend border" style="background-color: #f59e0b;" title="Late Login"></span>
+                                <span class="heatmap-legend border" style="background-color: #10b981;" title="Present"></span>
+                            </div>
+                            <span>More</span>
+                        </div>
+                    </div>
+                    <div class="heatmap-container d-flex flex-wrap gap-1 p-2 bg-glass-dark rounded-3" id="attendanceHeatmap">
+                        <!-- Heatmap items generated via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- 2.2 Interactive Calendar -->
+                <div class="glass-card mb-4 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-main"><i class="far fa-calendar-alt me-2 text-primary"></i>Attendance Calendar</h5>
+                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            Monthly View
+                        </div>
+                    </div>
+                    <div id="attendanceCalendar" class="calendar-content"></div>
+                </div>
+
+                <!-- 2.3 Daily Activity Timeline -->
+                <div class="glass-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1 text-main"><i class="fas fa-stream me-2 text-info"></i>Daily Activity Logs</h5>
+                            <p class="text-muted x-small mb-0">Recent events log and checks history.</p>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-glass btn-sm dropdown-toggle" type="button" id="timelineFilter" data-bs-toggle="dropdown">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 mt-2" style="border-radius: 12px;">
+                                <li><a class="dropdown-item rounded-2 small" href="#" onclick="filterTimeline('all')">All Activities</a></li>
+                                <li><a class="dropdown-item rounded-2 small" href="#" onclick="filterTimeline('check')">Checks Only</a></li>
+                                <li><a class="dropdown-item rounded-2 small" href="#" onclick="filterTimeline('break')">Breaks Only</a></li>
+                                <li><a class="dropdown-item rounded-2 small" href="#" onclick="filterTimeline('leave')">Leaves Only</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="activity-timeline" id="timelineList">
+                        {% if my_activity_logs %}
+                            {% for log in my_activity_logs %}
+                                <div class="timeline-item d-flex gap-3 pb-3 border-start position-relative ps-4" data-type="{% if 'Check' in log.activity_type %}check{% elif 'Break' in log.activity_type %}break{% else %}leave{% endif %}">
+                                    <div class="timeline-dot position-absolute top-0 start-0 translate-middle"></div>
+                                    <div class="timeline-time small text-muted font-monospace">{{ log.created_at|date:"h:i A" }}</div>
+                                    <div class="timeline-body">
+                                        <div class="fw-semibold text-main small">{{ log.activity_type }}</div>
+                                        <div class="x-small text-muted mt-1">{{ log.description }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4 text-muted small">
+                                <i class="fas fa-history d-block display-6 mb-2 opacity-50"></i>
+                                No activity logs recorded today.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right 4 Columns: Productivity, Leave Management, Mood, Screen Capture -->
+            <div class="col-lg-4">
+                <!-- 2.4 Mood Tracker -->
+                <div class="glass-card mb-4 p-4 text-center">
+                    <h5 class="fw-bold mb-1 text-main text-start">Daily Standup Mood</h5>
+                    <p class="text-muted x-small mb-3 text-start">How are you feeling today? Pick an emoji status.</p>
+                    <div class="mood-emojis d-flex justify-content-around py-2">
+                        <button class="mood-btn {% if today_attendance.mood == '😊 Happy' %}active{% endif %}" onclick="selectMood('😊 Happy')">
+                            <span class="fs-2">😊</span>
+                            <span class="d-block x-small text-muted mt-1">Happy</span>
+                        </button>
+                        <button class="mood-btn {% if today_attendance.mood == '😐 Normal' %}active{% endif %}" onclick="selectMood('😐 Normal')">
+                            <span class="fs-2">😐</span>
+                            <span class="d-block x-small text-muted mt-1">Normal</span>
+                        </button>
+                        <button class="mood-btn {% if today_attendance.mood == '😴 Tired' %}active{% endif %}" onclick="selectMood('😴 Tired')">
+                            <span class="fs-2">😴</span>
+                            <span class="d-block x-small text-muted mt-1">Tired</span>
+                        </button>
+                        <button class="mood-btn {% if today_attendance.mood == '🔥 Focused' %}active{% endif %}" onclick="selectMood('🔥 Focused')">
+                            <span class="fs-2">🔥</span>
+                            <span class="d-block x-small text-muted mt-1">Focused</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2.5 Screen Capture & Monitoring Simulation -->
+                <div class="glass-card mb-4 p-4">
+                    <h5 class="fw-bold mb-1 text-main">Monitoring & Focus Monitor</h5>
+                    <p class="text-muted x-small mb-3">Idle state and desktop capture tracker status.</p>
+                    <div class="bg-glass-dark rounded-3 p-3 text-center border position-relative overflow-hidden mb-3">
+                        <div class="small fw-semibold text-main mb-2"><i class="fas fa-desktop me-2 text-primary"></i>Active Monitor Preview</div>
+                        <img src="https://images.unsplash.com/photo-1547082299-de196ea013d6?w=280&auto=format&fit=crop&q=60" 
+                             alt="Desktop Snapshot" class="img-fluid rounded border shadow-sm opacity-75" style="max-height: 120px; object-fit: cover; width: 100%;">
+                        <div class="position-absolute top-50 start-50 translate-middle pointer-events-none">
+                            <span class="badge bg-dark-glass text-success border border-success px-3 py-2 small fw-bold">
+                                <i class="fas fa-circle-notch fa-spin me-2"></i>Capturing (Idle: Active)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="x-small text-muted"><i class="fas fa-lock me-1"></i>Privacy Mode Enabled</div>
+                        <div class="x-small text-muted">Next capture in <span class="fw-semibold font-monospace" id="countdownCapture">3m 45s</span></div>
+                    </div>
+                </div>
+
+                <!-- 2.6 Leave Request Form -->
+                <div class="glass-card mb-4 p-4">
+                    <h5 class="fw-bold mb-2 text-main"><i class="fas fa-plane-departure me-2 text-primary"></i>Request Leave</h5>
+                    <form action="{% url 'submit_leave_request' %}" method="POST" id="leaveRequestForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label x-small text-muted">Leave Type</label>
+                            <select class="form-select form-select-sm" name="leave_type" required>
+                                <option value="sick">Sick Leave (Sick Balance: {{ leave_balance.sick_balance }} days)</option>
+                                <option value="casual">Casual Leave (Casual Balance: {{ leave_balance.casual_balance }} days)</option>
+                                <option value="emergency">Emergency Leave (Emergency Balance: {{ leave_balance.emergency_balance }} days)</option>
+                                <option value="wfh">Work From Home (WFH Balance: {{ leave_balance.wfh_balance }} days)</option>
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label x-small text-muted">Start Date</label>
+                                <input type="date" class="form-control form-control-sm" name="start_date" id="leaveStartDate" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label x-small text-muted">End Date</label>
+                                <input type="date" class="form-control form-control-sm" name="end_date" id="leaveEndDate" required>
+                            </div>
+                        </div>
+                        <div id="approverHint" class="mb-2"></div>
+                        <div class="mb-3">
+                            <label class="form-label x-small text-muted">Reason</label>
+                            <textarea class="form-control form-control-sm" name="reason" rows="2" placeholder="Describe reason for leave..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100 py-2">
+                            <i class="fas fa-paper-plane me-1"></i> Submit Leave Request
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 2.7 Leave Balance & History -->
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3 text-main"><i class="fas fa-history me-2 text-success"></i>My Leave History</h5>
+                    <div class="leave-history-list" style="max-height: 250px; overflow-y: auto;">
+                        {% if my_leaves %}
+                            {% for leave in my_leaves %}
+                                <div class="leave-history-item p-3 rounded-3 mb-2 bg-glass-dark border border-glass">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold text-main small">{{ leave.get_leave_type_display }}</span>
+                                        <span class="badge bg-{% if leave.status == 'approved' %}success{% elif leave.status == 'rejected' %}danger{% else %}warning{% endif %}-subtle text-{% if leave.status == 'approved' %}success{% elif leave.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                            {{ leave.status|title }}
+                                        </span>
+                                    </div>
+                                    <div class="x-small text-muted">
+                                        <i class="far fa-calendar-alt me-1"></i> {{ leave.start_date }} to {{ leave.end_date }}
+                                        ({{ leave.duration_days }} days)
+                                    </div>
+                                    {% if leave.rejection_reason %}
+                                    <div class="x-small text-danger-color mt-2 p-2 rounded-2 bg-danger-subtle" style="font-size: 0.72rem;">
+                                        <strong>Reject Reason:</strong> {{ leave.rejection_reason }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4 text-muted x-small">
+                                No leave requests submitted yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: DAILY STATUS (STANDUP) UPDATE CARD -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="glass-card p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-primary-subtle text-primary p-2 rounded-circle">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1 text-main">Daily Status Update (Standup Log)</h5>
+                            <p class="text-muted x-small mb-0">Submit standup details before checking out to update team leaders and project managers.</p>
+                        </div>
+                    </div>
+                    <form id="statusUpdateForm">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold text-main">Today's Accomplishments / Work Done</label>
+                                <textarea class="form-control form-control-sm" name="today_work" id="txtTodayWork" rows="3" 
+                                          placeholder="Detail features completed, bugs solved, or files created..." required>{% if today_attendance %}{{ today_attendance.today_work|default:'' }}{% endif %}</textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-main">Blockers & Challenges</label>
+                                <textarea class="form-control form-control-sm" name="blockers" id="txtBlockers" rows="3" 
+                                          placeholder="Mention blockers, technical challenges, or dependencies (if any)...">{% if today_attendance %}{{ today_attendance.blockers|default:'' }}{% endif %}</textarea>
+                            </div>
+                            <div class="col-md-3 d-flex flex-column justify-content-between">
+                                <div>
+                                    <label class="form-label small fw-semibold text-main d-flex justify-content-between">
+                                        <span>Daily Task Progress</span>
+                                        <span class="text-primary font-monospace" id="progressVal">{% if today_attendance %}{{ today_attendance.progress }}{% else %}0{% endif %}%</span>
+                                    </label>
+                                    <input type="range" class="form-range" name="progress" id="rangeProgress" min="0" max="100" step="5" 
+                                           value="{% if today_attendance %}{{ today_attendance.progress }}{% else %}0{% endif %}">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 py-2 border-0 shadow-sm mt-3" id="btnSaveStatus">
+                                    <i class="fas fa-check-double me-2"></i> Save Standup Status
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: BOTTOM PANEL (Analytics Charts & Team Standings) -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3 text-main"><i class="fas fa-chart-line me-2 text-primary"></i>Work Hours & Productivity Analytics</h5>
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="weeklyHoursChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-main"><i class="fas fa-trophy me-2 text-warning"></i>Weekly Focus Leaderboard</h5>
+                        <p class="text-muted x-small mb-3">Top-performing employees by productivity/efficiency score.</p>
+                        
+                        <div class="ranking-list">
+                            {% for rank in team_rankings %}
+                            <div class="ranking-item d-flex align-items-center justify-content-between p-2 rounded-3 mb-2 {% if rank.name == user.get_full_name or rank.name == user.username %}bg-primary-subtle border border-primary{% else %}bg-glass-dark{% endif %}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rank-number fw-bold text-muted font-monospace" style="width: 20px;">#{{ forloop.counter }}</div>
+                                    <img src="{{ rank.avatar }}" class="rounded-circle border" width="30" height="30">
+                                    <div>
+                                        <div class="fw-bold text-main small" style="font-size: 0.8rem;">{{ rank.name }}</div>
+                                        <div class="x-small text-muted" style="font-size: 0.7rem;">{{ rank.role }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ rank.efficiency }}% Eff</span>
+                                    <div class="x-small text-muted font-monospace mt-1" style="font-size: 0.65rem;">Completed: {{ rank.tasks }} tasks</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="text-center pt-3 border-top mt-3">
+                        <span class="small text-muted">Your Position: <strong class="text-main fw-bold">#{{ my_rank }}</strong> in the department</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TAB 2: TEAM ATTENDANCE STATUS (TL/PM/Admin view) -->
+    {% if user_role != 'team_member' %}
+    <div id="team-attendance-content" class="main-tab-content">
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1 text-main"><i class="fas fa-users-cog me-2 text-primary"></i>Team/Department Check-In Registry</h5>
+                    <p class="text-muted x-small mb-0">Monitor online status, working locations, devices, standup logs, and progress in real-time.</p>
+                </div>
+                <div class="search-registry-wrapper">
+                    <input type="text" class="form-control form-control-sm bg-glass-dark border border-glass" placeholder="Search members..." id="searchTeamMembers">
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-main" id="tblTeamAttendance">
+                    <thead>
+                        <tr class="text-muted border-bottom" style="font-size: 0.8rem;">
+                            <th>Member Name</th>
+                            <th>Today's Status</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Location/Device</th>
+                            <th>Standup / Daily Progress</th>
+                            <th>Standup Mood</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if team_members %}
+                            {% for m in team_members %}
+                                <tr class="team-member-row border-bottom border-glass" data-name="{{ m.user.get_full_name|default:m.user.username|lower }}">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ m.user.username }}" class="rounded-circle border" width="35" height="35">
+                                            <div>
+                                                <div class="fw-bold small">{{ m.user.get_full_name|default:m.user.username }}</div>
+                                                <div class="x-small text-muted">{{ m.user.profile.get_role_display }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if m.status == 'present' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-check-circle me-1"></i>Present</span>
+                                        {% elif m.status == 'late' %}
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="fas fa-exclamation-circle me-1"></i>Late Login</span>
+                                        {% elif m.status == 'leave' %}
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="fas fa-plane-departure me-1"></i>On Leave</span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fas fa-circle me-1" style="font-size: 0.55rem;"></i>Absent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="font-monospace small">
+                                        {{ m.check_in|date:"h:i A"|default:"--" }}
+                                    </td>
+                                    <td class="font-monospace small">
+                                        {{ m.check_out|date:"h:i A"|default:"--" }}
+                                    </td>
+                                    <td class="small">
+                                        {% if m.status != 'absent' and m.status != 'leave' %}
+                                            <span class="badge bg-glass text-muted"><i class="{% if m.location == 'office' %}fas fa-building{% else %}fas fa-home{% endif %} me-1"></i>{{ m.location|title }}</span>
+                                            <span class="x-small text-muted font-monospace d-block mt-1"><i class="{% if m.device == 'mobile' %}fas fa-mobile-alt{% else %}fas fa-desktop{% endif %} me-1"></i>{{ m.device|title }}</span>
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if m.status != 'absent' and m.status != 'leave' %}
+                                            <div style="max-width: 250px;">
+                                                <div class="x-small fw-semibold text-main text-truncate" title="{{ m.today_work }}">{{ m.today_work|default:"No standup submitted yet." }}</div>
+                                                {% if m.blockers %}
+                                                    <div class="x-small text-danger-color text-truncate mt-1" title="{{ m.blockers }}">🚨 Blockers: {{ m.blockers }}</div>
+                                                {% endif %}
+                                                <div class="progress mt-1" style="height: 5px; border-radius: 10px;">
+                                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ m.progress }}%; border-radius: 10px;"></div>
+                                                </div>
+                                                <span class="x-small text-muted font-monospace mt-1 d-inline-block">{{ m.progress }}% complete</span>
+                                            </div>
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-size: 1.15rem;">
+                                        {{ m.mood|default:"--" }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fas fa-users display-4 d-block mb-3 opacity-25"></i>
+                                    No team members found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 3: LEAVE APPROVALS PANEL (TL/PM/Admin view) -->
+    {% if user_role != 'team_member' %}
+    <div id="leave-approvals-content" class="main-tab-content">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-2 text-main"><i class="fas fa-clipboard-check me-2 text-primary"></i>Pending Leave Approvals</h5>
+            <p class="text-muted x-small mb-4">Review, approve, or reject employee leave requests and adjust balances accordingly.</p>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-main">
+                    <thead>
+                        <tr class="text-muted border-bottom" style="font-size: 0.8rem;">
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>Duration (Dates)</th>
+                            <th>Request Reason</th>
+                            <th>Submitted Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if pending_leaves %}
+                            {% for leave in pending_leaves %}
+                                <tr class="border-bottom border-glass">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ leave.user.username }}" class="rounded-circle border" width="30" height="30">
+                                            <div>
+                                                <div class="fw-bold small">{{ leave.user.get_full_name|default:leave.user.username }}</div>
+                                                <div class="x-small text-muted">{{ leave.user.profile.get_role_display }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ leave.get_leave_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-main">{{ leave.start_date }} to {{ leave.end_date }}</div>
+                                        <div class="x-small text-muted mt-1 font-monospace">({{ leave.duration_days }} days total)</div>
+                                    </td>
+                                    <td>
+                                        <div class="x-small text-muted text-wrap" style="max-width: 250px;">
+                                            {{ leave.reason }}
+                                        </div>
+                                    </td>
+                                    <td class="x-small text-muted font-monospace">
+                                        {{ leave.created_at|date:"M d, Y" }}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            {% with required_role=leave.required_approver_role %}
+                                                {% if user_role == required_role or user_role == 'admin' %}
+                                                    <form action="{% url 'approve_leave' leave.pk %}" method="POST" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-success btn-sm px-3 py-1">Approve</button>
+                                                    </form>
+                                                    <button class="btn btn-outline-danger btn-sm px-3 py-1" onclick="openRejectModal('{{ leave.pk }}', '{{ leave.user.get_full_name|default:leave.user.username }}')">Reject</button>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Awaiting {{ required_role|title }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-clipboard-list display-4 d-block mb-3 opacity-25"></i>
+                                    No pending leave requests found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- MODAL: Mock Webcam Face Scan Check-In -->
+<div class="modal fade glass-modal" id="faceCheckInModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-glass shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-main" id="faceCheckInTitle"><i class="fas fa-portrait me-2 text-primary"></i>Webcam Face Recognition</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="text-muted small mb-3">Align your face inside the camera scan circle below.</p>
+                <div class="camera-scan-viewport border bg-glass-dark rounded-3 position-relative overflow-hidden mb-3 mx-auto" style="width: 320px; height: 320px;">
+                    <!-- Video tag for streaming -->
+                    <video id="webcamVideo" autoplay playsinline width="320" height="320" style="object-fit: cover;"></video>
+                    <!-- Canvas for scanning overlay effects -->
+                    <canvas id="webcamCanvas" class="position-absolute top-0 start-0" width="320" height="320"></canvas>
+                    
+                    <!-- Scan ring -->
+                    <div class="scan-ring position-absolute top-50 start-50 translate-middle"></div>
+                    <!-- Scanning green line -->
+                    <div class="scanning-laser" id="scanningLaser"></div>
+                </div>
+                <div class="fw-bold text-main" id="scanStatus">Initialising camera module...</div>
+                <div class="x-small text-muted mt-2" id="scanSubText">Requesting user camera permissions. Please wait.</div>
+            </div>
+            <div class="modal-footer border-top-0 d-flex gap-2 justify-content-center pb-4">
+                <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel Scan</button>
+                <button class="btn btn-primary px-4 d-none" id="btnManualFaceCapture" onclick="startVerificationScan()">Capture Scan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Mock QR Code Check-In -->
+<div class="modal fade glass-modal" id="qrCheckInModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-glass shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-qrcode me-2 text-primary"></i>In-Office QR Log Check</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="text-muted small mb-3">Place the generated Office QR Code in front of your screen camera.</p>
+                <div class="camera-scan-viewport border bg-glass-dark rounded-3 position-relative overflow-hidden mb-3 mx-auto" style="width: 260px; height: 260px;">
+                    <div class="scanning-laser"></div>
+                    <div class="qr-target-box border border-primary border-4 position-absolute top-50 start-50 translate-middle" style="width: 160px; height: 160px; border-style: dashed !important; opacity: 0.65;"></div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=OfficeAttendanceCheckIn" alt="Mock QR Scanner" class="position-absolute top-50 start-50 translate-middle opacity-50" style="width: 140px; height: 140px;">
+                </div>
+                <div class="fw-bold text-main" id="qrScanStatus">Scanning for QR code...</div>
+                <div class="x-small text-muted mt-2">Make sure you are connected to the internal office network.</div>
+            </div>
+            <div class="modal-footer border-top-0 d-flex gap-2 justify-content-center pb-4">
+                <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel Scan</button>
+                <button class="btn btn-primary px-4" onclick="simulateQRVerificationSuccess()">Simulate Scan Success</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Leave Rejection Reason -->
+<div class="modal fade glass-modal" id="rejectLeaveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-glass shadow-lg">
+            <form action="" method="POST" id="rejectLeaveForm">
+                {% csrf_token %}
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-main"><i class="fas fa-ban me-2 text-danger"></i>Reject Leave Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Provide a reason for rejecting leave request of <strong id="rejectLeaveUser">Employee</strong>.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-main">Rejection Reason</label>
+                        <textarea class="form-control" name="rejection_reason" rows="3" placeholder="Explain the reason for rejection..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 d-flex gap-2 justify-content-end pb-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-4">Submit Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Inactive / Idle Timer Warning -->
+<div class="modal fade glass-modal" id="idleTimeoutModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-glass shadow-lg">
+            <div class="modal-body text-center p-4">
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle d-inline-block mb-3" style="font-size: 2.2rem;">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <h5 class="fw-bold text-main mb-2">Idle Presence Detected!</h5>
+                <p class="text-muted small">You have been inactive for more than 15 minutes. To prevent auto-checkout, click the button below within <strong class="text-danger font-monospace" id="idleCountdownText">60</strong> seconds.</p>
+            </div>
+            <div class="modal-footer border-top-0 d-flex gap-2 justify-content-center pb-4">
+                <button class="btn btn-primary px-5 py-2 fw-semibold" onclick="resetIdleStateFromModal()">
+                    <i class="fas fa-walking me-1"></i> I'm Back (Resume Working)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling System variables for Glassmorphism & Harmony colors */
+    .attendance-wrapper {
+        --primary-color: #3b82f6;
+        --secondary-color: #6366f1;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --glass-bg: rgba(255, 255, 255, 0.45);
+        --glass-border: rgba(255, 255, 255, 0.25);
+        --glass-shadow: rgba(31, 38, 135, 0.05);
+        --text-color: #1e293b;
+        --border-color: #e2e8f0;
+    }
+    
+    html[data-theme="dark"] .attendance-wrapper {
+        --glass-bg: rgba(30, 41, 59, 0.45);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-shadow: rgba(0, 0, 0, 0.2);
+        --border-color: #334155;
+    }
+
+    .text-gradient {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 36px 0 rgba(31, 38, 135, 0.08);
+    }
+
+    .glass-alert {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(8px);
+        border-radius: 12px;
+    }
+    
+    html[data-theme="dark"] .glass-alert {
+        background: rgba(30, 41, 59, 0.7);
+    }
+
+    /* Tabs styling */
+    .glass-tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.35rem;
+        border-radius: 12px;
+        backdrop-filter: blur(8px);
+        max-width: fit-content;
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover,
+    .tab-btn.active {
+        background: var(--primary-color);
+        color: white !important;
+    }
+
+    .main-tab-content {
+        display: none;
+    }
+
+    .main-tab-content.active-content {
+        display: block;
+        animation: fadeIn 0.35s ease-in-out;
+    }
+
+    /* KPI circular progress indicator */
+    .kpi-circle-progress {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .kpi-circle-progress .circle-val {
+        position: absolute;
+        font-size: 1.1rem;
+        color: var(--text-main);
+    }
+
+    .kpi-card-mini {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-radius: 14px;
+        min-height: 80px;
+    }
+
+    /* Smart check in timer badge custom style */
+    .bg-glass {
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+    .bg-glass-dark {
+        background: rgba(0, 0, 0, 0.03);
+    }
+    html[data-theme="dark"] .bg-glass-dark {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Pulse dots */
+    .pulse-dot-success, .pulse-dot-warning {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        position: relative;
+    }
+    .pulse-dot-success {
+        background-color: var(--success-color);
+        box-shadow: 0 0 0 var(--success-color);
+        animation: pulseGreen 2s infinite;
+    }
+    .pulse-dot-warning {
+        background-color: var(--warning-color);
+        box-shadow: 0 0 0 var(--warning-color);
+        animation: pulseYellow 2s infinite;
+    }
+
+    @keyframes pulseGreen {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    @keyframes pulseYellow {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+
+    /* Button custom glass styles */
+    .btn-glass {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .btn-glass:hover {
+        background: rgba(59, 130, 246, 0.08);
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    /* Heatmap styling */
+    .heatmap-legend {
+        width: 10px;
+        height: 10px;
+        display: inline-block;
+        border-radius: 2px;
+    }
+    .heatmap-day {
+        width: calc(100% / 16 - 4px);
+        min-width: 25px;
+        height: 25px;
+        border-radius: 4px;
+        transition: transform 0.15s ease;
+        position: relative;
+    }
+    .heatmap-day:hover {
+        transform: scale(1.18);
+        z-index: 10;
+        cursor: pointer;
+    }
+
+    /* Full Calendar overrides */
+    .fc {
+        font-family: inherit;
+    }
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: var(--border-color);
+    }
+    .fc-header-toolbar {
+        margin-bottom: 1rem !important;
+    }
+    .fc-button-primary {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+    }
+    .fc-button-primary:hover {
+        background-color: var(--secondary-color) !important;
+    }
+    .fc-button-active {
+        background-color: var(--secondary-color) !important;
+    }
+
+    /* Mood button styling */
+    .mood-btn {
+        background: transparent;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 0.5rem;
+        width: 65px;
+        transition: all 0.2s ease;
+    }
+    .mood-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--glass-border);
+    }
+    .mood-btn.active {
+        background: rgba(59, 130, 246, 0.12);
+        border-color: var(--primary-color);
+    }
+
+    /* Webcam scanning overlay design */
+    .camera-scan-viewport video {
+        transform: scaleX(-1);
+    }
+    .scan-ring {
+        width: 220px;
+        height: 220px;
+        border: 3px solid rgba(16, 185, 129, 0.4);
+        border-radius: 50%;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    }
+    .scanning-laser {
+        width: 100%;
+        height: 3px;
+        background-color: #10b981;
+        box-shadow: 0 0 8px 2px #10b981;
+        position: absolute;
+        top: 0;
+        left: 0;
+        animation: scanAnim 3s linear infinite;
+        z-index: 10;
+        pointer-events: none;
+    }
+    @keyframes scanAnim {
+        0% { top: 0%; }
+        50% { top: 100%; }
+        100% { top: 0%; }
+    }
+
+    /* Timeline items */
+    .timeline-item::before {
+        content: '';
+        display: none;
+    }
+    .timeline-item {
+        border-color: var(--border-color) !important;
+    }
+    .timeline-item:last-child {
+        border-left: 1px solid transparent !important;
+    }
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        border: 2px solid white;
+        left: -6px !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    html[data-theme="dark"] .timeline-dot {
+        border-color: #1e293b;
+    }
+
+    /* Glass modals */
+    .glass-modal .modal-content {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+    }
+
+    /* Table styles */
+    .table-hover tbody tr:hover {
+        background-color: rgba(59, 130, 246, 0.03);
+    }
+    .border-glass {
+        border-color: var(--glass-border) !important;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<script>
+    // JS timer state, chart state, heatmap state, idle state
+    let workSecondsTimer = 0;
+    let timerInterval = null;
+    let idleTimeout = null;
+    let countdownInterval = null;
+    let checkInTime = null;
+    let totalWorkHoursRegistered = {{ total_work_hours }};
+    let isCheckedIn = {% if today_attendance and not today_attendance.check_out %}true{% else %}false{% endif %};
+    let isOnBreak = {% if active_break %}true{% else %}false{% endif %};
+
+    // Camera scanning variables
+    let videoStream = null;
+    let canvasAnimationId = null;
+
+    // Document elements
+    const smartTimer = document.getElementById('smartTimer');
+    const workingDuration = document.getElementById('workingDuration');
+    const rangeProgress = document.getElementById('rangeProgress');
+    const progressVal = document.getElementById('progressVal');
+    const btnCheckIn = document.getElementById('btnCheckIn');
+    const btnCheckOut = document.getElementById('btnCheckOut');
+    const btnStartBreak = document.getElementById('btnStartBreak');
+    const btnEndBreak = document.getElementById('btnEndBreak');
+    const wfhSwitch = document.getElementById('wfhSwitch');
+    const remoteBadgeText = document.getElementById('remoteBadgeText');
+    const faceCheckInModal = new bootstrap.Modal(document.getElementById('faceCheckInModal'));
+    const qrCheckInModal = new bootstrap.Modal(document.getElementById('qrCheckInModal'));
+    const idleTimeoutModal = new bootstrap.Modal(document.getElementById('idleTimeoutModal'));
+    const rejectLeaveModal = new bootstrap.Modal(document.getElementById('rejectLeaveModal'));
+
+    // Set today's date inputs constraints
+    document.addEventListener("DOMContentLoaded", function() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const startInput = document.getElementById('leaveStartDate');
+        const endInput = document.getElementById('leaveEndDate');
+        if(startInput) startInput.min = todayStr;
+        if(endInput) endInput.min = todayStr;
+
+        // Set circular progress stroke offset
+        const progressCircle = document.getElementById('kpiProgressCircle');
+        if (progressCircle) {
+            const pct = {{ attendance_pct }};
+            const offset = 251.2 - (251.2 * pct / 100);
+            progressCircle.setAttribute('stroke-dashoffset', offset);
+        }
+
+        // Initialize clock
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Setup sliders
+        if (rangeProgress) {
+            rangeProgress.addEventListener('input', function(e) {
+                progressVal.textContent = e.target.value + '%';
+            });
+        }
+
+        // Initialize standard check-in events
+        btnCheckIn.addEventListener('click', function() {
+            // Check check-in method or simply trigger check-in
+            triggerStandardCheckIn();
+        });
+
+        btnCheckOut.addEventListener('click', triggerCheckOut);
+        btnStartBreak.addEventListener('click', triggerStartBreak);
+        btnEndBreak.addEventListener('click', triggerEndBreak);
+
+        // Face scanner trigger
+        document.getElementById('lnkFaceCheckIn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (isCheckedIn) return;
+            openFaceCheckInModal();
+        });
+
+        // Sync button
+        document.getElementById('btnSync').addEventListener('click', function() {
+            location.reload();
+        });
+
+        // Initialize Charts & FullCalendar
+        initAttendanceCalendar();
+        initHeatmap();
+        initCharts();
+        
+        // Start idle presence detection
+        initPresenceTracking();
+    });
+
+    // Clock
+    function updateClock() {
+        const now = new Date();
+        smartTimer.textContent = now.toLocaleTimeString('en-GB'); // HH:MM:SS format
+    }
+
+    // Tab Switching
+    function switchMainTab(tabId) {
+        document.querySelectorAll('.main-tab-content').forEach(el => {
+            el.classList.remove('active-content');
+        });
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        document.getElementById(tabId + '-content').classList.add('active-content');
+        
+        // Find button that has onclick referring to tabId
+        event.currentTarget.classList.add('active');
+
+        // Reflow calendar if needed
+        if (tabId === 'my-attendance' && calendarInstance) {
+            calendarInstance.updateSize();
+        }
+    }
+
+    // Standup mood selector
+    function selectMood(moodVal) {
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+        
+        // Save mood in database if checked in
+        if (isCheckedIn) {
+            saveStandupStatus(moodVal);
+        }
+    }
+
+    // Save standup status
+    document.getElementById('statusUpdateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveStandupStatus();
+    });
+
+    function saveStandupStatus(selectedMoodOverride = null) {
+        const activeMoodBtn = document.querySelector('.mood-btn.active');
+        const mood = selectedMoodOverride || (activeMoodBtn ? activeMoodBtn.querySelector('span:last-child').textContent : 'Happy');
+        const today_work = document.getElementById('txtTodayWork').value;
+        const blockers = document.getElementById('txtBlockers').value;
+        const progress = rangeProgress ? rangeProgress.value : 0;
+
+        const formData = new FormData();
+        formData.append('mood', mood);
+        formData.append('today_work', today_work);
+        formData.append('blockers', blockers);
+        formData.append('progress', progress);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'attendance_status_update' %}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast("Success", "Daily standup status updated successfully!", "success");
+            } else {
+                showToast("Error", data.message, "danger");
+            }
+        });
+    }
+
+    // Check In API
+    function triggerStandardCheckIn(methodVal = 'standard') {
+        const location = wfhSwitch.checked ? 'remote' : 'office';
+        const activeMoodBtn = document.querySelector('.mood-btn.active');
+        const mood = activeMoodBtn ? activeMoodBtn.querySelector('span:last-child').textContent : 'Happy';
+
+        const formData = new FormData();
+        formData.append('location', location);
+        formData.append('device', 'desktop');
+        formData.append('mood', mood);
+        formData.append('method', methodVal);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'attendance_check_in' %}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast("Success", "Welcome! Check-In Recorded at " + data.check_in_time, "success");
+                isCheckedIn = true;
+                location.reload();
+            } else {
+                showToast("Error", data.message, "danger");
+            }
+        });
+    }
+
+    // Check Out API
+    function triggerCheckOut() {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'attendance_check_out' %}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast("Success", "Goodbye! Check-Out Recorded at " + data.check_out_time, "success");
+                isCheckedIn = false;
+                location.reload();
+            } else {
+                showToast("Error", data.message, "danger");
+            }
+        });
+    }
+
+    // Breaks
+    function triggerStartBreak() {
+        const formData = new FormData();
+        formData.append('break_type', 'lunch');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'attendance_break_start' %}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast("Break Started", "Break timer activated: " + data.start_time, "warning");
+                location.reload();
+            } else {
+                showToast("Error", data.message, "danger");
+            }
+        });
+    }
+
+    function triggerEndBreak() {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'attendance_break_end' %}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast("Break Ended", "Break completed. Duration: " + data.duration_mins + " mins.", "success");
+                location.reload();
+            } else {
+                showToast("Error", data.message, "danger");
+            }
+        });
+    }
+
+    // Search team registry
+    const searchInput = document.getElementById('searchTeamMembers');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.team-member-row').forEach(row => {
+                const name = row.getAttribute('data-name');
+                if (name.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Rejection Modal
+    function openRejectModal(leaveId, userName) {
+        document.getElementById('rejectLeaveUser').textContent = userName;
+        document.getElementById('rejectLeaveForm').action = "/attendance/leave/" + leaveId + "/reject/";
+        rejectLeaveModal.show();
+    }
+
+    // FullCalendar Initialization
+    let calendarInstance = null;
+    function initAttendanceCalendar() {
+        const calendarEl = document.getElementById('attendanceCalendar');
+        if (!calendarEl) return;
+
+        calendarInstance = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 480,
+            events: "{% url 'attendance_events_json' %}",
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            eventClick: function(info) {
+                const props = info.event.extendedProps;
+                let details = `Status: ${info.event.title}\nDate: ${info.event.startStr}`;
+                if (props.type === 'attendance') {
+                    details += `\nLocation: ${props.location}\nDevice: ${props.device}`;
+                    if (props.work_seconds) {
+                        const hrs = (props.work_seconds / 3600).toFixed(1);
+                        details += `\nProductive Hours: ${hrs} hrs`;
+                    }
+                } else if (props.type === 'leave') {
+                    details += `\nLeave Type: ${props.leave_type}\nReason: ${props.reason}`;
+                }
+                alert(details);
+            }
+        });
+        calendarInstance.render();
+    }
+
+    // Heatmap Initialization
+    function initHeatmap() {
+        const container = document.getElementById('attendanceHeatmap');
+        if (!container) return;
+
+        // Fetch events from json URL and fill in heatmap
+        fetch("{% url 'attendance_events_json' %}")
+        .then(res => res.json())
+        .then(events => {
+            // Build a list of the last 45 days
+            const today = new Date();
+            container.innerHTML = '';
+            
+            for (let i = 44; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+
+                // Find event for this day
+                const dayEvent = events.find(e => e.start === dateStr && e.extendedProps.type === 'attendance');
+                const leaveEvent = events.find(e => e.start === dateStr && e.extendedProps.type === 'leave');
+
+                let color = 'var(--border-color)'; // default no-record
+                let tooltip = `${dateStr} : No Record`;
+
+                if (dayEvent) {
+                    if (dayEvent.extendedProps.status === 'present') {
+                        color = '#10b981';
+                        tooltip = `${dateStr} : Present`;
+                    } else if (dayEvent.extendedProps.status === 'late') {
+                        color = '#f59e0b';
+                        tooltip = `${dateStr} : Late Login`;
+                    } else if (dayEvent.extendedProps.status === 'absent') {
+                        color = '#ef4444';
+                        tooltip = `${dateStr} : Absent`;
+                    }
+                } else if (leaveEvent) {
+                    color = '#6366f1';
+                    tooltip = `${dateStr} : Approved Leave (${leaveEvent.extendedProps.leave_type})`;
+                }
+
+                const dayBlock = document.createElement('div');
+                dayBlock.className = 'heatmap-day border border-1 border-white';
+                dayBlock.style.backgroundColor = color;
+                dayBlock.title = tooltip;
+                dayBlock.addEventListener('click', function() {
+                    alert(tooltip);
+                });
+                container.appendChild(dayBlock);
+            }
+        });
+    }
+
+    // Chart.js Configuration
+    function initCharts() {
+        const ctx = document.getElementById('weeklyHoursChart');
+        if (!ctx) return;
+
+        const days = {{ weekly_days|safe }};
+        const workHours = {{ weekly_hours_chart|safe }};
+        const overtime = {{ weekly_overtime_chart|safe }};
+        const productivity = {{ weekly_productivity_chart|safe }};
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Focus Hours Worked',
+                        data: workHours,
+                        backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                        borderRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Overtime',
+                        data: overtime,
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        borderRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Focus Efficiency %',
+                        data: productivity,
+                        type: 'line',
+                        borderColor: '#10b981',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#10b981',
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#7c8ba1',
+                            font: { weight: 'bold' }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#7c8ba1' }
+                    },
+                    y: {
+                        position: 'left',
+                        grid: { color: 'rgba(124, 139, 161, 0.1)' },
+                        ticks: { color: '#7c8ba1' },
+                        title: { display: true, text: 'Hours', color: '#7c8ba1' }
+                    },
+                    y1: {
+                        position: 'right',
+                        grid: { display: false },
+                        ticks: { color: '#10b981' },
+                        title: { display: true, text: 'Efficiency %', color: '#10b981' },
+                        min: 40,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    // WEBCAM MOCK FACE RECOGNITION SCANNING
+    function openFaceCheckInModal() {
+        document.getElementById('scanStatus').textContent = "Requesting webcam stream...";
+        document.getElementById('scanSubText').textContent = "Please allow browser camera permissions if prompted.";
+        faceCheckInModal.show();
+
+        const video = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('webcamCanvas');
+        const laser = document.getElementById('scanningLaser');
+        const captureBtn = document.getElementById('btnManualFaceCapture');
+
+        // Request real camera stream if available, otherwise mock it with green shapes
+        navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320 } })
+        .then(stream => {
+            videoStream = stream;
+            video.srcObject = stream;
+            video.play();
+            captureBtn.classList.remove('d-none');
+            
+            // Draw face helper guides on canvas
+            const ctx = canvas.getContext('2d');
+            function drawOverlay() {
+                ctx.clearRect(0,0, 320, 320);
+                
+                // Animated tracking box
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.arc(160, 160, 95, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Dynamic simulation text
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.8)';
+                ctx.font = '10px monospace';
+                ctx.fillText(`BIOMETRIC FEED - SCANNING AI PORT: ${Math.random().toFixed(4)}`, 15, 25);
+                ctx.fillText(`IRIS LOCK: OK`, 15, 40);
+                ctx.fillText(`SYS TEMPERATURE: 36.4C`, 15, 55);
+
+                canvasAnimationId = requestAnimationFrame(drawOverlay);
+            }
+            drawOverlay();
+            
+            // Auto capture after 4 seconds
+            setTimeout(startVerificationScan, 3500);
+        })
+        .catch(err => {
+            // Draw simulated video on canvas
+            document.getElementById('scanStatus').textContent = "Camera Blocked or Unavailable";
+            document.getElementById('scanSubText').textContent = "Simulating biometric login. Hold still.";
+            
+            const ctx = canvas.getContext('2d');
+            let frame = 0;
+            function drawMockBiometrics() {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0,0,320, 320);
+                
+                // Draw a mock face outline
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(160, 140, 60, 0, Math.PI, false); // chin
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(160, 120, 50, 60, 0, 0, Math.PI*2); // face oval
+                ctx.stroke();
+                
+                // Draw blinking scanning dots
+                ctx.fillStyle = frame % 30 < 15 ? '#ef4444' : '#10b981';
+                ctx.beginPath();
+                ctx.arc(160, 120, 5, 0, Math.PI*2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(160, 160, 100, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.fillStyle = '#10b981';
+                ctx.font = '11px monospace';
+                ctx.fillText(`SIMULATED CAMERA - NO HARDWARE FOUND`, 10, 20);
+                ctx.fillText(`NODE ID: ${Math.floor(Math.random()*100000)}`, 10, 35);
+                ctx.fillText(`SCANNING FACE RECOGNITION...`, 10, 305);
+
+                frame++;
+                canvasAnimationId = requestAnimationFrame(drawMockBiometrics);
+            }
+            drawMockBiometrics();
+            
+            // Auto capture after 3 seconds
+            setTimeout(startVerificationScan, 3000);
+        });
+    }
+
+    // Stop webcam stream helper
+    function stopWebcamStream() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        if (canvasAnimationId) {
+            cancelAnimationFrame(canvasAnimationId);
+            canvasAnimationId = null;
+        }
+    }
+
+    // Trigger face check-in scanning
+    function startVerificationScan() {
+        document.getElementById('scanStatus').textContent = "Matching biometric hash...";
+        document.getElementById('scanSubText').textContent = "Comparing with registered profile faceprint...";
+
+        setTimeout(() => {
+            stopWebcamStream();
+            faceCheckInModal.hide();
+            triggerStandardCheckIn('face_biometrics');
+        }, 1500);
+    }
+
+    // QR scan simulation
+    function simulateQRVerificationSuccess() {
+        qrCheckInModal.hide();
+        triggerStandardCheckIn('qr_code');
+    }
+
+    // Close webcam stream when modal closes
+    document.getElementById('faceCheckInModal').addEventListener('hidden.bs.modal', function () {
+        stopWebcamStream();
+    });
+
+    // PRESENCE TRACKING & IDLE TIMEOUT
+    let idleCountdown = 60;
+    let countdownTimer = null;
+    function initPresenceTracking() {
+        if (!isCheckedIn) return; // Only monitor if user is active
+
+        const idleLimit = 15 * 60 * 1000; // 15 minutes in milliseconds
+        
+        function resetIdleTimer() {
+            clearTimeout(idleTimeout);
+            idleTimeout = setTimeout(showIdleAlert, idleLimit);
+        }
+
+        // Add mouse / key listeners
+        window.onload = resetIdleTimer;
+        document.onmousemove = resetIdleTimer;
+        document.onkeypress = resetIdleTimer;
+        document.onclick = resetIdleTimer;
+        document.onscroll = resetIdleTimer;
+
+        resetIdleTimer();
+    }
+
+    function showIdleAlert() {
+        // Stop presence listeners temporarily
+        document.onmousemove = null;
+        document.onkeypress = null;
+        
+        idleCountdown = 60;
+        document.getElementById('idleCountdownText').textContent = idleCountdown;
+        
+        // Show Warning Modal
+        idleTimeoutModal.show();
+        
+        // Countdown
+        countdownTimer = setInterval(() => {
+            idleCountdown--;
+            document.getElementById('idleCountdownText').textContent = idleCountdown;
+            
+            if (idleCountdown <= 0) {
+                clearInterval(countdownTimer);
+                idleTimeoutModal.hide();
+                // Auto Check-Out
+                triggerCheckOut();
+                showToast("System Auto Checkout", "You were logged out due to inactivity.", "danger");
+            }
+        }, 1000);
+    }
+
+    function resetIdleStateFromModal() {
+        clearInterval(countdownTimer);
+        idleTimeoutModal.hide();
+        
+        // Resume presence listeners
+        initPresenceTracking();
+        showToast("Welcome Back", "Inactivity timer has been successfully reset.", "success");
+    }
+
+    // TOAST NOTIFICATIONS HELPER
+    function showToast(title, body, type = 'primary') {
+        // Simply alert if bootstrap toast isn't loaded, or log in timeline
+        console.log(`[${type.toUpperCase()}] ${title}: ${body}`);
+        
+        // Inject a custom visual floating banner for supreme polish
+        const container = document.querySelector('.attendance-wrapper');
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show border-0 shadow-lg position-fixed top-0 start-50 translate-middle-x mt-4 glass-alert" role="alert" style="z-index: 9999; min-width: 300px;">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>${title}</strong>: ${body}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = alertHtml;
+        document.body.appendChild(tempDiv.firstElementChild);
+        
+        setTimeout(() => {
+            const activeAlerts = document.querySelectorAll('.position-fixed.glass-alert');
+            activeAlerts.forEach(alert => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            });
+        }, 4000);
+    }
+
+
+    function updateApproverHint() {
+        const start = document.getElementById('leaveStartDate').value;
+        const end = document.getElementById('leaveEndDate').value;
+        if (start && end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            let approver = '';
+            if (days <= 2) approver = 'Team Leader';
+            else if (days <= 5) approver = 'Project Manager';
+            else approver = 'Admin';
+            document.getElementById('approverHint').innerHTML = `<small class="text-muted">This request will be sent to <strong>${approver}</strong> for approval (${days} days).</small>`;
+        }
+    }
+    document.getElementById('leaveStartDate').addEventListener('change', updateApproverHint);
+    document.getElementById('leaveEndDate').addEventListener('change', updateApproverHint);
+    // Filter Daily Activity Timeline
+    function filterTimeline(type) {
+        document.querySelectorAll('#timelineList .timeline-item').forEach(item => {
+            if (type === 'all' || item.getAttribute('data-type') === type) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

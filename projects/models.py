@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import date, datetime
 
 class UserProfile(models.Model):
     ROLE_CHOICES = [
@@ -346,3 +347,150 @@ class ClientPermission(models.Model):
 
     def __str__(self):
         return f"Permissions for {self.client.name}"
+
+class Attendance(models.Model):
+    STATUS_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('late', 'Late'),
+        ('leave', 'Leave'),
+    ]
+    LOCATION_CHOICES = [
+        ('office', 'Office'),
+        ('remote', 'Remote'),
+    ]
+    DEVICE_CHOICES = [
+        ('desktop', 'Desktop'),
+        ('mobile', 'Mobile Login'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='attendances')
+    date = models.DateField(default=date.today)
+    check_in = models.DateTimeField(null=True, blank=True)
+    check_out = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='present')
+    location = models.CharField(max_length=20, choices=LOCATION_CHOICES, default='office')
+    device = models.CharField(max_length=20, choices=DEVICE_CHOICES, default='desktop')
+    
+    # Daily status update (standup)
+    today_work = models.TextField(blank=True, null=True)
+    blockers = models.TextField(blank=True, null=True)
+    progress = models.IntegerField(default=0) # 0 to 100
+    
+    # Mood status
+    mood = models.CharField(max_length=20, blank=True, null=True) # e.g. Happy, Normal, Tired
+    
+    # Streak count
+    streak = models.PositiveIntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'date')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date} - {self.status}"
+
+    def total_work_seconds(self):
+        if not self.check_in or not self.check_out:
+            return 0
+        diff = (self.check_out - self.check_in).total_seconds()
+        # Subtract break durations
+        break_duration = sum([b.duration_seconds() for b in self.breaks.all() if b.end_time])
+        return max(0, int(diff - break_duration))
+
+class BreakLog(models.Model):
+    BREAK_CHOICES = [
+        ('lunch', 'Lunch Break'),
+        ('tea', 'Tea Break'),
+        ('meeting', 'Meeting Break'),
+    ]
+    attendance = models.ForeignKey(Attendance, on_delete=models.CASCADE, related_name='breaks')
+    break_type = models.CharField(max_length=20, choices=BREAK_CHOICES, default='lunch')
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+
+    def duration_seconds(self):
+        if not self.end_time:
+            from django.utils import timezone
+            return int((timezone.now() - self.start_time).total_seconds())
+        return int((self.end_time - self.start_time).total_seconds())
+
+    def __str__(self):
+        return f"{self.attendance.user.username} - {self.break_type} ({self.start_time})"
+
+class LeaveRequest(models.Model):
+    LEAVE_CHOICES = [
+        ('sick', 'Sick Leave'),
+        ('casual', 'Casual Leave'),
+        ('emergency', 'Emergency Leave'),
+        ('wfh', 'Work From Home'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='leave_requests')
+    leave_type = models.CharField(max_length=20, choices=LEAVE_CHOICES, default='casual')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_leaves')
+    rejection_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def required_approver_role(self):
+        days = self.duration_days()
+        if 1 <= days <= 2:
+            return 'team_leader'
+        elif 3 <= days <= 5:
+            return 'project_manager'
+        else:
+            return 'admin'
+        
+    def __str__(self):
+        return f"{self.user.username} - {self.leave_type} ({self.start_date} to {self.end_date})"
+
+    def duration_days(self):
+        return (self.end_date - self.start_date).days + 1
+
+class LeaveBalance(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='leave_balance')
+    sick_balance = models.PositiveIntegerField(default=12)
+    casual_balance = models.PositiveIntegerField(default=15)
+    emergency_balance = models.PositiveIntegerField(default=5)
+    wfh_balance = models.PositiveIntegerField(default=20)
+
+    def __str__(self):
+        return f"{self.user.username}'s Leave Balance"
+
+class ProductivityLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='productivity_logs')
+    date = models.DateField(default=date.today)
+    focus_time_seconds = models.PositiveIntegerField(default=0)
+    efficiency = models.PositiveIntegerField(default=90)
+    tasks_completed = models.PositiveIntegerField(default=0)
+    bugs_fixed = models.PositiveIntegerField(default=0)
+    files_uploaded = models.PositiveIntegerField(default=0)
+    meetings_attended = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('user', 'date')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date} - {self.efficiency}%"
+
+# Signals to automatically create LeaveBalance
+@receiver(post_save, sender=User)
+def create_leave_balance(sender, instance, created, **kwargs):
+    if created:
+        LeaveBalance.objects.get_or_create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_leave_balance(sender, instance, **kwargs):
+    if hasattr(instance, 'leave_balance'):
+        instance.leave_balance.save()
+    else:
+        LeaveBalance.objects.get_or_create(user=instance)

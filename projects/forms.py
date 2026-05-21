@@ -83,6 +83,16 @@ class ClientProjectForm(forms.Form):
         })
     )
     
+    company_name = forms.CharField(
+        label='Company / Organization Name',
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your company name'
+        })
+    )
+    
     phone = forms.CharField(
         label='Phone Number',
         max_length=20,

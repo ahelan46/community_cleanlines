@@ -13,13 +13,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.SeparateDatabaseAndState(
-            state_operations=[
-                migrations.AddField(
-                    model_name='client',
-                    name='client_id',
-                    field=models.CharField(blank=True, max_length=50, null=True),
-                ),
+        migrations.AddField(
+            model_name='client',
+            name='client_id',
+            field=models.CharField(blank=True, max_length=50, null=True),
+        ),
                 migrations.AddField(
                     model_name='client',
                     name='last_meeting_date',
@@ -173,8 +171,6 @@ class Migration(migrations.Migration):
                         ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files', to='projects.task')),
                     ],
                 ),
-            ]
-        ),
         migrations.AddField(
             model_name='project',
             name='approval_status',

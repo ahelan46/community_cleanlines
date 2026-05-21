@@ -251,8 +251,7 @@
                     <div>
                         <div class="small fw-bold text-main">{{ act.activity_type }}</div>
                         <p class="text-muted x-small mb-0">{{ act.description }}</p>
-                        <span class="x-small text-muted font-monospace" style="font-size: 0.65rem;">{{ act.time
-                            }}</span>
+                        <span class="x-small text-muted font-monospace" style="font-size: 0.65rem;">{{ act.time }}</span>
                     </div>
                 </div>
                 {% endfor %}
@@ -341,8 +340,7 @@
                                 class="badge bg-{% if dev.workload == 'Overloaded' %}danger-subtle text-danger{% elif dev.workload == 'Balanced' %}success-subtle text-success{% else %}info-subtle text-info{% endif %} px-2.5 py-0.5 rounded-2 x-small text-uppercase">
                                 {{ dev.workload }}
                             </span>
-                            <span class="x-small font-monospace text-main" title="Team Mood Indicator">{{ dev.mood
-                                }}</span>
+                            <span class="x-small font-monospace text-main" title="Team Mood Indicator">{{ dev.mood }}</span>
                         </div>
                         <div class="x-small text-muted" style="font-size: 0.65rem;">Last Login: Today 9:30 AM</div>
                     </div>

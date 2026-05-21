@@ -43,5 +43,17 @@ urlpatterns = [
     path('assignment/<int:assignment_id>/accept/', views.accept_project_assignment, name='accept_project_assignment'),
     path('assignment/<int:assignment_id>/reject/', views.reject_project_assignment, name='reject_project_assignment'),
     path('projects/<int:project_id>/assign-to/<int:team_leader_id>/', views.quick_assign_project, name='quick_assign_project'),
-
+    
+    # Attendance URLs
+    path('attendance/', views.attendance_dashboard, name='attendance_dashboard'),
+    path('attendance/check-in/', views.attendance_check_in, name='attendance_check_in'),
+    path('attendance/check-out/', views.attendance_check_out, name='attendance_check_out'),
+    path('attendance/break/start/', views.attendance_break_start, name='attendance_break_start'),
+    path('attendance/break/end/', views.attendance_break_end, name='attendance_break_end'),
+    path('attendance/status/', views.attendance_status_update, name='attendance_status_update'),
+    path('attendance/leave/request/', views.submit_leave_request, name='submit_leave_request'),
+    path('attendance/leave/<int:pk>/approve/', views.approve_leave, name='approve_leave'),
+    path('attendance/leave/<int:pk>/reject/', views.reject_leave, name='reject_leave'),
+    path('attendance/report/download/', views.download_attendance_report, name='download_attendance_report'),
+    path('attendance/events/json/', views.attendance_events_json, name='attendance_events_json'),
 ]

@@ -590,8 +590,7 @@ html[data-theme="dark"] .timeline-dot {
                         <div class="fw-bold text-main">{{ user.username }}</div>
                         <div class="text-muted x-small mb-1" style="font-size: 0.75rem;">{{ user.email }}</div>
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
-                            style="font-size: 0.7rem;">{% if user.profile %}{{ user.profile.get_role_display }}{% else
-                            %}No Role{% endif %}</span>
+                            style="font-size: 0.7rem;">{% if user.profile %}{{ user.profile.get_role_display }}{% else %}No Role{% endif %}</span>
                     </li>
                     <li><a class="dropdown-item py-2 rounded-2" href="{% url 'settings' %}"><i
                                 class="far fa-user me-2"></i> Profile</a></li>
@@ -681,6 +680,15 @@ html[data-theme="dark"] .timeline-dot {
                         class="nav-link-custom {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}"
                         title="Calendar">
                         <i class="fas fa-calendar-alt"></i> <span class="nav-link-text">Calendar</span>
+                    </a>
+                </div>
+
+                <!-- Attendance -->
+                <div class="nav-item-custom">
+                    <a href="{% url 'attendance_dashboard' %}"
+                        class="nav-link-custom {% if request.resolver_match.url_name == 'attendance_dashboard' %}active{% endif %}"
+                        title="Attendance">
+                        <i class="fas fa-clock"></i> <span class="nav-link-text">Attendance</span>
                     </a>
                 </div>
                 {% endif %}

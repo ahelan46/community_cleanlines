@@ -60,6 +60,11 @@
                                 {{ form.client_name }}
                                 <div class="invalid-feedback">Please enter your contact name.</div>
                             </div>
+                            <div class="col-12">
+                                <label class="form-label text-main">Company / Organization Name</label>
+                                {{ form.company_name }}
+                                <div class="invalid-feedback">Please enter your company name.</div>
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label text-main">Direct Phone Number</label>
                                 {{ form.phone }}
@@ -147,6 +152,10 @@
                                 <div class="col-md-6">
                                     <span class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Target Deadline</span>
                                     <span class="d-block text-main fw-bold" id="revDeadline">--</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.65rem;">Company Name</span>
+                                    <span class="d-block text-main fw-bold" id="revCompanyName">--</span>
                                 </div>
                             </div>
                         </div>
@@ -304,6 +313,7 @@
             document.getElementById("revClientName").textContent = nameField ? nameField.value : "--";
             document.getElementById("revClientContact").textContent = `${emailField ? emailField.value : "--"} • ${phoneField ? phoneField.value : "--"}`;
             document.getElementById("revProjectTitle").textContent = projectTitleField ? projectTitleField.value : "--";
+            document.getElementById("revCompanyName").textContent = document.getElementById("id_company_name").value;
             
             const prio = document.getElementById("wizardPriority");
             const budg = document.getElementById("wizardBudget");
