@@ -4,11 +4,17 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold mb-0">Projects Assigned to Me</h3>
-        <p class="text-muted small mb-0">Manage projects assigned by your project manager</p>
-    </div>
+  <div>
+    <h3 class="fw-bold mb-0">Projects Assigned to Me</h3>
+    <p class="text-muted small mb-0">Manage projects assigned by your project manager</p>
+  </div>
+  <div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUrlModal">
+      <i class="fas fa-plus me-1"></i> Add Demo URL
+    </button>
+  </div>
 </div>
+
 
 <!-- Pending Assignments -->
 <div class="row g-4 mb-4">
@@ -186,4 +192,84 @@
         font-size: 0.875rem;
     }
 </style>
+<div class="modal fade" id="addUrlModal" tabindex="-1" aria-labelledby="addUrlModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="addUrlModalLabel">Add Demo URLs</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="{% url 'add_url' %}">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="client_name" class="form-label fw-bold">Client Name</label>
+            <select id="client_name" name="client_name" class="form-select" onchange="loadProjects()">
+              <option value="">Select Client</option>
+              {% for client in clients %}
+                <option value="{{ client.id }}">{{ client.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="project_name" class="form-label fw-bold">Project Name</label>
+            <select id="project_name" name="project_name" class="form-select">
+              <option value="">Select Project</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="demo_video_url" class="form-label fw-bold">Demo Video URL</label>
+            <input type="url" id="demo_video_url" name="demo_video_url" class="form-control"
+                   placeholder="https://example.com/video">
+          </div>
+
+          <div class="mb-3">
+            <label for="demo_project_url" class="form-label fw-bold">Demo Project URL</label>
+            <input type="url" id="demo_project_url" name="demo_project_url" class="form-control"
+                   placeholder="https://example.com/project">
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-check me-1"></i> Submit
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-1"></i> Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function loadProjects() {
+  const clientId = document.getElementById("client_name").value;
+  const projectSelect = document.getElementById("project_name");
+
+  projectSelect.innerHTML = "<option value=''>Loading...</option>";
+
+  if (clientId) {
+    fetch(`/projects/by-client/${clientId}/`)
+      .then(response => response.json())
+      .then(data => {
+        projectSelect.innerHTML = "<option value=''>Select Project</option>";
+        data.forEach(project => {
+          projectSelect.innerHTML += `<option value="${project.id}">${project.title}</option>`;
+        });
+      })
+      .catch(err => {
+        projectSelect.innerHTML = "<option value=''>Error loading projects</option>";
+        console.error(err);
+      });
+  } else {
+    projectSelect.innerHTML = "<option value=''>Select Project</option>";
+  }
+}
+</script>
+
+
 {% endblock %}

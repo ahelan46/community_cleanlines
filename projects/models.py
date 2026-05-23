@@ -155,6 +155,25 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+    
+class DemoURL(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("rejected", "Rejected"),
+    ]
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="demo_urls")
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="demo_urls")
+    demo_video_url = models.URLField(blank=True, null=True)
+    demo_project_url = models.URLField(blank=True, null=True)
+    advance_payment = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    full_payment = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.client.name} - {self.project.title}"
 
 class Task(models.Model):
     STATUS_CHOICES = [

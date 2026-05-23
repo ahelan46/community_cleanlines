@@ -60,4 +60,15 @@ urlpatterns = [
     path('attendance/leave/<int:pk>/reject/', views.reject_leave, name='reject_leave'),
     path('attendance/report/download/', views.download_attendance_report, name='download_attendance_report'),
     path('attendance/events/json/', views.attendance_events_json, name='attendance_events_json'),
+
+    path("add-url/", views.add_url, name="add_url"),
+    path("projects/by-client/<int:client_id>/", views.get_projects_by_client, name="get_projects_by_client"),
+
+     # Project Detail list page
+    path("project-details/", views.project_detail_list, name="project_detail_list"),
+
+    # Edit Demo URL page
+    path("project-details/edit/<int:pk>/", views.edit_demo_url, name="edit_demo_url"),
+    path("workspace/<int:pk>/", views.workspace_details, name="workspace_details"),
+
 ]

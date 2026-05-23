@@ -1,0 +1,43 @@
+<!--URL edit page-->
+
+{% extends 'base.html' %}
+
+{% block title %}Project Details | Tracker{% endblock %}
+
+{% block content %}
+<div class="glass-card p-4">
+    <h2 class="fw-bold mb-4">Project Details</h2>
+
+    <table class="table table-dark table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Project</th>
+                <th>Demo Video URL</th>
+                <th>Demo Project URL</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in demo_urls %}
+            <tr>
+                <td>{{ entry.client.name }}</td>
+                <td>{{ entry.project.title }}</td>
+                <td><a href="{{ entry.demo_video_url }}" target="_blank">{{ entry.demo_video_url }}</a></td>
+                <td><a href="{{ entry.demo_project_url }}" target="_blank">{{ entry.demo_project_url }}</a></td>
+                <td>
+                    <a href="{% url 'edit_demo_url' entry.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center text-muted">No demo URLs added yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+</div>
+{% endblock %}

@@ -655,6 +655,16 @@ html[data-theme="dark"] .timeline-dot {
                 </div>
                 {% endif %}
 
+                {% if user.profile.role == 'project_manager' or user.profile.role == 'admin' %}
+                <div class="nav-item-custom">
+                  <a href="{% url 'project_detail_list' %}" 
+                    class="nav-link-custom {% if request.resolver_match.url_name == 'project_detail_list' %}active{% endif %}" 
+                    title="Project Detail">
+                      <i class="fas fa-info-circle"></i> <span class="nav-link-text">Project Detail</span>
+                  </a>
+              </div>
+                {% endif %}
+
                 {% if user.profile.role == 'team_leader' %}
                 <div class="nav-item-custom">
                     <a href="{% url 'team_leader_projects' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'team_leader_projects' %}active{% endif %}" title="Assigned Projects">

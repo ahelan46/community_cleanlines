@@ -12,6 +12,9 @@ from django.contrib.auth.models import User
 from django.template.loader import get_template, TemplateDoesNotExist
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+
+from .models import DemoURL
+
 import json
 
 @login_required
@@ -1430,19 +1433,31 @@ def assign_project_to_leader(request, project_id):
 @login_required
 def team_leader_projects(request):
     """Team Leader sees all projects assigned to him"""
+
     # Get all project assignments for this team leader
     assignments = ProjectAssignment.objects.filter(team_leader=request.user)
-    
+
     pending_assignments = assignments.filter(status='pending')
     accepted_assignments = assignments.filter(status='accepted')
     rejected_assignments = assignments.filter(status='rejected')
-    
+
+    # ✅ Correct way: filter projects via assignments relation
+    projects = Project.objects.filter(
+        assignments__team_leader=request.user,
+        assignments__status='accepted'
+    ).distinct()
+
+    clients = Client.objects.all()
+
     context = {
-        'pending_assignments': pending_assignments,
-        'accepted_assignments': accepted_assignments,
-        'rejected_assignments': rejected_assignments,
+        "projects": projects,
+        "clients": clients,
+        "pending_assignments": pending_assignments,
+        "accepted_assignments": accepted_assignments,
+        "rejected_assignments": rejected_assignments,
     }
-    return render(request, 'projects/team_leader_projects.html', context)
+    return render(request, "projects/team_leader_projects.html", context)
+
 
 @login_required
 def accept_project_assignment(request, assignment_id):
@@ -2434,3 +2449,81 @@ def attendance_events_json(request):
             curr_d += timedelta(days=1)
 
     return JsonResponse(events, safe=False)
+
+@login_required
+def add_url(request):
+    if request.method == "POST":
+        client_id = request.POST.get("client_name")
+        project_id = request.POST.get("project_name")
+        demo_video_url = request.POST.get("demo_video_url")
+        demo_project_url = request.POST.get("demo_project_url")
+
+        # ✅ Save into DemoURL model
+        DemoURL.objects.create(
+            client_id=client_id,
+            project_id=project_id,
+            demo_video_url=demo_video_url,
+            demo_project_url=demo_project_url,
+        )
+
+        # ✅ Redirect back to the same page (modal parent)
+        return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+    # If GET request, just redirect to dashboard or the same page
+    return redirect("dashboard")
+
+
+
+@login_required
+def get_projects_by_client(request, client_id):
+    projects = Project.objects.filter(client_id=client_id).values("id", "title")
+    return JsonResponse(list(projects), safe=False)
+
+@login_required
+def project_detail_list(request):
+    demo_urls = DemoURL.objects.select_related("client", "project").all()
+    return render(request, "projects/project_detail_list.html", {"demo_urls": demo_urls})
+
+
+@login_required
+def edit_demo_url(request, pk):
+    demo_url = get_object_or_404(DemoURL, pk=pk)
+
+    if request.method == "POST":
+        # URLs are read-only, so we don’t update them
+        advance_payment = request.POST.get("advance_payment")
+        full_payment = request.POST.get("full_payment")
+
+        # Convert to Decimal if provided
+        from decimal import Decimal, InvalidOperation
+        try:
+            demo_url.advance_payment = Decimal(advance_payment) if advance_payment else None
+        except InvalidOperation:
+            demo_url.advance_payment = None
+
+        try:
+            demo_url.full_payment = Decimal(full_payment) if full_payment else None
+        except InvalidOperation:
+            demo_url.full_payment = None
+
+        demo_url.save()
+        return redirect("project_detail_list")
+
+    return render(request, "projects/edit_demo_url.html", {"demo_url": demo_url})
+
+@login_required
+def workspace_details(request, pk):
+    demo_url = get_object_or_404(DemoURL, pk=pk)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "accept":
+            demo_url.status = "accepted"
+        elif action == "reject":
+            demo_url.status = "rejected"
+        demo_url.save()
+        return redirect("client_projects")  # back to client projects page
+
+    return render(request, "projects/workspace_details.html", {"demo_url": demo_url})
+
+
