@@ -1,0 +1,171 @@
+<div class="row g-0">
+    <div class="col-md-3 bg-light border-end">
+        <div class="p-4 text-center">
+            <img src="{% if target_user.profile.profile_picture %}{{ target_user.profile.profile_picture.url }}{% else %}https://api.dicebear.com/7.x/avataaars/svg?seed={{ target_user.username }}{% endif %}" class="rounded-circle border mb-3 shadow-sm" width="120" height="120">
+            <h5 class="fw-bold text-main mb-1">{{ target_user.get_full_name|default:target_user.username }}</h5>
+            <p class="small text-muted mb-2">{{ target_user.profile.get_role_display }}</p>
+            <p class="x-small text-muted mb-3"><i class="fas fa-building me-1"></i>{{ target_user.profile.department|default:"General" }}</p>
+            
+            <div class="d-grid gap-2">
+                <a href="mailto:{{ target_user.email }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-envelope me-2"></i>Email</a>
+                {% if target_user.profile.phone %}
+                <a href="tel:{{ target_user.profile.phone }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-phone me-2"></i>Call</a>
+                {% endif %}
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="text-start">
+                <div class="mb-2"><span class="small text-muted d-block">Joining Date</span><span class="fw-bold small">{{ target_user.date_joined|date:"M d, Y" }}</span></div>
+                <div class="mb-2"><span class="small text-muted d-block">Employee ID</span><span class="fw-bold font-monospace small">EMP-{{ target_user.id|stringformat:"04d" }}</span></div>
+                <div class="mb-2"><span class="small text-muted d-block">Last Login</span><span class="fw-bold small">{{ target_user.last_login|date:"M d, g:i A"|default:"Never" }}</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="p-4">
+            <ul class="nav nav-tabs mb-4 border-bottom-0" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active fw-bold border-0 border-bottom border-3 border-primary" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button">Overview</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link fw-bold border-0 text-muted" data-bs-toggle="tab" data-bs-target="#tab-projects" type="button" onclick="this.classList.add('border-bottom', 'border-3', 'border-primary', 'text-main'); this.classList.remove('text-muted'); [...this.parentElement.parentElement.children].forEach(c => { if(c.children[0]!==this) { c.children[0].classList.remove('border-bottom', 'border-3', 'border-primary', 'text-main'); c.children[0].classList.add('text-muted'); } })">Projects & Tasks</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link fw-bold border-0 text-muted" data-bs-toggle="tab" data-bs-target="#tab-attendance" type="button" onclick="this.classList.add('border-bottom', 'border-3', 'border-primary', 'text-main'); this.classList.remove('text-muted'); [...this.parentElement.parentElement.children].forEach(c => { if(c.children[0]!==this) { c.children[0].classList.remove('border-bottom', 'border-3', 'border-primary', 'text-main'); c.children[0].classList.add('text-muted'); } })">Attendance</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link fw-bold border-0 text-muted" data-bs-toggle="tab" data-bs-target="#tab-logs" type="button" onclick="this.classList.add('border-bottom', 'border-3', 'border-primary', 'text-main'); this.classList.remove('text-muted'); [...this.parentElement.parentElement.children].forEach(c => { if(c.children[0]!==this) { c.children[0].classList.remove('border-bottom', 'border-3', 'border-primary', 'text-main'); c.children[0].classList.add('text-muted'); } })">Activity Logs</button></li>
+            </ul>
+            
+            <div class="tab-content">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="tab-overview">
+                    <h6 class="fw-bold mb-3 text-main">Performance Summary</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center bg-light">
+                                <h3 class="text-primary fw-bold mb-0">{{ active_tasks }}</h3><span class="x-small text-muted text-uppercase">Active Tasks</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center bg-light">
+                                <h3 class="text-success fw-bold mb-0">{{ perf_score }}%</h3><span class="x-small text-muted text-uppercase">Productivity Score</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center bg-light">
+                                <h3 class="text-warning fw-bold mb-0">{{ leave_balance.total_remaining|default:0 }}</h3><span class="x-small text-muted text-uppercase">Leaves Remaining</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h6 class="fw-bold mb-3 text-main">Recent Activity Focus</h6>
+                    <div class="p-3 border rounded bg-light">
+                        <canvas id="profileProductivityChart_{{ target_user.id }}" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Projects Tab -->
+                <div class="tab-pane fade" id="tab-projects">
+                    <h6 class="fw-bold mb-3 text-main">Assigned Tasks</h6>
+                    <div class="table-responsive" style="max-height: 300px;">
+                        <table class="table table-sm align-middle">
+                            <thead class="text-muted x-small text-uppercase">
+                                <tr><th>Project</th><th>Task</th><th>Status</th><th>Priority</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for t in user_tasks %}
+                                <tr>
+                                    <td class="small">{{ t.project.title|truncatechars:20 }}</td>
+                                    <td class="small fw-bold">{{ t.title }}</td>
+                                    <td>
+                                        {% if t.status == 'todo' %}<span class="badge bg-secondary-subtle text-secondary">To Do</span>
+                                        {% elif t.status == 'in_progress' %}<span class="badge bg-primary-subtle text-primary">In Progress</span>
+                                        {% elif t.status == 'review' %}<span class="badge bg-warning-subtle text-warning">Review</span>
+                                        {% else %}<span class="badge bg-success-subtle text-success">Done</span>{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if t.priority == 'urgent' %}<span class="text-danger small"><i class="fas fa-fire me-1"></i>Urgent</span>
+                                        {% elif t.priority == 'high' %}<span class="text-warning small"><i class="fas fa-arrow-up me-1"></i>High</span>
+                                        {% else %}<span class="text-info small"><i class="fas fa-minus me-1"></i>{{ t.get_priority_display }}</span>{% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted small py-3">No active tasks assigned.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Attendance Tab -->
+                <div class="tab-pane fade" id="tab-attendance">
+                    <h6 class="fw-bold mb-3 text-main">Attendance History (Last 30 Days)</h6>
+                    <div class="table-responsive" style="max-height: 300px;">
+                        <table class="table table-sm align-middle">
+                            <thead class="text-muted x-small text-uppercase">
+                                <tr><th>Date</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Duration</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for a in user_attendances %}
+                                <tr>
+                                    <td class="small">{{ a.date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if a.status == 'present' %}<span class="badge bg-success-subtle text-success">Present</span>
+                                        {% elif a.status == 'late' %}<span class="badge bg-warning-subtle text-warning">Late</span>
+                                        {% elif a.status == 'leave' %}<span class="badge bg-primary-subtle text-primary">Leave</span>
+                                        {% else %}<span class="badge bg-danger-subtle text-danger">Absent</span>{% endif %}
+                                    </td>
+                                    <td class="font-monospace small">{{ a.check_in|date:"h:i A"|default:"--" }}</td>
+                                    <td class="font-monospace small">{{ a.check_out|date:"h:i A"|default:"--" }}</td>
+                                    <td class="small">{% if a.total_work_seconds > 0 %}{{ a.total_work_seconds|divisibleby:3600|floatformat:1 }} hrs{% else %}--{% endif %}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted small py-3">No attendance records found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Logs Tab -->
+                <div class="tab-pane fade" id="tab-logs">
+                    <h6 class="fw-bold mb-3 text-main">System Activity Log</h6>
+                    <div class="activity-feed px-2" style="max-height: 300px; overflow-y: auto;">
+                        {% for log in user_logs %}
+                        <div class="d-flex mb-3 border-bottom pb-2">
+                            <div class="me-3 pt-1 text-primary"><i class="fas fa-circle" style="font-size: 0.5rem;"></i></div>
+                            <div>
+                                <div class="small fw-bold">{{ log.activity_type }}</div>
+                                <div class="x-small text-muted">{{ log.description }}</div>
+                                <div class="x-small text-muted mt-1"><i class="far fa-clock me-1"></i>{{ log.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted small py-3">No activity logs recorded yet.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize profile chart if Chart.js is loaded
+    if (typeof Chart !== 'undefined') {
+        const pCtx = document.getElementById('profileProductivityChart_{{ target_user.id }}');
+        if (pCtx) {
+            new Chart(pCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ profile_chart_labels|safe }},
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: {{ profile_chart_data|safe }},
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+    }
+</script>

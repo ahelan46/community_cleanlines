@@ -5,7 +5,8 @@
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'project_list' %}" class="text-primary text-decoration-none">Projects</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'project_list' %}"
+                class="text-primary text-decoration-none">Projects</a></li>
         <li class="breadcrumb-item active text-white" aria-current="page">{{ project.title }}</li>
     </ol>
 </nav>
@@ -20,19 +21,21 @@
                 </div>
                 <div class="d-flex gap-2">
                     {% if user == project.manager %}
-                        <a href="{% url 'assign_project_to_leader' project.pk %}" class="btn btn-sm btn-info" title="Assign to Team Leader">
-                            <i class="fas fa-users"></i> Assign
-                        </a>
+                    <a href="{% url 'assign_project_to_leader' project.pk %}" class="btn btn-sm btn-info"
+                        title="Assign to Team Leader">
+                        <i class="fas fa-users"></i> Assign
+                    </a>
                     {% endif %}
-                    <span class="badge {% if project.status == 'completed' %}bg-success{% elif project.status == 'ongoing' %}bg-warning{% else %}bg-secondary{% endif %} px-3 py-2 fs-6">
+                    <span
+                        class="badge {% if project.status == 'completed' %}bg-success{% elif project.status == 'ongoing' %}bg-warning{% else %}bg-secondary{% endif %} px-3 py-2 fs-6">
                         {{ project.get_status_display }}
                     </span>
                 </div>
             </div>
-            
+
             <h6 class="fw-bold text-muted text-uppercase small mb-3">Description</h6>
             <p class="mb-4">{{ project.description }}</p>
-            
+
             <div class="row g-3">
                 <div class="col-md-4">
                     <div class="p-3 rounded bg-dark border border-secondary border-opacity-25">
@@ -43,7 +46,8 @@
                 <div class="col-md-4">
                     <div class="p-3 rounded bg-dark border border-secondary border-opacity-25">
                         <small class="text-muted d-block">Manager</small>
-                        <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary"></i>{% if project.manager %}{{ project.manager.username }}{% else %}Unassigned{% endif %}</span>
+                        <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary"></i>{% if project.manager
+                            %}{{ project.manager.username }}{% else %}Unassigned{% endif %}</span>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -54,28 +58,33 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="glass-card">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="fw-bold mb-0">Project Tasks</h5>
                 {% if user.profile.role == 'team_leader' %}
-                <a href="{% url 'task_board' %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus me-1"></i>Add Task</a>
+                <a href="{% url 'task_board' %}" class="btn btn-sm btn-outline-primary"><i
+                        class="fas fa-plus me-1"></i>Add Task</a>
                 {% endif %}
             </div>
-            
+
             <div class="list-group list-group-flush bg-transparent">
                 {% for task in tasks %}
                 <div class="list-group-item bg-transparent border-secondary border-opacity-25 px-0 py-3">
                     <div class="d-flex align-items-center">
                         <div class="form-check me-3">
-                            <input class="form-check-input" type="checkbox" {% if task.status == 'done' %}checked{% endif %} disabled>
+                            <input class="form-check-input" type="checkbox" {% if task.status=='done' %}checked{% endif
+                                %} disabled>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="mb-0 fw-bold {% if task.status == 'done' %}text-muted text-decoration-line-through{% endif %}">{{ task.title }}</h6>
+                            <h6
+                                class="mb-0 fw-bold {% if task.status == 'done' %}text-muted text-decoration-line-through{% endif %}">
+                                {{ task.title }}</h6>
                             <small class="text-muted">Assigned to: {% if task.assigned_to %}{{ task.assigned_to.username }}{% else %}Unassigned{% endif %} • Due: {{ task.deadline }}</small>
                         </div>
                         <div class="flex-shrink-0">
-                            <span class="badge {% if task.status == 'done' %}bg-success-soft{% elif task.status == 'in_progress' %}bg-warning-soft{% else %}bg-secondary-soft{% endif %}">
+                            <span
+                                class="badge {% if task.status == 'done' %}bg-success-soft{% elif task.status == 'in_progress' %}bg-warning-soft{% else %}bg-secondary-soft{% endif %}">
                                 {{ task.get_status_display }}
                             </span>
                         </div>
@@ -89,11 +98,12 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <div class="glass-card mb-4 text-center">
             <h6 class="fw-bold text-muted text-uppercase small mb-3">Client Contact</h6>
-            <img src="https://ui-avatars.com/api/?name={{ project.client.name }}&background=6366f1&color=fff&size=80" class="rounded-circle mb-3">
+            <img src="https://ui-avatars.com/api/?name={{ project.client.name }}&background=6366f1&color=fff&size=80"
+                class="rounded-circle mb-3">
             <h5 class="fw-bold">{{ project.client.name }}</h5>
             <p class="text-muted mb-4 small"><i class="fas fa-envelope me-2"></i>{{ project.client.email }}</p>
             <div class="d-grid">

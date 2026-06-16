@@ -16,9 +16,11 @@ class UserProfile(models.Model):
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='team_member')
+    department = models.CharField(max_length=100, default='General')
     phone = models.CharField(max_length=20, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_frozen = models.BooleanField(default=False)  # Add this line
+    skills = models.CharField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
@@ -382,7 +384,7 @@ class Attendance(models.Model):
     today_work = models.TextField(blank=True, null=True)
     blockers = models.TextField(blank=True, null=True)
     progress = models.IntegerField(default=0) # 0 to 100
-    
+    last_activity = models.DateTimeField(null=True, blank=True)
     # Mood status
     mood = models.CharField(max_length=20, blank=True, null=True) # e.g. Happy, Normal, Tired
     
@@ -399,11 +401,18 @@ class Attendance(models.Model):
         return f"{self.user.username} - {self.date} - {self.status}"
 
     def total_work_seconds(self):
-        if not self.check_in or not self.check_out:
+        if not self.check_in:
             return 0
-        diff = (self.check_out - self.check_in).total_seconds()
-        # Subtract break durations
+        from django.utils import timezone
+        end_time = self.check_out if self.check_out else timezone.now()
+        diff = (end_time - self.check_in).total_seconds()
+        # Subtract completed break durations
         break_duration = sum([b.duration_seconds() for b in self.breaks.all() if b.end_time])
+        # Subtract active break duration
+        ongoing_break = self.breaks.filter(end_time__isnull=True).first()
+        if ongoing_break:
+            break_duration += (timezone.now() - ongoing_break.start_time).total_seconds()
+            
         return max(0, int(diff - break_duration))
 
 class BreakLog(models.Model):
@@ -501,3 +510,36 @@ def save_leave_balance(sender, instance, **kwargs):
         instance.leave_balance.save()
     else:
         LeaveBalance.objects.get_or_create(user=instance)
+
+class DemoSubmission(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('pm_approved', 'Approved by PM'),
+        ('client_approved', 'Approved by Client'),
+        ('rejected', 'Rejected'),
+    ]
+    PAYMENT_CHOICES = [
+        ('advance', 'Advance Payment'),
+        ('full', 'Full Payment'),
+    ]
+    
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='demo_submissions')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='demo_submissions')
+    demo_url = models.URLField(max_length=500, blank=True, null=True)
+    demo_video = models.FileField(upload_to='demo_videos/', blank=True, null=True)
+    main_project_url = models.URLField(max_length=500, blank=True, null=True)
+    
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='advance')
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    payment_notes = models.TextField(blank=True, null=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_demos')
+    
+    version = models.PositiveIntegerField(default=1)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Demo v{self.version} - {self.project.title}"

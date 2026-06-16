@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - Team Management{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard-wrapper mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-main"><i class="fas fa-crown text-warning me-2"></i>Admin Management Console</h2>
+            <p class="text-muted mb-0">Company-wide team overview, analytics, and HR controls.</p>
+        </div>
+        <div class="d-flex gap-3">
+            <button class="btn btn-outline-primary shadow-sm" onclick="exportData('pdf')"><i class="fas fa-file-pdf me-2"></i>Export PDF</button>
+            <button class="btn btn-outline-success shadow-sm" onclick="exportData('excel')"><i class="fas fa-file-excel me-2"></i>Export Excel</button>
+        </div>
+    </div>
+
+    <!-- Admin Navigation Tabs -->
+    <div class="glass-tabs mb-4 overflow-auto">
+        <button class="tab-btn active" onclick="switchAdminTab('overview')"><i class="fas fa-chart-pie me-2"></i>Overview & Analytics</button>
+        <button class="tab-btn" onclick="switchAdminTab('directory')"><i class="fas fa-address-book me-2"></i>Employee Directory</button>
+
+    </div>
+
+    <!-- ================== TAB: OVERVIEW & ANALYTICS ================== -->
+    <div id="overview-content" class="admin-tab-content active-content">
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="glass-card p-3 d-flex align-items-center border-primary-subtle border-start border-4">
+                    <div class="bg-primary-subtle text-primary rounded-circle p-3 me-3"><i class="fas fa-users fa-fw"></i></div>
+                    <div><h6 class="mb-0 text-muted">Total Employees</h6><h3 class="mb-0 fw-bold">{{ total_employees }}</h3></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card p-3 d-flex align-items-center border-success-subtle border-start border-4">
+                    <div class="bg-success-subtle text-success rounded-circle p-3 me-3"><i class="fas fa-check-circle fa-fw"></i></div>
+                    <div><h6 class="mb-0 text-muted">Present Today</h6><h3 class="mb-0 fw-bold">{{ present_today }}</h3></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card p-3 d-flex align-items-center border-warning-subtle border-start border-4">
+                    <div class="bg-warning-subtle text-warning rounded-circle p-3 me-3"><i class="fas fa-plane-departure fa-fw"></i></div>
+                    <div><h6 class="mb-0 text-muted">On Leave</h6><h3 class="mb-0 fw-bold">{{ on_leave_today }}</h3></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card p-3 d-flex align-items-center border-info-subtle border-start border-4">
+                    <div class="bg-info-subtle text-info rounded-circle p-3 me-3"><i class="fas fa-project-diagram fa-fw"></i></div>
+                    <div><h6 class="mb-0 text-muted">Active Projects</h6><h3 class="mb-0 fw-bold">{{ active_projects }}</h3></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Charts Section -->
+            <div class="col-md-8">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-chart-line me-2 text-primary"></i>Company Productivity Trend</h5>
+                    <div style="height: 300px;"><canvas id="adminProductivityChart"></canvas></div>
+                </div>
+            </div>
+            
+            <!-- Employee Recognition -->
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-trophy me-2 text-warning"></i>Employee Recognition</h5>
+                    
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded shadow-sm border border-warning-subtle">
+                        <div class="me-3 position-relative">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=EOM" class="rounded-circle border border-warning border-2" width="50" height="50">
+                            <span class="position-absolute top-100 start-50 translate-middle badge rounded-pill bg-warning text-dark"><i class="fas fa-star"></i> EOM</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-main">{{ eom_user|default:"Sarah Jenkins" }}</h6>
+                            <p class="mb-0 x-small text-muted">Employee of the Month (98% Eff.)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded shadow-sm border border-success-subtle">
+                        <div class="me-3 position-relative">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BTL" class="rounded-circle border border-success border-2" width="50" height="50">
+                            <span class="position-absolute top-100 start-50 translate-middle badge rounded-pill bg-success"><i class="fas fa-medal"></i> BTL</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-main">{{ btl_user|default:"Marcus Cole" }}</h6>
+                            <p class="mb-0 x-small text-muted">Best Team Leader (3 Proj Delivered)</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center p-3 bg-light rounded shadow-sm border border-primary-subtle">
+                        <div class="me-3 position-relative">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=FR" class="rounded-circle border border-primary border-2" width="50" height="50">
+                            <span class="position-absolute top-100 start-50 translate-middle badge rounded-pill bg-primary"><i class="fas fa-bolt"></i> FAST</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-main">{{ fast_user|default:"Alex Wu" }}</h6>
+                            <p class="mb-0 x-small text-muted">Fastest Resolver (45 Tasks)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 mb-4">
+            <!-- Team Activity Feed -->
+            <div class="col-md-6">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-rss me-2 text-primary"></i>Live Activity Feed</h5>
+                    <div class="activity-feed overflow-auto pe-2" style="max-height: 350px;">
+                        {% for activity in recent_activities %}
+                        <div class="d-flex mb-3 border-bottom pb-2">
+                            <div class="me-3 pt-1">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ activity.user.username }}" class="rounded-circle" width="32" height="32">
+                            </div>
+                            <div>
+                                <div class="fw-bold small text-main">{{ activity.user.get_full_name|default:activity.user.username }}</div>
+                                <div class="small text-muted">{{ activity.description }}</div>
+                                <div class="x-small text-muted mt-1"><i class="far fa-clock me-1"></i>{{ activity.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted p-3">No recent activities found.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Workload Monitoring -->
+            <div class="col-md-6">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-balance-scale me-2 text-primary"></i>Workload Monitoring</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>Employee</th>
+                                    <th>Tasks</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for w in workloads %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ w.user.username }}" width="24" height="24" class="rounded-circle me-2">
+                                            <span class="small fw-bold">{{ w.user.get_full_name|default:w.user.username }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="small">{{ w.task_count }} active</td>
+                                    <td>
+                                        {% if w.task_count > 15 %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="fas fa-fire me-1"></i>Overloaded</span>
+                                        {% elif w.task_count < 3 %}
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle"><i class="fas fa-snowflake me-1"></i>Underutilized</span>
+                                        {% else %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fas fa-check me-1"></i>Balanced</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== TAB: EMPLOYEE DIRECTORY ================== -->
+    <div id="directory-content" class="admin-tab-content">
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h5 class="fw-bold mb-0 text-main"><i class="fas fa-address-book me-2 text-primary"></i>Employee Directory</h5>
+                
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <select id="filterRole" class="form-select form-select-sm w-auto">
+                        <option value="all">All Roles</option>
+                        <option value="team_leader">Team Leader</option>
+                        <option value="project_manager">Project Manager</option>
+                        <option value="team_member">Team Member</option>
+                    </select>
+                    <select id="filterDept" class="form-select form-select-sm w-auto">
+                        <option value="all">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.name }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" id="searchEmp" class="form-control form-control-sm w-auto" placeholder="Search name or ID...">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle text-main" id="empTable">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Employee</th>
+                            <th>Role & Dept</th>
+                            <th>Status</th>
+                            <th>Active Proj</th>
+                            <th>Perf Score</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr class="emp-row" data-name="{{ emp.user.username|lower }} {{ emp.user.get_full_name|lower }}" data-role="{{ emp.user.profile.role }}" data-dept="{{ emp.user.profile.department }}">
+                            <td>
+                                <div class="d-flex align-items-center cursor-pointer" onclick="openProfileModal('{{ emp.user.id }}')">
+                                    <img src="{% if emp.user.profile.profile_picture %}{{ emp.user.profile.profile_picture.url }}{% else %}https://api.dicebear.com/7.x/avataaars/svg?seed={{ emp.user.username }}{% endif %}" class="rounded-circle border me-3" width="45" height="45">
+                                    <div>
+                                        <div class="fw-bold text-primary">{{ emp.user.get_full_name|default:emp.user.username }}</div>
+                                        <div class="x-small text-muted font-monospace">ID: EMP-{{ emp.user.id|stringformat:"04d" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small fw-bold">{{ emp.user.profile.get_role_display }}</div>
+                                <div class="x-small text-muted"><i class="fas fa-building me-1"></i>{{ emp.user.profile.department|default:"General" }}</div>
+                            </td>
+                            <td>
+                                {% if emp.today_status == 'present' or emp.today_status == 'late' %}
+                                    <span class="badge bg-success"><i class="fas fa-circle me-1" style="font-size:0.5rem"></i>Online</span>
+                                {% elif emp.today_status == 'leave' %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-plane-departure me-1"></i>Leave</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="fas fa-circle me-1" style="font-size:0.5rem"></i>Offline</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center fw-bold">{{ emp.active_projects_count }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                        <div class="progress-bar {% if emp.perf_score > 85 %}bg-success{% elif emp.perf_score > 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ emp.perf_score }}%"></div>
+                                    </div>
+                                    <span class="small fw-bold">{{ emp.perf_score }}%</span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><a class="dropdown-item" href="#" onclick="openProfileModal('{{ emp.user.id }}')"><i class="fas fa-eye fa-fw text-primary me-2"></i>View Profile</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="openEditRoleModal('{{ emp.user.id }}', '{{ emp.user.profile.role }}', '{{ emp.user.profile.department }}')"><i class="fas fa-edit fa-fw text-warning me-2"></i>Change Role/Dept</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" onclick="resetPassword('{{ emp.user.id }}')"><i class="fas fa-key fa-fw text-info me-2"></i>Reset Password</a></li>
+                                        <li>
+                                            {% if emp.user.is_active %}
+                                            <a class="dropdown-item text-danger" href="#" onclick="toggleAccountStatus('{{ emp.user.id }}', false)"><i class="fas fa-ban fa-fw me-2"></i>Disable Account</a>
+                                            {% else %}
+                                            <a class="dropdown-item text-success" href="#" onclick="toggleAccountStatus('{{ emp.user.id }}', true)"><i class="fas fa-check fa-fw me-2"></i>Enable Account</a>
+                                            {% endif %}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- ================== MODALS ================== -->
+
+<!-- Employee Profile Modal -->
+<div class="modal fade" id="empProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-bottom border-glass bg-light">
+                <h5 class="modal-title fw-bold text-primary"><i class="fas fa-user-circle me-2"></i>Employee Profile 360°</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="empProfileModalBody">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Loading complete profile...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editRoleForm" onsubmit="submitEditRole(event)">
+                {% csrf_token %}
+                <input type="hidden" id="editRoleUserId" name="user_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Role & Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Role</label>
+                        <select class="form-select" name="role" id="editRoleSelect">
+                            <option value="admin">Admin</option>
+                            <option value="project_manager">Project Manager</option>
+                            <option value="team_leader">Team Leader</option>
+                            <option value="team_member">Team Member</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Department</label>
+                        <input type="text" class="form-control" name="department" id="editDeptInput" placeholder="e.g. Development, QA, HR">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-dashboard-wrapper {
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.4);
+    }
+    
+    html[data-theme="dark"] .admin-dashboard-wrapper {
+        --glass-bg: rgba(30, 41, 59, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    .admin-tab-content { display: none; }
+    .admin-tab-content.active-content { display: block; animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .glass-tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.35rem;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-btn:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary-color); }
+    .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.3); }
+    
+    .cursor-pointer { cursor: pointer; transition: opacity 0.2s; }
+    .cursor-pointer:hover { opacity: 0.8; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function switchAdminTab(tabId) {
+        document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.remove('active-content'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId + '-content').classList.add('active-content');
+        event.currentTarget.classList.add('active');
+    }
+
+    // Chart.js init
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('adminProductivityChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ prod_chart_labels|safe }},
+                    datasets: [{
+                        label: 'Company Avg Efficiency (%)',
+                        data: {{ prod_chart_data|safe }},
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 40, max: 100 } }
+                }
+            });
+        }
+
+        // Directory Search/Filter
+        const searchInput = document.getElementById('searchEmp');
+        const roleFilter = document.getElementById('filterRole');
+        const deptFilter = document.getElementById('filterDept');
+        
+        function filterDirectory() {
+            const query = searchInput.value.toLowerCase();
+            const role = roleFilter.value;
+            const dept = deptFilter.value;
+            
+            document.querySelectorAll('.emp-row').forEach(row => {
+                const nameStr = row.getAttribute('data-name');
+                const rowRole = row.getAttribute('data-role');
+                const rowDept = row.getAttribute('data-dept');
+                
+                let match = nameStr.includes(query);
+                if (role !== 'all' && rowRole !== role) match = false;
+                if (dept !== 'all' && rowDept !== dept) match = false;
+                
+                row.style.display = match ? '' : 'none';
+            });
+        }
+        
+        if (searchInput) searchInput.addEventListener('input', filterDirectory);
+        if (roleFilter) roleFilter.addEventListener('change', filterDirectory);
+        if (deptFilter) deptFilter.addEventListener('change', filterDirectory);
+        
+        // Attendance Date Filter
+        const attDate = document.getElementById('adminAttDate');
+        if (attDate) {
+            attDate.addEventListener('change', (e) => {
+                window.location.href = `?att_date=${e.target.value}#attendance`;
+            });
+        }
+        
+        // Handle URL hash to open correct tab
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            const validTabs = ['overview', 'directory', 'departments', 'attendance', 'hierarchy', 'permissions'];
+            if (validTabs.includes(hash)) {
+                // Find matching button
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    if (btn.textContent.toLowerCase().includes(hash.substring(0,4))) {
+                        btn.click();
+                    }
+                });
+            }
+        }
+    });
+
+    // Action Handlers
+    function showToast(msg, type='success') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3 shadow-lg`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `<i class="fas fa-check-circle me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function toggleAccountStatus(userId, activate) {
+        if (!confirm(`Are you sure you want to ${activate ? 'enable' : 'disable'} this account?`)) return;
+        
+        try {
+            const res = await fetch("{% url 'admin_action_user' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: activate ? 'enable' : 'disable', user_id: userId })
+            });
+            const data = await res.json();
+            if (data.status === 'success') location.reload();
+            else showToast(data.message, 'danger');
+        } catch(e) { showToast('Error processing request', 'danger'); }
+    }
+
+    async function resetPassword(userId) {
+        if (!confirm('Are you sure you want to reset this user\'s password? It will be set to the default: Pinesphere@123')) return;
+        
+        try {
+            const res = await fetch("{% url 'admin_action_user' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: 'reset_pwd', user_id: userId })
+            });
+            const data = await res.json();
+            if (data.status === 'success') showToast('Password successfully reset to default.', 'success');
+            else showToast(data.message, 'danger');
+        } catch(e) { showToast('Error processing request', 'danger'); }
+    }
+    
+    async function overrideLeave(leaveId, action) {
+        if (!confirm(`Are you sure you want to ${action} this leave request?`)) return;
+        try {
+            const res = await fetch("{% url 'admin_action_leave' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: action, leave_id: leaveId })
+            });
+            const data = await res.json();
+            if (data.status === 'success') location.reload();
+            else showToast(data.message, 'danger');
+        } catch(e) { showToast('Error processing request', 'danger'); }
+    }
+
+    function openEditRoleModal(userId, role, dept) {
+        document.getElementById('editRoleUserId').value = userId;
+        document.getElementById('editRoleSelect').value = role;
+        document.getElementById('editDeptInput').value = dept !== 'None' ? dept : '';
+        new bootstrap.Modal(document.getElementById('editRoleModal')).show();
+    }
+
+    async function submitEditRole(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        try {
+            const res = await fetch("{% url 'admin_action_user' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ 
+                    action: 'update_role', 
+                    user_id: formData.get('user_id'),
+                    role: formData.get('role'),
+                    department: formData.get('department')
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'success') location.reload();
+            else showToast(data.message, 'danger');
+        } catch(err) { showToast('Error updating role', 'danger'); }
+    }
+
+    async function openProfileModal(userId) {
+        const modal = new bootstrap.Modal(document.getElementById('empProfileModal'));
+        modal.show();
+        
+        try {
+            const res = await fetch(`/admin-dashboard/user-profile/${userId}/`);
+            const html = await res.text();
+            document.getElementById('empProfileModalBody').innerHTML = html;
+        } catch(e) {
+            document.getElementById('empProfileModalBody').innerHTML = `<div class="p-5 text-center text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p>Failed to load profile.</p></div>`;
+        }
+    }
+
+    function exportData(format) {
+        showToast(`Generating ${format.toUpperCase()} report...`, 'info');
+        window.location.href = `{% url 'admin_export' %}?format=${format}`;
+    }
+</script>
+{% endblock %}

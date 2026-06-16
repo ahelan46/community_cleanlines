@@ -950,6 +950,250 @@ def teams(request):
     except UserProfile.DoesNotExist:
         user_role = 'team_member'
 
+    if user_role == 'admin':
+        from django.utils import timezone
+        from datetime import date
+        import json
+        from django.db.models import Count, Avg
+        
+        today = date.today()
+        total_employees = User.objects.exclude(profile__role='client').count()
+        present_today = Attendance.objects.filter(date=today, status__in=['present', 'late']).count()
+        on_leave_today = LeaveRequest.objects.filter(status='approved', start_date__lte=today, end_date__gte=today).count()
+        active_projects = Project.objects.filter(status='ongoing').count()
+        
+        users = User.objects.exclude(profile__role='client').select_related('profile')
+        employees = []
+        workloads = []
+        for u in users:
+            plog = ProductivityLog.objects.filter(user=u).order_by('-date').first()
+            perf_score = plog.efficiency if plog else 0
+            
+            if u.profile.role == 'project_manager':
+                active_proj = Project.objects.filter(manager=u, status='ongoing').count()
+            elif u.profile.role == 'team_leader':
+                active_proj = ProjectAssignment.objects.filter(team_leader=u, status='accepted', project__status='ongoing').count()
+            else:
+                active_proj = Task.objects.filter(assigned_to=u, status__in=['todo', 'in_progress']).values('project').distinct().count()
+                
+            today_att = Attendance.objects.filter(user=u, date=today).first()
+            today_status = today_att.status if today_att else 'absent'
+            if on_leave_today > 0 and LeaveRequest.objects.filter(user=u, status='approved', start_date__lte=today, end_date__gte=today).exists():
+                today_status = 'leave'
+            
+            employees.append({
+                'user': u,
+                'perf_score': perf_score,
+                'active_projects_count': active_proj,
+                'today_status': today_status
+            })
+            
+            if u.profile.role == 'team_member':
+                tc = Task.objects.filter(assigned_to=u, status__in=['todo', 'in_progress']).count()
+                workloads.append({'user': u, 'task_count': tc})
+                
+        depts_list = UserProfile.objects.exclude(role='client').values_list('department', flat=True).distinct()
+        departments = []
+        for d_name in depts_list:
+            if not d_name: d_name = 'General'
+            d_users = User.objects.filter(profile__department=d_name)
+            d_leaders = d_users.filter(profile__role__in=['project_manager', 'team_leader'])
+            avg_prod = ProductivityLog.objects.filter(user__in=d_users).aggregate(Avg('efficiency'))['efficiency__avg'] or 0
+            
+            departments.append({
+                'name': d_name,
+                'emp_count': d_users.count(),
+                'proj_count': active_projects, 
+                'avg_prod': int(avg_prod),
+                'leaders': d_leaders
+            })
+            
+        att_stats = {
+            'present': Attendance.objects.filter(date=today, status='present').count(),
+            'absent': Attendance.objects.filter(date=today, status='absent').count() + max(0, total_employees - Attendance.objects.filter(date=today).count()),
+            'leave': on_leave_today,
+            'late': Attendance.objects.filter(date=today, status='late').count()
+        }
+        
+        today_attendance_list = Attendance.objects.filter(date=today)
+        for a in today_attendance_list:
+            a.hours_str = f"{(a.total_work_seconds() / 3600.0):.1f} hrs"
+            
+        all_pending_leaves = LeaveRequest.objects.filter(status='pending').order_by('-created_at')
+        
+        pms = User.objects.filter(profile__role='project_manager')
+        hierarchy_pms = []
+        for pm in pms:
+            teams_managed = Team.objects.filter(project_manager=pm)
+            tls_for_pm = []
+            for t in teams_managed:
+                for leader in t.leaders.all():
+                    tls_for_pm.append({
+                        'user': leader,
+                        'member_count': t.members.count()
+                    })
+            hierarchy_pms.append({
+                'user': pm,
+                'tls': tls_for_pm
+            })
+        org_hierarchy = {'pms': hierarchy_pms}
+        
+        recent_activities = ActivityLog.objects.all().order_by('-created_at')[:10]
+        
+        eom_user = User.objects.filter(profile__role__in=['team_member', 'team_leader']).first()
+        btl_user = User.objects.filter(profile__role='team_leader').first()
+        fast_user = User.objects.filter(profile__role='team_member').first()
+
+        context = {
+            'total_employees': total_employees,
+            'present_today': present_today,
+            'on_leave_today': on_leave_today,
+            'active_projects': active_projects,
+            'employees': employees,
+            'departments': departments,
+            'att_stats': att_stats,
+            'today_attendance_list': today_attendance_list,
+            'all_pending_leaves': all_pending_leaves,
+            'org_hierarchy': org_hierarchy,
+            'current_date_ymd': today.strftime('%Y-%m-%d'),
+            'prod_chart_labels': json.dumps(["Mon", "Tue", "Wed", "Thu", "Fri"]),
+            'prod_chart_data': json.dumps([85, 88, 92, 90, 95]),
+            'recent_activities': recent_activities,
+            'workloads': workloads,
+            'eom_user': eom_user.get_full_name() if eom_user else "Sarah Jenkins",
+            'btl_user': btl_user.get_full_name() if btl_user else "Marcus Cole",
+            'fast_user': fast_user.get_full_name() if fast_user else "Alex Wu",
+        }
+        return render(request, 'projects/admin_teams.html', context)
+
+    elif user_role == 'team_leader':
+        from django.utils import timezone
+        from datetime import date
+        import json
+        from django.db.models import Avg
+
+        today = date.today()
+        # 1. Get TL's teams
+        my_teams = Team.objects.filter(leaders=request.user).prefetch_related('members')
+        team_members = set()
+        for t in my_teams:
+            for m in t.members.all():
+                team_members.add(m)
+        
+        team_members_list = list(team_members)
+        total_members = len(team_members_list)
+        
+        # Team Attendance
+        member_ids = [m.id for m in team_members_list]
+        today_att = Attendance.objects.filter(user_id__in=member_ids, date=today)
+        present_count = today_att.filter(status='present').count()
+        late_count = today_att.filter(status='late').count()
+        active_today = present_count + late_count
+        
+        on_leave_today = LeaveRequest.objects.filter(
+            user_id__in=member_ids, status='approved', 
+            start_date__lte=today, end_date__gte=today
+        ).count()
+        
+        absent_count = total_members - active_today - on_leave_today
+        if absent_count < 0: absent_count = 0
+        
+        # Tasks & Productivity
+        team_tasks = Task.objects.filter(assigned_to_id__in=member_ids)
+        in_progress_tasks = team_tasks.filter(status='in_progress').count()
+        total_team_tasks = team_tasks.count()
+        completed_tasks = team_tasks.filter(status='done').count()
+        task_completion_pct = int((completed_tasks / total_team_tasks * 100)) if total_team_tasks > 0 else 0
+        
+        avg_prod = ProductivityLog.objects.filter(user_id__in=member_ids).aggregate(Avg('efficiency'))['efficiency__avg'] or 0
+        team_productivity = int(avg_prod)
+        
+        # Members Data
+        members_data = []
+        for m in team_members_list:
+            current_task = Task.objects.filter(assigned_to=m).exclude(status='done').order_by('-priority').first()
+            m_att = today_att.filter(user=m).first()
+            att_status = m_att.status if m_att else 'absent'
+            if on_leave_today > 0 and LeaveRequest.objects.filter(user=m, status='approved', start_date__lte=today, end_date__gte=today).exists():
+                att_status = 'leave'
+            
+            task_count = Task.objects.filter(assigned_to=m).exclude(status='done').count()
+            if task_count > 10:
+                workload = 'overloaded'
+            elif task_count >= 5:
+                workload = 'medium'
+            else:
+                workload = 'balanced'
+                
+            members_data.append({
+                'user': m,
+                'current_task': current_task,
+                'att_status': att_status,
+                'task_count': task_count,
+                'workload': workload,
+                'progress': m_att.progress if m_att else 0,
+                'skills': [s.strip() for s in (m.profile.skills or '').split(',') if s.strip()]
+            })
+            
+        # Leaves needing TL approval
+        pending_leaves = LeaveRequest.objects.filter(
+            user_id__in=member_ids, 
+            status='pending'
+        )
+        tl_leaves = [l for l in pending_leaves if l.required_approver_role() == 'team_leader']
+        
+        # Standup & Blockers
+        standups = []
+        blockers = []
+        for att in today_att:
+            if att.today_work:
+                standups.append(att)
+            if att.blockers:
+                blockers.append(att)
+                
+        # Activity Feed
+        activities = ActivityLog.objects.filter(user_id__in=member_ids).order_by('-created_at')[:15]
+        
+        # Kanban
+        kanban_tasks = {
+            'todo': team_tasks.filter(status='todo'),
+            'in_progress': team_tasks.filter(status='in_progress'),
+            'review': team_tasks.filter(status='review'),
+            'done': team_tasks.filter(status='done')[:10]
+        }
+        
+        # Top Performers
+        import random
+        healthy_team = task_completion_pct > 70 and absent_count <= 2
+
+        context = {
+            'total_members': total_members,
+            'active_today': active_today,
+            'on_leave_today': on_leave_today,
+            'task_completion_pct': task_completion_pct,
+            'team_productivity': team_productivity,
+            'in_progress_tasks': in_progress_tasks,
+            
+            'members_data': members_data,
+            'att_stats': {
+                'present': present_count,
+                'leave': on_leave_today,
+                'late': late_count,
+                'absent': absent_count
+            },
+            'tl_leaves': tl_leaves,
+            'standups': standups,
+            'blockers': blockers,
+            'activities': activities,
+            'kanban_tasks': kanban_tasks,
+            
+            'healthy_team': healthy_team,
+            
+            'prod_chart_labels': json.dumps(["Mon", "Tue", "Wed", "Thu", "Fri"]),
+            'prod_chart_data': json.dumps([82, 85, 89, 88, team_productivity]),
+        }
+        return render(request, 'projects/team_leader_teams.html', context)
+
     if user_role != 'project_manager':
         return redirect('dashboard')
 
@@ -989,6 +1233,114 @@ def teams(request):
         'projects': projects,
     }
     return render(request, 'projects/teams.html', context)
+
+# Admin API Endpoints
+from django.views.decorators.http import require_POST
+from django.http import HttpResponse
+
+@login_required
+@require_POST
+def admin_action_user(request):
+    if request.user.profile.role != 'admin':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        
+    data = json.loads(request.body)
+    action = data.get('action')
+    user_id = data.get('user_id')
+    
+    try:
+        target_user = User.objects.get(id=user_id)
+        if action == 'disable':
+            target_user.is_active = False
+            target_user.save()
+            return JsonResponse({'status': 'success'})
+        elif action == 'enable':
+            target_user.is_active = True
+            target_user.save()
+            return JsonResponse({'status': 'success'})
+        elif action == 'reset_pwd':
+            target_user.set_password('Pinesphere@123')
+            target_user.save()
+            return JsonResponse({'status': 'success'})
+        elif action == 'update_role':
+            role = data.get('role')
+            department = data.get('department', 'General')
+            target_user.profile.role = role
+            target_user.profile.department = department
+            target_user.profile.save()
+            return JsonResponse({'status': 'success'})
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+        
+    return JsonResponse({'status': 'error', 'message': 'Invalid action'}, status=400)
+
+@login_required
+@require_POST
+def admin_action_leave(request):
+    if request.user.profile.role != 'admin':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        
+    data = json.loads(request.body)
+    action = data.get('action')
+    leave_id = data.get('leave_id')
+    
+    try:
+        leave = LeaveRequest.objects.get(id=leave_id)
+        if action == 'approve':
+            leave.status = 'approved'
+            leave.approved_by = request.user
+            leave.save()
+            return JsonResponse({'status': 'success'})
+        elif action == 'reject':
+            leave.status = 'rejected'
+            leave.approved_by = request.user
+            leave.save()
+            return JsonResponse({'status': 'success'})
+    except LeaveRequest.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Leave request not found'}, status=404)
+        
+    return JsonResponse({'status': 'error', 'message': 'Invalid action'}, status=400)
+
+@login_required
+def admin_user_profile_modal(request, user_id):
+    if request.user.profile.role != 'admin':
+        return HttpResponse('Unauthorized', status=403)
+        
+    target_user = User.objects.get(id=user_id)
+    user_tasks = Task.objects.filter(assigned_to=target_user).order_by('-priority', 'status')
+    user_attendances = Attendance.objects.filter(user=target_user).order_by('-date')[:30]
+    user_logs = ActivityLog.objects.filter(user=target_user).order_by('-created_at')[:30]
+    
+    active_tasks = user_tasks.filter(status__in=['todo', 'in_progress', 'review']).count()
+    plog = ProductivityLog.objects.filter(user=target_user).order_by('-date').first()
+    perf_score = plog.efficiency if plog else 0
+    
+    import json
+    context = {
+        'target_user': target_user,
+        'user_tasks': user_tasks,
+        'user_attendances': user_attendances,
+        'user_logs': user_logs,
+        'active_tasks': active_tasks,
+        'perf_score': perf_score,
+        'profile_chart_labels': json.dumps(["Mon", "Tue", "Wed", "Thu", "Fri"]),
+        'profile_chart_data': json.dumps([5, 3, 6, 4, 7]),
+    }
+    return render(request, 'projects/admin_user_profile.html', context)
+
+@login_required
+def admin_export(request):
+    if request.user.profile.role != 'admin':
+        return HttpResponse('Unauthorized', status=403)
+    format = request.GET.get('format', 'excel')
+    import csv
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="employee_export.{format if format == "csv" else "xls"}"'
+    writer = csv.writer(response)
+    writer.writerow(['ID', 'Name', 'Role', 'Department', 'Email'])
+    for u in User.objects.exclude(profile__role='client'):
+        writer.writerow([u.id, u.get_full_name() or u.username, u.profile.role, u.profile.department, u.email])
+    return response
 
 # Auth Views
 def signup_view(request):
@@ -1485,15 +1837,15 @@ def quick_assign_project(request, project_id, team_leader_id):
     return redirect('teams')
 @login_required
 def admin_users_list(request):
-    """Return list of all users for admin panel"""
-    # Check if user is admin
+    """Return list of all non-admin users for admin panel"""
     if request.user.profile.role != 'admin':
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
     
     from django.contrib.auth.models import User
     from django.db.models import Count
     
-    users = User.objects.exclude(profile__role='client').select_related('profile').annotate(
+    # Exclude users with role 'admin'
+    users = User.objects.exclude(profile__role__in=['admin', 'client']).select_related('profile').annotate(
         projects_count=Count('managed_projects')
     )
     
@@ -1507,7 +1859,7 @@ def admin_users_list(request):
             'role': user.profile.role,
             'role_display': user.profile.get_role_display(),
             'is_active': user.is_active,
-            'is_frozen': user.profile.is_frozen,  # Add this line
+            'is_frozen': user.profile.is_frozen,
             'last_login': user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else None,
             'projects_count': user.projects_count,
         })
@@ -1519,7 +1871,8 @@ def user_frozen_page(request):
     """Page shown when user account is frozen"""
     return render(request, 'projects/frozen_page.html', {
         'user': request.user,
-        'frozen_reason': 'Your account has been frozen by administrator.'
+        'frozen_reason': 'Your account has been frozen by administrator.',
+        'hide_sidebar': True,
     })
 
 @login_required
@@ -1532,8 +1885,6 @@ def admin_users_freeze(request):
 @login_required
 @require_POST
 def admin_update_user_status(request):
-    """Update user active status and frozen status (on/off/freeze)"""
-    # Check if user is admin
     if request.user.profile.role != 'admin':
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
     
@@ -1541,37 +1892,51 @@ def admin_update_user_status(request):
         data = json.loads(request.body)
         users_to_update = data.get('users', [])
         
-        from django.contrib.auth.models import User
-        
         for item in users_to_update:
             user_id = item.get('user_id')
             is_active = item.get('is_active')
-            is_frozen = item.get('is_frozen')  # Add this field
+            is_frozen = item.get('is_frozen')
             
-            if user_id and is_active is not None:
+            if user_id:
                 user = User.objects.get(id=user_id)
                 # Don't allow disabling own account
                 if user.id == request.user.id:
                     continue
-                user.is_active = is_active
-                user.save()
-                
-                # Update frozen status if provided
+                # Update is_active only if provided
+                if is_active is not None:
+                    user.is_active = is_active
+                    user.save()
+                # Update is_frozen only if provided
                 if is_frozen is not None:
                     user.profile.is_frozen = is_frozen
                     user.profile.save()
-                
-                # Log activity
-                ActivityLog.objects.create(
-                    user=request.user,
-                    activity_type='User Access Changed',
-                    description=f"{'Enabled' if is_active else 'Disabled'} access for user {user.username}" + (f" (Frozen: {is_frozen})" if is_frozen is not None else "")
-                )
         
         return JsonResponse({'status': 'success', 'message': 'User status updated successfully'})
-        
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+
+@login_required
+def freeze_inactivity(request):
+    """Freeze the user due to inactivity while checked in."""
+    if request.method == 'POST':
+        today = date.today()
+        attendance = Attendance.objects.filter(user=request.user, date=today).first()
+        if attendance and attendance.check_in and not attendance.check_out:
+            # Only freeze if the user is currently checked in
+            user_profile = request.user.profile
+            if not user_profile.is_frozen:
+                user_profile.is_frozen = True
+                user_profile.save()
+                # Log the event
+                ActivityLog.objects.create(
+                    user=request.user,
+                    activity_type='Auto Freeze',
+                    description='User was frozen due to inactivity while checked in.'
+                )
+                return JsonResponse({'status': 'success', 'message': 'Frozen due to inactivity'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
 # ==========================================
 # ATTENDANCE & LEAVE MANAGEMENT SYSTEM VIEWS
 # ==========================================
@@ -1590,9 +1955,19 @@ def attendance_dashboard(request):
         return redirect('dashboard')
 
     today = date.today()
+    selected_date_str = request.GET.get('date')
+    if selected_date_str:
+        from datetime import datetime
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    else:
+        selected_date = today
 
     # Get or create today's attendance for the logged-in user
     today_attendance = Attendance.objects.filter(user=request.user, date=today).first()
+    today_work_seconds = today_attendance.total_work_seconds() if today_attendance else 0
     
     # Active break if any
     active_break = None
@@ -1724,7 +2099,7 @@ def attendance_dashboard(request):
         
         # Build team members list with all required fields - FIXED INDENTATION
         for u in team_users:
-            att = Attendance.objects.filter(user=u, date=today).first()
+            att = Attendance.objects.filter(user=u, date=selected_date).first()
             team_members.append({
                 'user': u,
                 'attendance_id': att.id if att else None,
@@ -1748,8 +2123,8 @@ def attendance_dashboard(request):
     elif user_role == 'project_manager':
         employees = User.objects.filter(profile__role__in=['team_leader', 'team_member']).distinct()
         for u in employees:
-            att = Attendance.objects.filter(user=u, date=today).first()
-            prod = ProductivityLog.objects.filter(user=u, date=today).first()
+            att = Attendance.objects.filter(user=u, date=selected_date).first()
+            prod = ProductivityLog.objects.filter(user=u, date=selected_date).first()
             team_members.append({
                 'user': u,
                 'attendance_id': att.id if att else None,
@@ -1772,7 +2147,7 @@ def attendance_dashboard(request):
     elif user_role == 'admin':
         employees = User.objects.exclude(profile__role='client').distinct()
         for u in employees:
-            att = Attendance.objects.filter(user=u, date=today).first()
+            att = Attendance.objects.filter(user=u, date=selected_date).first()
             team_members.append({
                 'user': u,
                 'attendance_id': att.id if att else None,
@@ -1793,7 +2168,7 @@ def attendance_dashboard(request):
         pending_leaves = LeaveRequest.objects.filter(status='pending').order_by('-created_at')
         
         # Company-wide stats for today
-        present_today = Attendance.objects.filter(date=today, status__in=['present', 'late']).count()
+        present_today = Attendance.objects.filter(date=selected_date, status__in=['present', 'late']).count()
         total_emp = employees.count()
         company_attendance_pct = int((present_today / total_emp) * 100) if total_emp > 0 else 100
     # Team Ranking (by efficiency of current week)
@@ -1853,7 +2228,9 @@ def attendance_dashboard(request):
         'company_attendance_pct': company_attendance_pct,
         'team_rankings': team_rankings[:5],
         'my_rank': my_rank,
-        'current_date_str': today.strftime('%B %d, %Y'),
+        'current_date_str': selected_date.strftime('%B %d, %Y'),
+        'selected_date_ymd': selected_date.strftime('%Y-%m-%d'),
+        'today_work_seconds': today_work_seconds,
     }
 
     return render(request, 'projects/attendance.html', context)
@@ -2434,3 +2811,152 @@ def attendance_events_json(request):
             curr_d += timedelta(days=1)
 
     return JsonResponse(events, safe=False)
+
+@login_required
+@require_POST
+def freeze_all_timer(request):
+    """Freeze all non-client users (Project Managers, Team Leaders, Team Members)."""
+    if request.user.profile.role != 'admin':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
+    try:
+        # Get all users with roles that should be frozen (exclude clients and admins)
+        eligible_roles = ['project_manager', 'team_leader', 'team_member']
+        users_to_freeze = User.objects.filter(profile__role__in=eligible_roles)
+        
+        frozen_count = 0
+        for user in users_to_freeze:
+            # Don't freeze yourself (the admin) even if role matches (should not happen)
+            if user.id == request.user.id:
+                continue
+            if not user.profile.is_frozen:
+                user.profile.is_frozen = True
+                user.profile.save()
+                frozen_count += 1
+        
+        return JsonResponse({
+            'status': 'success',
+            'frozen_count': frozen_count,
+            'message': f'{frozen_count} user(s) have been frozen.'
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def submit_demo(request):
+    from .models import DemoSubmission, ProjectAssignment
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'team_leader':
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        project_id = request.POST.get('project_id')
+        demo_url = request.POST.get('demo_url')
+        main_project_url = request.POST.get('main_project_url')
+        payment_type = request.POST.get('payment_type')
+        payment_amount = request.POST.get('payment_amount')
+        payment_notes = request.POST.get('payment_notes')
+        demo_video = request.FILES.get('demo_video')
+        
+        if not payment_amount:
+            payment_amount = 0
+            
+        project = get_object_or_404(Project, id=project_id)
+        
+        latest_demo = DemoSubmission.objects.filter(project=project).order_by('-version').first()
+        version = (latest_demo.version + 1) if latest_demo else 1
+        
+        demo = DemoSubmission.objects.create(
+            client=project.client,
+            project=project,
+            demo_url=demo_url,
+            demo_video=demo_video,
+            main_project_url=main_project_url,
+            payment_type=payment_type,
+            payment_amount=payment_amount,
+            payment_notes=payment_notes,
+            status='pending',
+            submitted_by=request.user,
+            version=version
+        )
+        
+        admins = User.objects.filter(is_superuser=True)
+        for admin in admins:
+            Notification.objects.create(user=admin, message=f"New Demo Submitted: {project.title} (v{version})")
+            
+        if project.manager:
+            Notification.objects.create(user=project.manager, message=f"New Demo Submitted for your project: {project.title} (v{version})")
+            
+        messages.success(request, "Demo successfully submitted for review.")
+        return redirect('team_leader_projects')
+        
+    assignments = ProjectAssignment.objects.filter(team_leader=request.user, status='accepted')
+    assigned_projects = [a.project for a in assignments]
+    return render(request, 'projects/demos/submit_demo.html', {'assigned_projects': assigned_projects})
+
+@login_required
+def demo_approval_table(request):
+    from .models import DemoSubmission
+    if not hasattr(request.user, 'profile') or request.user.profile.role not in ['admin', 'project_manager']:
+        return redirect('dashboard')
+        
+    demos = DemoSubmission.objects.all().order_by('-created_at')
+    if request.user.profile.role == 'project_manager':
+        demos = demos.filter(project__manager=request.user)
+        
+    return render(request, 'projects/demos/demo_approvals.html', {'demos': demos})
+
+@login_required
+def demo_approve_pm(request, demo_id):
+    from .models import DemoSubmission
+    if not hasattr(request.user, 'profile') or request.user.profile.role not in ['admin', 'project_manager']:
+        return redirect('dashboard')
+        
+    demo = get_object_or_404(DemoSubmission, id=demo_id)
+    demo.status = 'pm_approved'
+    demo.save()
+    
+    Notification.objects.create(
+        user=demo.client.user,
+        message=f"New Demo Ready for Review: {demo.project.title}"
+    )
+    
+    messages.success(request, "Demo approved and sent to client.")
+    return redirect('demo_approval_table')
+
+@login_required
+def client_demo_approval(request):
+    from .models import DemoSubmission
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'client':
+        return redirect('dashboard')
+        
+    demos = DemoSubmission.objects.filter(client__email=request.user.email, status__in=['pm_approved', 'client_approved']).order_by('-created_at')
+    
+    return render(request, 'projects/dashboards/client_payments.html', {'demos': demos})
+
+@login_required
+def client_demo_action(request, demo_id, action):
+    from .models import DemoSubmission
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'client':
+        return redirect('dashboard')
+        
+    demo = get_object_or_404(DemoSubmission, id=demo_id, client__email=request.user.email)
+    
+    if action == 'accept':
+        demo.status = 'client_approved'
+        demo.save()
+        messages.success(request, "Demo accepted successfully.")
+        
+        # Notify admins and PMs
+        if demo.project.manager:
+            Notification.objects.create(user=demo.project.manager, message=f"Client Accepted Demo: {demo.project.title}")
+            
+    elif action == 'reject':
+        demo.status = 'rejected'
+        demo.save()
+        messages.success(request, "Demo rejected.")
+        
+        if demo.project.manager:
+            Notification.objects.create(user=demo.project.manager, message=f"Client Rejected Demo: {demo.project.title}")
+            
+    return redirect('client_demo_approval')
+

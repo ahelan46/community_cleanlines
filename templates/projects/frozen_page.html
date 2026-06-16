@@ -94,5 +94,20 @@
             <i class="fas fa-envelope me-1"></i> support@tracker.com
         </div>
     </div>
+    <script>
+    // Disable back/forward navigation (traps user on this page)
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.go(1);
+    };
+
+    // Prevent ESC key from doing anything (optional)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+</script>
 </body>
 </html>

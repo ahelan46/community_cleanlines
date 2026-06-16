@@ -44,10 +44,16 @@ urlpatterns = [
     path('assignment/<int:assignment_id>/reject/', views.reject_project_assignment, name='reject_project_assignment'),
     path('projects/<int:project_id>/assign-to/<int:team_leader_id>/', views.quick_assign_project, name='quick_assign_project'),
     # Add these to your urlpatterns
+    path('admin-dashboard/action/user/', views.admin_action_user, name='admin_action_user'),
+    path('admin-dashboard/action/leave/', views.admin_action_leave, name='admin_action_leave'),
+    path('admin-dashboard/user-profile/<int:user_id>/', views.admin_user_profile_modal, name='admin_user_profile_modal'),
+    path('admin-dashboard/export/', views.admin_export, name='admin_export'),
     path('user-mgmt/list/', views.admin_users_list, name='admin_users_list'),
     path('user-mgmt/update-status/', views.admin_update_user_status, name='admin_update_user_status'),
     path('user-mgmt/freeze/', views.admin_users_freeze, name='admin_users_freeze'),
     path('frozen/', views.user_frozen_page, name='user_frozen_page'),
+    path('user-mgmt/freeze-timer/', views.freeze_all_timer, name='freeze_all_timer'),
+    path('attendance/freeze-inactivity/', views.freeze_inactivity, name='freeze_inactivity'),
     # Attendance URLs
     path('attendance/', views.attendance_dashboard, name='attendance_dashboard'),
     path('attendance/check-in/', views.attendance_check_in, name='attendance_check_in'),
@@ -60,4 +66,10 @@ urlpatterns = [
     path('attendance/leave/<int:pk>/reject/', views.reject_leave, name='reject_leave'),
     path('attendance/report/download/', views.download_attendance_report, name='download_attendance_report'),
     path('attendance/events/json/', views.attendance_events_json, name='attendance_events_json'),
+
+    path('team-leader/submit-demo/', views.submit_demo, name='submit_demo'),
+    path('demos/approvals/', views.demo_approval_table, name='demo_approval_table'),
+    path('demos/<int:demo_id>/approve-pm/', views.demo_approve_pm, name='demo_approve_pm'),
+    path('client/demos/', views.client_demo_approval, name='client_demo_approval'),
+    path('client/demos/<int:demo_id>/<str:action>/', views.client_demo_action, name='client_demo_action'),
 ]

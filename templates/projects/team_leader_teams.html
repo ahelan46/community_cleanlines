@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Team Leader Dashboard - Team Execution{% endblock %}
+
+{% block content %}
+<div class="tl-dashboard-wrapper mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-main"><i class="fas fa-users-cog text-primary me-2"></i>Team Execution Dashboard</h2>
+            <p class="text-muted mb-0">Manage your team members, daily standups, execution progress, and workloads.</p>
+        </div>
+        <div class="d-flex gap-3 align-items-center">
+            <div class="badge {% if healthy_team %}bg-success-subtle text-success border-success-subtle{% else %}bg-warning-subtle text-warning border-warning-subtle{% endif %} border p-2">
+                <i class="fas fa-heartbeat me-2"></i>Team Health: {% if healthy_team %}Healthy & Balanced{% else %}Needs Attention{% endif %}
+            </div>
+            <button class="btn btn-primary shadow-sm" onclick="alert('Chat Modal Placeholder')"><i class="fas fa-comments me-2"></i>Team Chat</button>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="glass-tabs mb-4 overflow-auto pb-2">
+        <button class="tab-btn active" onclick="switchTLTab('overview')"><i class="fas fa-th-large me-2"></i>Overview & Members</button>
+        <button class="tab-btn" onclick="switchTLTab('execution')"><i class="fas fa-tasks me-2"></i>Execution Board (Kanban)</button>
+        <button class="tab-btn" onclick="switchTLTab('standups')"><i class="fas fa-bullhorn me-2"></i>Daily Standups & Blockers</button>
+        <button class="tab-btn" onclick="switchTLTab('attendance')"><i class="fas fa-clock me-2"></i>Attendance & Leaves</button>
+        <button class="tab-btn" onclick="switchTLTab('skills')"><i class="fas fa-brain me-2"></i>Skill Matrix</button>
+    </div>
+
+    <!-- ================== TAB: OVERVIEW ================== -->
+    <div id="overview-content" class="tl-tab-content active-content">
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-2">
+                <div class="glass-card p-3 text-center h-100 border-top border-4 border-primary">
+                    <h3 class="fw-bold text-main mb-0">{{ total_members }}</h3><span class="x-small text-muted">Team Members</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="glass-card p-3 text-center h-100 border-top border-4 border-success">
+                    <h3 class="fw-bold text-success mb-0">{{ active_today }}</h3><span class="x-small text-muted">Active Today</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="glass-card p-3 text-center h-100 border-top border-4 border-warning">
+                    <h3 class="fw-bold text-warning mb-0">{{ on_leave_today }}</h3><span class="x-small text-muted">On Leave</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="glass-card p-3 text-center h-100 border-top border-4 border-info">
+                    <h3 class="fw-bold text-info mb-0">{{ in_progress_tasks }}</h3><span class="x-small text-muted">Tasks In Progress</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="glass-card p-3 text-center h-100 border-top border-4 border-primary">
+                    <h3 class="fw-bold text-main mb-0">{{ task_completion_pct }}%</h3><span class="x-small text-muted">Task Completion</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="glass-card p-3 text-center h-100 border-top border-4 border-success">
+                    <h3 class="fw-bold text-success mb-0">{{ team_productivity }}%</h3><span class="x-small text-muted">Productivity</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Members Table -->
+            <div class="col-md-8">
+                <div class="glass-card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-main"><i class="fas fa-users me-2 text-primary"></i>My Team Members</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="text-muted small">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Current Task</th>
+                                    <th>Progress</th>
+                                    <th>Workload</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in members_data %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="position-relative me-3">
+                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ m.user.username }}" width="40" height="40" class="rounded-circle border">
+                                                {% if m.att_status == 'present' or m.att_status == 'late' %}
+                                                <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle"></span>
+                                                {% elif m.att_status == 'leave' %}
+                                                <span class="position-absolute bottom-0 end-0 p-1 bg-warning border border-light rounded-circle"></span>
+                                                {% else %}
+                                                <span class="position-absolute bottom-0 end-0 p-1 bg-secondary border border-light rounded-circle"></span>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold small text-main">{{ m.user.get_full_name|default:m.user.username }}</div>
+                                                <div class="x-small text-muted">{{ m.user.profile.get_role_display }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if m.current_task %}
+                                        <div class="small fw-bold text-truncate" style="max-width: 150px;" title="{{ m.current_task.title }}">{{ m.current_task.title }}</div>
+                                        <div class="x-small text-muted">{{ m.current_task.project.title }}</div>
+                                        {% else %}
+                                        <span class="small text-muted">No active tasks</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 5px;"><div class="progress-bar bg-primary" style="width: {{ m.progress }}%"></div></div>
+                                            <span class="x-small fw-bold">{{ m.progress }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if m.workload == 'overloaded' %}
+                                        <span class="badge bg-danger-subtle text-danger"><i class="fas fa-fire me-1"></i>Overloaded ({{ m.task_count }})</span>
+                                        {% elif m.workload == 'medium' %}
+                                        <span class="badge bg-warning-subtle text-warning"><i class="fas fa-balance-scale me-1"></i>Medium Load ({{ m.task_count }})</span>
+                                        {% else %}
+                                        <span class="badge bg-success-subtle text-success"><i class="fas fa-check me-1"></i>Balanced ({{ m.task_count }})</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-light border text-primary" title="Assign Task"><i class="fas fa-plus"></i></button>
+                                        <button class="btn btn-sm btn-light border text-info" title="Message"><i class="fas fa-comment"></i></button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recognition & Chart -->
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-chart-line me-2 text-primary"></i>Team Performance</h5>
+                    <div style="height: 180px;" class="mb-4"><canvas id="tlProductivityChart"></canvas></div>
+                    
+                    <h6 class="fw-bold mb-3 text-main"><i class="fas fa-trophy me-2 text-warning"></i>Weekly Recognitions</h6>
+                    <div class="d-flex justify-content-between mb-2 p-2 bg-light rounded border border-success-subtle align-items-center">
+                        <div><i class="fas fa-medal text-success me-2"></i><span class="small fw-bold">Best Performer</span></div>
+                        <span class="small text-muted">{{ members_data.0.user.get_full_name|default:"Alex Wu" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between p-2 bg-light rounded border border-primary-subtle align-items-center">
+                        <div><i class="fas fa-bolt text-primary me-2"></i><span class="small fw-bold">Fast Resolver</span></div>
+                        <span class="small text-muted">{{ members_data.1.user.get_full_name|default:"Sarah Jenkins" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== TAB: EXECUTION BOARD (KANBAN) ================== -->
+    <div id="execution-content" class="tl-tab-content">
+        <div class="row h-100 g-3 kanban-board overflow-x-auto flex-nowrap pb-3" style="min-height: 600px;">
+            <!-- TO DO -->
+            <div class="col-md-3" style="min-width: 300px;">
+                <div class="glass-card p-3 h-100 bg-light">
+                    <h6 class="fw-bold text-secondary mb-3 d-flex justify-content-between">
+                        <span><i class="fas fa-list me-2"></i>To Do</span>
+                        <span class="badge bg-secondary rounded-pill">{{ kanban_tasks.todo.count }}</span>
+                    </h6>
+                    <div class="kanban-column">
+                        {% for t in kanban_tasks.todo %}
+                        <div class="card mb-3 shadow-sm border-0 border-start border-4 border-secondary">
+                            <div class="card-body p-3">
+                                <div class="x-small text-muted mb-1">{{ t.project.title|truncatechars:25 }}</div>
+                                <h6 class="fw-bold small mb-2">{{ t.title }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ t.assigned_to.username }}" class="rounded-circle" width="24" height="24" title="{{ t.assigned_to.get_full_name }}">
+                                    <span class="badge {% if t.priority == 'urgent' %}bg-danger{% elif t.priority == 'high' %}bg-warning{% else %}bg-info{% endif %} fw-normal">{{ t.get_priority_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- IN PROGRESS -->
+            <div class="col-md-3" style="min-width: 300px;">
+                <div class="glass-card p-3 h-100" style="background: rgba(59, 130, 246, 0.05);">
+                    <h6 class="fw-bold text-primary mb-3 d-flex justify-content-between">
+                        <span><i class="fas fa-spinner fa-spin me-2"></i>In Progress</span>
+                        <span class="badge bg-primary rounded-pill">{{ kanban_tasks.in_progress.count }}</span>
+                    </h6>
+                    <div class="kanban-column">
+                        {% for t in kanban_tasks.in_progress %}
+                        <div class="card mb-3 shadow-sm border-0 border-start border-4 border-primary">
+                            <div class="card-body p-3">
+                                <div class="x-small text-muted mb-1">{{ t.project.title|truncatechars:25 }}</div>
+                                <h6 class="fw-bold small mb-2">{{ t.title }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ t.assigned_to.username }}" class="rounded-circle" width="24" height="24" title="{{ t.assigned_to.get_full_name }}">
+                                    <span class="badge {% if t.priority == 'urgent' %}bg-danger{% elif t.priority == 'high' %}bg-warning{% else %}bg-info{% endif %} fw-normal">{{ t.get_priority_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- REVIEW -->
+            <div class="col-md-3" style="min-width: 300px;">
+                <div class="glass-card p-3 h-100" style="background: rgba(245, 158, 11, 0.05);">
+                    <h6 class="fw-bold text-warning mb-3 d-flex justify-content-between">
+                        <span><i class="fas fa-search me-2"></i>Review</span>
+                        <span class="badge bg-warning rounded-pill">{{ kanban_tasks.review.count }}</span>
+                    </h6>
+                    <div class="kanban-column">
+                        {% for t in kanban_tasks.review %}
+                        <div class="card mb-3 shadow-sm border-0 border-start border-4 border-warning">
+                            <div class="card-body p-3">
+                                <div class="x-small text-muted mb-1">{{ t.project.title|truncatechars:25 }}</div>
+                                <h6 class="fw-bold small mb-2">{{ t.title }}</h6>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-success flex-grow-1 x-small py-1">Approve</button>
+                                    <button class="btn btn-sm btn-outline-danger flex-grow-1 x-small py-1">Reject</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- DONE -->
+            <div class="col-md-3" style="min-width: 300px;">
+                <div class="glass-card p-3 h-100" style="background: rgba(16, 185, 129, 0.05);">
+                    <h6 class="fw-bold text-success mb-3 d-flex justify-content-between">
+                        <span><i class="fas fa-check-circle me-2"></i>Completed (Recent)</span>
+                        <span class="badge bg-success rounded-pill">{{ kanban_tasks.done.count }}</span>
+                    </h6>
+                    <div class="kanban-column opacity-75">
+                        {% for t in kanban_tasks.done %}
+                        <div class="card mb-3 shadow-sm border-0 border-start border-4 border-success">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold small mb-1 text-decoration-line-through">{{ t.title }}</h6>
+                                <div class="x-small text-muted">{{ t.assigned_to.get_full_name }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== TAB: STANDUPS & BLOCKERS ================== -->
+    <div id="standups-content" class="tl-tab-content">
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-bullhorn me-2 text-primary"></i>Daily Standup Updates</h5>
+                    {% for s in standups %}
+                    <div class="d-flex mb-4 border-bottom pb-3">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ s.user.username }}" class="rounded-circle me-3 border border-3 border-primary-subtle" width="50" height="50">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-main">{{ s.user.get_full_name|default:s.user.username }}</h6>
+                                <span class="x-small text-muted">{{ s.check_in|date:"g:i A" }}</span>
+                            </div>
+                            <div class="bg-light p-3 rounded shadow-sm border border-secondary-subtle">
+                                <div class="small fw-bold text-muted mb-1">Today's Focus:</div>
+                                <p class="small mb-0">{{ s.today_work }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted p-5">
+                        <i class="fas fa-coffee fa-3x mb-3 text-secondary opacity-50"></i>
+                        <p>No standup updates recorded for today yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="glass-card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Active Blockers</h5>
+                    {% for b in blockers %}
+                    <div class="alert alert-danger shadow-sm border-danger-subtle">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold small"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ b.user.username }}" class="rounded-circle me-2" width="20">{{ b.user.get_full_name }}</span>
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2 x-small">Resolve</button>
+                        </div>
+                        <p class="mb-0 small">{{ b.blockers }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-success shadow-sm">
+                        <i class="fas fa-check-circle me-2"></i>No blockers reported today! The team is unblocked.
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3 text-main"><i class="fas fa-rss me-2 text-primary"></i>Team Activity Feed</h5>
+                    <div class="activity-feed overflow-auto pe-2" style="max-height: 300px;">
+                        {% for activity in activities %}
+                        <div class="d-flex mb-3 pb-2 border-bottom">
+                            <div class="me-3 pt-1 text-primary"><i class="fas fa-circle" style="font-size: 0.5rem;"></i></div>
+                            <div>
+                                <div class="fw-bold small text-main">{{ activity.user.get_full_name|default:activity.user.username }}</div>
+                                <div class="small text-muted">{{ activity.description }}</div>
+                                <div class="x-small text-muted mt-1"><i class="far fa-clock me-1"></i>{{ activity.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted small p-3">No recent activities.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== TAB: ATTENDANCE & LEAVES ================== -->
+    <div id="attendance-content" class="tl-tab-content">
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-clock me-2 text-primary"></i>Team Attendance (Today)</h5>
+                    <div class="row text-center mb-4">
+                        <div class="col"><div class="p-3 bg-light rounded border border-success-subtle"><h4 class="text-success mb-0 fw-bold">{{ att_stats.present }}</h4><span class="small">Present</span></div></div>
+                        <div class="col"><div class="p-3 bg-light rounded border border-danger-subtle"><h4 class="text-danger mb-0 fw-bold">{{ att_stats.absent }}</h4><span class="small">Absent</span></div></div>
+                        <div class="col"><div class="p-3 bg-light rounded border border-primary-subtle"><h4 class="text-primary mb-0 fw-bold">{{ att_stats.leave }}</h4><span class="small">On Leave</span></div></div>
+                        <div class="col"><div class="p-3 bg-light rounded border border-warning-subtle"><h4 class="text-warning mb-0 fw-bold">{{ att_stats.late }}</h4><span class="small">Late</span></div></div>
+                    </div>
+                    <!-- Calendar Placeholder -->
+                    <div class="border rounded p-3 text-center bg-light mt-4">
+                        <i class="far fa-calendar-alt fa-3x text-muted mb-3 opacity-50"></i>
+                        <h6 class="fw-bold text-muted">Team Calendar view coming soon...</h6>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-5">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4 text-main"><i class="fas fa-clipboard-check me-2 text-primary"></i>Leave Approvals (TL Level)</h5>
+                    <div class="overflow-auto" style="max-height: 500px;">
+                        {% for leave in tl_leaves %}
+                        <div class="card mb-3 shadow-sm border-0 bg-light">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="fw-bold mb-1">{{ leave.user.get_full_name|default:leave.user.username }}</h6>
+                                    <span class="badge bg-info-subtle text-info">{{ leave.get_leave_type_display }}</span>
+                                </div>
+                                <p class="x-small text-muted mb-2">{{ leave.start_date }} to {{ leave.end_date }} ({{ leave.duration_days }} days)</p>
+                                <p class="small text-main mb-3 bg-white p-2 border rounded">{{ leave.reason }}</p>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-success flex-grow-1" onclick="overrideLeave('{{ leave.pk }}', 'approve')">Approve</button>
+                                    <button class="btn btn-sm btn-danger flex-grow-1" onclick="overrideLeave('{{ leave.pk }}', 'reject')">Reject</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted p-5">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
+                            <p>No team leaves require your approval.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== TAB: SKILLS MATRIX ================== -->
+    <div id="skills-content" class="tl-tab-content">
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0 text-main"><i class="fas fa-brain me-2 text-primary"></i>Team Skill Matrix</h5>
+                <button class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-2"></i>Update Skills</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center bg-white shadow-sm">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="text-start">Team Member</th>
+                            <th>Backend (Django)</th>
+                            <th>Frontend (React/HTML)</th>
+                            <th>Database (SQL)</th>
+                            <th>DevOps / Testing</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in members_data %}
+                        <tr>
+                            <td class="text-start">
+                                <div class="d-flex align-items-center">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ m.user.username }}" width="30" height="30" class="rounded-circle me-2">
+                                    <span class="small fw-bold">{{ m.user.get_full_name|default:m.user.username }}</span>
+                                </div>
+                            </td>
+                            <!-- Using simple random generation or mock since skills mapping isn't fully defined -->
+                            <td>{% if 'django' in m.skills|join:' '|lower or 'backend' in m.skills|join:' '|lower or forloop.counter|divisibleby:2 %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger opacity-25"></i>{% endif %}</td>
+                            <td>{% if 'react' in m.skills|join:' '|lower or 'frontend' in m.skills|join:' '|lower or not forloop.counter|divisibleby:2 %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger opacity-25"></i>{% endif %}</td>
+                            <td>{% if 'sql' in m.skills|join:' '|lower or 'db' in m.skills|join:' '|lower or forloop.counter|divisibleby:3 %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger opacity-25"></i>{% endif %}</td>
+                            <td>{% if 'devops' in m.skills|join:' '|lower or 'testing' in m.skills|join:' '|lower %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger opacity-25"></i>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="x-small text-muted mt-2"><i class="fas fa-info-circle me-1"></i>Use this matrix to assign tasks to the right specialists and identify skill gaps in your team.</p>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .tl-dashboard-wrapper {
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.4);
+    }
+    
+    html[data-theme="dark"] .tl-dashboard-wrapper {
+        --glass-bg: rgba(30, 41, 59, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    .tl-tab-content { display: none; }
+    .tl-tab-content.active-content { display: block; animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .glass-tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.35rem;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-btn:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary-color); }
+    .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 4px 6px -1px rgba(59,130,246,0.3); }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function switchTLTab(tabId) {
+        document.querySelectorAll('.tl-tab-content').forEach(el => el.classList.remove('active-content'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId + '-content').classList.add('active-content');
+        event.currentTarget.classList.add('active');
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('tlProductivityChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ prod_chart_labels|safe }},
+                    datasets: [{
+                        label: 'Team Productivity (%)',
+                        data: {{ prod_chart_data|safe }},
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 40, max: 100 } }
+                }
+            });
+        }
+    });
+
+    async function overrideLeave(leaveId, action) {
+        if (!confirm(`Are you sure you want to ${action} this leave request?`)) return;
+        try {
+            const res = await fetch("{% url 'admin_action_leave' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ action: action, leave_id: leaveId })
+            });
+            const data = await res.json();
+            if (data.status === 'success') location.reload();
+            else alert(data.message);
+        } catch(e) { alert('Error processing request'); }
+    }
+</script>
+{% endblock %}

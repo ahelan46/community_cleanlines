@@ -105,8 +105,13 @@
         border: 2px solid #fff;
     }
 
-    .status-online { background-color: #22c55e; }
-    .status-offline { background-color: #94a3b8; }
+    .status-online {
+        background-color: #22c55e;
+    }
+
+    .status-offline {
+        background-color: #94a3b8;
+    }
 
     .unread-glowing-badge {
         background: var(--primary-color);
@@ -132,7 +137,7 @@
         max-width: 65%;
         padding: 0.85rem 1rem;
         border-radius: 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         position: relative;
     }
 
@@ -180,12 +185,25 @@
         animation: typing 1.4s infinite ease-in-out both;
     }
 
-    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    .typing-dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+
+    .typing-dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
 
     @keyframes typing {
-        0%, 80%, 100% { transform: scale(0); }
-        40% { transform: scale(1); }
+
+        0%,
+        80%,
+        100% {
+            transform: scale(0);
+        }
+
+        40% {
+            transform: scale(1);
+        }
     }
 
     /* File preview styles */
@@ -201,7 +219,7 @@
     }
 
     .msg-received .file-preview-card {
-        background-color:white;
+        background-color: white;
         border: 1px solid var(--border-color);
     }
 
@@ -212,7 +230,7 @@
         transition: transform 0.2s ease;
         padding: 0.25rem;
     }
-    
+
     .emoji-pill:hover {
         transform: scale(1.2);
     }
@@ -221,7 +239,7 @@
         max-width: 65%;
         padding: 0.85rem 1rem;
         border-radius: 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         position: relative;
     }
 
@@ -231,15 +249,18 @@
         align-self: flex-end;
         border-bottom-right-radius: 4px;
     }
+
     .msg-received,
     .msg-received p,
     .msg-received .small,
     .msg-received .x-small {
         color: #000000 !important;
     }
+
     .msg-received .fw-bold {
         color: #3b82f6 !important;
     }
+
     .msg-received {
         background-color: #fff;
         color: #000000 !important;
@@ -250,7 +271,8 @@
 
     /* Sender name inside received messages */
     .msg-received .fw-bold {
-        color: #3b82f6 !important;  /* Blue color for sender name */
+        color: #3b82f6 !important;
+        /* Blue color for sender name */
     }
 
     /* Adjust file preview link colors */
@@ -268,7 +290,8 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <h2 class="fw-bold mb-1 text-main">Discussions & Chat</h2>
-        <p class="text-muted small mb-0">Collaborate in project channels or message team members and clients directly.</p>
+        <p class="text-muted small mb-0">Collaborate in project channels or message team members and clients directly.
+        </p>
     </div>
 </div>
 
@@ -278,10 +301,14 @@
     <div class="chat-sidebar">
         <!-- Directory Category Tabs -->
         <nav class="nav nav-tabs sidebar-tabs border-bottom px-2 pt-2 bg-white" id="chatTabs">
-            <button class="nav-link active flex-grow-1 text-center" data-bs-toggle="tab" data-bs-target="#tab-channels">Channels</button>
-            <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab" data-bs-target="#tab-managers">Managers</button>
-            <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab" data-bs-target="#tab-team">Team</button>
-            <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab" data-bs-target="#tab-clients">Clients</button>
+            <button class="nav-link active flex-grow-1 text-center" data-bs-toggle="tab"
+                data-bs-target="#tab-channels">Channels</button>
+            <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab"
+                data-bs-target="#tab-managers">Managers</button>
+            <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab"
+                data-bs-target="#tab-team">Team</button>
+            <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab"
+                data-bs-target="#tab-clients">Clients</button>
         </nav>
 
         <!-- Directory Tab Content -->
@@ -289,9 +316,11 @@
             <!-- Channels Tab -->
             <div class="tab-pane fade show active" id="tab-channels">
                 {% for proj in projects %}
-                <div class="chat-item" onclick="selectConversation('project', {{ proj.id }}, '# Channel: {{ proj.title }}', true)">
+                <div class="chat-item"
+                    onclick="selectConversation('project', {{ proj.id }}, '# Channel: {{ proj.title }}', true)">
                     <div class="avatar-wrapper">
-                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                            style="width: 40px; height: 40px;">
                             #
                         </div>
                     </div>
@@ -311,9 +340,12 @@
             <!-- Managers Tab -->
             <div class="tab-pane fade" id="tab-managers">
                 {% for m in managers %}
-                <div class="chat-item" onclick="selectConversation('user', {{ m.id }}, '{{ m.name }}', {{ m.online|yesno:'true,false' }})" id="user-chat-{{ m.id }}">
+                <div class="chat-item"
+                    onclick="selectConversation('user', {{ m.id }}, '{{ m.name }}', {{ m.online|yesno:'true,false' }})"
+                    id="user-chat-{{ m.id }}">
                     <div class="avatar-wrapper">
-                        <img src="https://ui-avatars.com/api/?name={{ m.name }}&background=6366f1&color=fff" alt="{{ m.name }}">
+                        <img src="https://ui-avatars.com/api/?name={{ m.name }}&background=6366f1&color=fff"
+                            alt="{{ m.name }}">
                         <span class="status-badge status-{{ m.online|yesno:'online,offline' }}"></span>
                     </div>
                     <div class="flex-grow-1 overflow-hidden">
@@ -334,9 +366,12 @@
             <!-- Team Tab -->
             <div class="tab-pane fade" id="tab-team">
                 {% for t in team %}
-                <div class="chat-item" onclick="selectConversation('user', {{ t.id }}, '{{ t.name }}', {{ t.online|yesno:'true,false' }})" id="user-chat-{{ t.id }}">
+                <div class="chat-item"
+                    onclick="selectConversation('user', {{ t.id }}, '{{ t.name }}', {{ t.online|yesno:'true,false' }})"
+                    id="user-chat-{{ t.id }}">
                     <div class="avatar-wrapper">
-                        <img src="https://ui-avatars.com/api/?name={{ t.name }}&background=0284c7&color=fff" alt="{{ t.name }}">
+                        <img src="https://ui-avatars.com/api/?name={{ t.name }}&background=0284c7&color=fff"
+                            alt="{{ t.name }}">
                         <span class="status-badge status-{{ t.online|yesno:'online,offline' }}"></span>
                     </div>
                     <div class="flex-grow-1 overflow-hidden">
@@ -357,9 +392,12 @@
             <!-- Clients Tab -->
             <div class="tab-pane fade" id="tab-clients">
                 {% for c in clients %}
-                <div class="chat-item" onclick="selectConversation('user', {{ c.id }}, '{{ c.name }}', {{ c.online|yesno:'true,false' }})" id="user-chat-{{ c.id }}">
+                <div class="chat-item"
+                    onclick="selectConversation('user', {{ c.id }}, '{{ c.name }}', {{ c.online|yesno:'true,false' }})"
+                    id="user-chat-{{ c.id }}">
                     <div class="avatar-wrapper">
-                        <img src="https://ui-avatars.com/api/?name={{ c.name }}&background=db2777&color=fff" alt="{{ c.name }}">
+                        <img src="https://ui-avatars.com/api/?name={{ c.name }}&background=db2777&color=fff"
+                            alt="{{ c.name }}">
                         <span class="status-badge status-{{ c.online|yesno:'online,offline' }}"></span>
                     </div>
                     <div class="flex-grow-1 overflow-hidden">
@@ -384,13 +422,15 @@
         <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted p-5">
             <i class="far fa-comments fa-4x mb-3 text-muted opacity-30"></i>
             <h5 class="fw-bold text-main mb-1">Select a Conversation</h5>
-            <p class="small text-muted text-center" style="max-width: 320px;">Open a group project channel or select an individual team member to start communicating.</p>
+            <p class="small text-muted text-center" style="max-width: 320px;">Open a group project channel or select an
+                individual team member to start communicating.</p>
         </div>
     </div>
 
     <div class="chat-window d-none" id="activeChatWindow">
         <!-- Active Chat Header -->
-        <div class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between border-bottom">
+        <div
+            class="card-header bg-white border-0 py-3 px-4 d-flex align-items-center justify-content-between border-bottom">
             <div class="d-flex align-items-center">
                 <div class="avatar-wrapper me-3">
                     <img id="activeChatAvatar" src="https://ui-avatars.com/api/?name=Chat" alt="Avatar">
@@ -417,7 +457,8 @@
         </div>
 
         <!-- Attachment Preview Bar -->
-        <div class="bg-light px-4 py-2 border-top d-none d-flex align-items-center justify-content-between" id="attachmentPreviewBar">
+        <div class="bg-light px-4 py-2 border-top d-none d-flex align-items-center justify-content-between"
+            id="attachmentPreviewBar">
             <div class="d-flex align-items-center gap-2">
                 <i class="far fa-file-alt text-primary fa-lg"></i>
                 <div>
@@ -425,7 +466,8 @@
                     <span class="x-small text-muted">Ready to upload</span>
                 </div>
             </div>
-            <button class="btn btn-sm btn-link text-danger p-0" onclick="cancelAttachment()"><i class="fas fa-times-circle"></i> Cancel</button>
+            <button class="btn btn-sm btn-link text-danger p-0" onclick="cancelAttachment()"><i
+                    class="fas fa-times-circle"></i> Cancel</button>
         </div>
 
         <!-- Chat Input Footer Area -->
@@ -443,16 +485,21 @@
             <!-- Text & File share Input Form -->
             <form id="chatSendForm" onsubmit="submitChatMessage(event)" class="d-flex gap-2.5 align-items-center">
                 <!-- File Share trigger -->
-                <button type="button" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 42px; height: 42px;" onclick="document.getElementById('chatFileInput').click()">
+                <button type="button"
+                    class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0"
+                    style="width: 42px; height: 42px;" onclick="document.getElementById('chatFileInput').click()">
                     <i class="fas fa-paperclip text-muted"></i>
                 </button>
-                <input type="file" id="chatFileInput" style="display: none;" onchange="handleFileSelected(this.files[0])">
+                <input type="file" id="chatFileInput" style="display: none;"
+                    onchange="handleFileSelected(this.files[0])">
 
                 <!-- Text entry -->
-                <input type="text" id="chatMessageInput" class="form-control rounded-pill border-0 bg-light py-2.5 px-4" placeholder="Type your message here..." autocomplete="off">
-                
+                <input type="text" id="chatMessageInput" class="form-control rounded-pill border-0 bg-light py-2.5 px-4"
+                    placeholder="Type your message here..." autocomplete="off">
+
                 <!-- Submit -->
-                <button style="background-color: #000000;" type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0">
+                <button style="background-color: #000000;" type="submit"
+                    class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
@@ -470,7 +517,7 @@
     let refreshInterval = null;
 
     // SELECT CONVERSATION FLOW
-    window.selectConversation = function(type, id, title, online) {
+    window.selectConversation = function (type, id, title, online) {
         activeTargetType = type;
         activeTargetId = id;
         activeOnlineState = online;
@@ -491,7 +538,7 @@
         const activeChatAvatar = document.getElementById('activeChatAvatar');
 
         activeChatTitle.textContent = title;
-        
+
         if (type === 'project') {
             activeChatOnlineStatus.className = 'status-badge status-online';
             activeChatSubtext.className = 'text-success small';
@@ -551,7 +598,7 @@
 
     function renderMessagesList(messages, scrollToBottom) {
         const body = document.getElementById('chatMessageBody');
-        
+
         if (messages.length === 0) {
             body.innerHTML = `
                 <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted py-5">
@@ -564,7 +611,7 @@
 
         const listHTML = messages.map(m => {
             const isMe = m.is_me;
-            
+
             // Build file attachments html if present
             let fileHTML = '';
             if (m.file_url) {
@@ -631,7 +678,7 @@
     // FILE ATTACHMENT PREVIEW FLOW
     let selectedFileObject = null;
 
-    window.handleFileSelected = function(file) {
+    window.handleFileSelected = function (file) {
         if (!file) return;
         selectedFileObject = file;
 
@@ -641,21 +688,21 @@
         previewBar.classList.remove('d-none');
     };
 
-    window.cancelAttachment = function() {
+    window.cancelAttachment = function () {
         selectedFileObject = null;
         document.getElementById('chatFileInput').value = '';
         document.getElementById('attachmentPreviewBar').classList.add('d-none');
     };
 
     // EMOJI PILLS FLOW
-    window.insertEmoji = function(emoji) {
+    window.insertEmoji = function (emoji) {
         const input = document.getElementById('chatMessageInput');
         input.value += emoji;
         input.focus();
     };
 
     // SEND CHAT MESSAGE VIA AJAX
-    window.submitChatMessage = function(event) {
+    window.submitChatMessage = function (event) {
         event.preventDefault();
 
         const input = document.getElementById('chatMessageInput');
@@ -686,18 +733,18 @@
             },
             body: formData
         })
-        .then(res => {
-            if (!res.ok) throw new Error('Send failed');
-            return res.json();
-        })
-        .then(data => {
-            // Load list synchronously and scroll
-            loadMessagesHistory(true);
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Could not deliver chat message.");
-        });
+            .then(res => {
+                if (!res.ok) throw new Error('Send failed');
+                return res.json();
+            })
+            .then(data => {
+                // Load list synchronously and scroll
+                loadMessagesHistory(true);
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Could not deliver chat message.");
+            });
     }
 </script>
 {% endblock %}

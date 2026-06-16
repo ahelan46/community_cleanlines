@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Submit Demo | Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mb-4">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h4 class="fw-bold mb-0"><i class="fas fa-video text-primary me-2"></i>Submit Demo to Client</h4>
+            <a href="{% url 'team_leader_projects' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form action="{% url 'submit_demo' %}" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Select Project</label>
+                        <select name="project_id" class="form-select border-light-subtle shadow-sm" required>
+                            <option value="">-- Choose Project --</option>
+                            {% for proj in assigned_projects %}
+                                <option value="{{ proj.id }}">{{ proj.title }} (Client: {{ proj.client.company_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Demo URL (Optional)</label>
+                            <input type="url" name="demo_url" class="form-control border-light-subtle shadow-sm" placeholder="https://demo.example.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Main Project URL</label>
+                            <input type="url" name="main_project_url" class="form-control border-light-subtle shadow-sm" placeholder="https://production.example.com">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Demo Video Upload (Optional)</label>
+                        <input type="file" name="demo_video" class="form-control border-light-subtle shadow-sm" accept=".mp4,.mov">
+                        <div class="form-text">Allowed formats: MP4, MOV. Max size 50MB.</div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Payment Type</label>
+                            <select name="payment_type" class="form-select border-light-subtle shadow-sm" required>
+                                <option value="advance">Advance Payment</option>
+                                <option value="full">Full Payment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Payment Amount (₹)</label>
+                            <input type="number" name="payment_amount" class="form-control border-light-subtle shadow-sm" placeholder="50000" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Payment Notes & Progress Details</label>
+                        <textarea name="payment_notes" class="form-control border-light-subtle shadow-sm" rows="3" placeholder="e.g. 50% completed, advance invoice generated"></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold">Submit Demo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
