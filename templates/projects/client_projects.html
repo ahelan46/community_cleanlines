@@ -153,9 +153,13 @@
                     </div>
                     {% endif %}
                 </div>
-                <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-primary px-3 rounded-2 fw-semibold">
-                    Workspace Details <i class="fas fa-chevron-right ms-1" style="font-size: 0.7rem;"></i>
-                </a>
+                {% if project.demo_urls.first %}
+                    <a href="{% url 'workspace_details' project.demo_urls.first.id %}" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-info-circle"></i> Workspace Details
+                    </a>
+                {% endif %}
+
+
             </div>
         </div>
     </div>

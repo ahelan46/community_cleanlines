@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Demo URL | Tracker{% endblock %}
+
+{% block content %}
+<div class="glass-card p-4">
+    <h2 class="fw-bold mb-4">Edit Demo URL</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Read-only URLs -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Demo Video URL</label>
+            <input type="url" class="form-control" value="{{ demo_url.demo_video_url }}" readonly>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Demo Project URL</label>
+            <input type="url" class="form-control" value="{{ demo_url.demo_project_url }}" readonly>
+        </div>
+
+        <!-- Payment Fields (blank if None) -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Advance Payment</label>
+            <input type="text" name="advance_payment" class="form-control" value="{{ demo_url.advance_payment|default_if_none:'' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Full Payment</label>
+            <input type="text" name="full_payment" class="form-control" value="{{ demo_url.full_payment|default_if_none:'' }}">
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i> Save</button>
+            <a href="{% url 'project_detail_list' %}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

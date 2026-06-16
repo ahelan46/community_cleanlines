@@ -12,6 +12,9 @@ from django.contrib.auth.models import User
 from django.template.loader import get_template, TemplateDoesNotExist
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+
+from .models import DemoURL
+
 import json
 
 @login_required
@@ -1782,19 +1785,31 @@ def assign_project_to_leader(request, project_id):
 @login_required
 def team_leader_projects(request):
     """Team Leader sees all projects assigned to him"""
+
     # Get all project assignments for this team leader
     assignments = ProjectAssignment.objects.filter(team_leader=request.user)
-    
+
     pending_assignments = assignments.filter(status='pending')
     accepted_assignments = assignments.filter(status='accepted')
     rejected_assignments = assignments.filter(status='rejected')
-    
+
+    # ✅ Correct way: filter projects via assignments relation
+    projects = Project.objects.filter(
+        assignments__team_leader=request.user,
+        assignments__status='accepted'
+    ).distinct()
+
+    clients = Client.objects.all()
+
     context = {
-        'pending_assignments': pending_assignments,
-        'accepted_assignments': accepted_assignments,
-        'rejected_assignments': rejected_assignments,
+        "projects": projects,
+        "clients": clients,
+        "pending_assignments": pending_assignments,
+        "accepted_assignments": accepted_assignments,
+        "rejected_assignments": rejected_assignments,
     }
-    return render(request, 'projects/team_leader_projects.html', context)
+    return render(request, "projects/team_leader_projects.html", context)
+
 
 @login_required
 def accept_project_assignment(request, assignment_id):
