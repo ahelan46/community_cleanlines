@@ -1730,6 +1730,13 @@ def settings_view(request):
     client = None
     if user_role == 'client':
         client = Client.objects.filter(email=request.user.email).first()
+        if client is None:
+            client = Client.objects.create(
+                name=request.user.get_full_name() or request.user.username,
+                email=request.user.email,
+                phone=request.user.profile.phone or '',
+                address='',
+            )
         
     if request.method == 'POST':
         user = request.user
@@ -1743,6 +1750,9 @@ def settings_view(request):
         profile.save()
         
         if client and user_role == 'client':
+            client.name = user.get_full_name() or user.username
+            client.email = user.email
+            client.phone = profile.phone
             client.address = request.POST.get('address', client.address)
             client.save()
             
