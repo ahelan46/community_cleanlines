@@ -72,48 +72,6 @@ class FeedbackForm(forms.ModelForm):
         }
 
 class ClientProjectForm(forms.Form):
-    # Client Information
-    client_name = forms.CharField(
-        label='Client Name',
-        max_length=200,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter client name'
-        })
-    )
-    
-    company_name = forms.CharField(
-        label='Company / Organization Name',
-        max_length=200,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter your company name'
-        })
-    )
-    
-    phone = forms.CharField(
-        label='Phone Number',
-        max_length=20,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter phone number',
-            'type': 'tel'
-        })
-    )
-    
-    email = forms.EmailField(
-        label='Email Address',
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter email address'
-        })
-    )
-    
-    # Project Information
     project_title = forms.CharField(
         label='Project Title',
         max_length=200,
@@ -123,8 +81,30 @@ class ClientProjectForm(forms.Form):
             'placeholder': 'Enter project title'
         })
     )
+
+    priority = forms.ChoiceField(
+        label='Priority',
+        choices=Project.PRIORITY_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+
+    amount = forms.DecimalField(
+        label='Amount',
+        max_digits=10,
+        decimal_places=2,
+        min_value=0,
+        required=True,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter project amount',
+            'step': '0.01',
+            'min': '0'
+        })
+    )
     
-    # Project Deadline
     deadline = forms.DateField(
         label='Project Deadline',
         required=True,
@@ -135,10 +115,9 @@ class ClientProjectForm(forms.Form):
         })
     )
     
-    # File Upload (Optional)
     file_upload = forms.FileField(
-        label='Upload File (Optional)',
-        required=False,
+        label='Upload File',
+        required=True,
         widget=forms.FileInput(attrs={
             'class': 'form-control',
             'accept': '*/*'
