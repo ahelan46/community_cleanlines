@@ -143,57 +143,57 @@
             </div>
 
             <!-- Charts Section -->
-            <div class="col-12">
-                <div class="card border-0 glass-card p-4">
-                    <h5 class="fw-bold mb-4"><i class="fas fa-chart-line text-info me-2"></i>Performance & Productivity
-                        Analytics</h5>
-                    <div class="row g-4">
+            <!-- <div class="col-12"> -->
+                <!-- <div class="card border-0 glass-card p-4"> -->
+                    <!-- <h5 class="fw-bold mb-4"><i class="fas fa-chart-line text-info me-2"></i>Performance & Productivity -->
+                        <!-- Analytics</h5> -->
+                    <!-- <div class="row g-4"> -->
                         <!-- Task Completion Doughnut -->
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 text-center bg-light-subtle h-100">
-                                <h6 class="fw-bold mb-3 text-muted">Task Completion Ratio</h6>
-                                <div
-                                    style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;">
-                                    <canvas id="taskCompletionChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- <div class="col-md-6"> -->
+                            <!-- <div class="p-3 border rounded-3 text-center bg-light-subtle h-100"> -->
+                                <!-- <h6 class="fw-bold mb-3 text-muted">Task Completion Ratio</h6> -->
+                                <!-- <div -->
+                                    <!-- style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;"> -->
+                                    <!-- <canvas id="taskCompletionChart"></canvas> -->
+                                <!-- </div> -->
+                            <!-- </div> -->
+                        <!-- </div> -->
                         <!-- Team Productivity Bar -->
-                        <div class="col-md-6">
-                            <div class="p-3 border rounded-3 text-center bg-light-subtle h-100">
-                                <h6 class="fw-bold mb-3 text-muted">Sprint Progress Velocity</h6>
-                                <div
-                                    style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;">
-                                    <canvas id="weeklyProgressChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- <div class="col-md-6"> -->
+                            <!-- <div class="p-3 border rounded-3 text-center bg-light-subtle h-100"> -->
+                                <!-- <h6 class="fw-bold mb-3 text-muted">Sprint Progress Velocity</h6> -->
+                                <!-- <div -->
+                                    <!-- style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center;"> -->
+                                    <!-- <canvas id="weeklyProgressChart"></canvas> -->
+                                <!-- </div> -->
+                            <!-- </div> -->
+                        <!-- </div> -->
                         <!-- Team workload radar or custom -->
-                        <div class="col-12">
-                            <div class="p-3 border rounded-3 text-center bg-light-subtle">
-                                <h6 class="fw-bold mb-3 text-muted">Team Workload Allocation (Hours/Week)</h6>
-                                <div style="height: 220px; width: 100%;">
-                                    <canvas id="teamProductivityChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <!-- <div class="col-12"> -->
+                            <!-- <div class="p-3 border rounded-3 text-center bg-light-subtle"> -->
+                                <!-- <h6 class="fw-bold mb-3 text-muted">Team Workload Allocation (Hours/Week)</h6> -->
+                                <!-- <div style="height: 220px; width: 100%;"> -->
+                                    <!-- <canvas id="teamProductivityChart"></canvas> -->
+                                <!-- </div> -->
+                            <!-- </div> -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+                <!-- </div> -->
             </div>
         </div>
     </div>
 
     <!-- Right Section: Deadlines and Active Team members -->
-    <div class="col-lg-4">
-        <div class="row g-4">
+    <div class="col-lg-8">
+        <!-- <div class="row g-4"> -->
             <!-- Upcoming Deadlines Widget -->
             <div class="col-12">
                 <div class="card border-0 glass-card p-4">
-                    <h5 class="fw-bold mb-4"><i class="far fa-calendar-times text-warning me-2"></i>Upcoming Deadlines
-                    </h5>
+                    <!-- <h5 class="fw-bold mb-4"><i class="far fa-calendar-times text-warning me-2"></i>Upcoming Deadlines -->
+                    <!-- </h5> -->
                     <div class="d-grid gap-3">
-                        {% for item in upcoming_deadlines %}
-                        <div
+                        <!-- {% for item in upcoming_deadlines %} -->
+                        <!-- <div
                             class="p-3 border rounded-3 bg-light-subtle d-flex align-items-center justify-content-between transition-all hover-translate">
                             <div>
                                 <h6 class="fw-bold mb-1 text-main" style="font-size: 0.9rem;">{{ item.title }}</h6>
@@ -209,10 +209,10 @@
                                     style="font-size: 0.7rem; font-weight: 600;">
                                     {% if item.days_left < 0 %} Overdue {% elif item.days_left == 0 %} Due today {% elif item.days_left == 1 %} Due tomorrow {% else %} In {{ item.days_left }} days {% endif %} </span>
                             </div>
-                        </div>
-                        {% empty %}
+                        </div> -->
+                        <!-- {% empty %}
                         <div class="text-center py-4 text-muted small">No upcoming deadlines found.</div>
-                        {% endfor %}
+                        {% endfor %} -->
                     </div>
                 </div>
             </div>
@@ -220,14 +220,14 @@
             <!-- Team Members Working Widget -->
             <div class="col-12">
                 <div class="card border-0 glass-card p-4">
-                    <h5 class="fw-bold mb-4"><i class="fas fa-user-friends text-success me-2"></i>Active Team Members
-                    </h5>
+                    <!-- <h5 class="fw-bold mb-4"><i class="fas fa-user-friends text-success me-2"></i>Active Team Members -->
+                    <!-- </h5> -->
                     <div class="d-grid gap-3">
-                        {% for member in team_members_working %}
-                        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 hover-bg">
+                        <!-- {% for member in team_members_working %} -->
+                        <!-- <div class="d-flex align-items-center justify-content-between p-2 rounded-3 hover-bg">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="position-relative">
-                                    <img src="{{ member.avatar }}" class="rounded-circle border" width="40" height="40">
+                                    <img src="{{ member.avatar }}" class="rounded-circle border" width="40" height="40"> 
                                     <span
                                         class="position-absolute bottom-0 end-0 border border-white rounded-circle p-1 {% if member.online %}online-dot{% else %}offline-dot{% endif %}"
                                         style="width: 10px; height: 10px;"></span>
@@ -245,7 +245,7 @@
                                 </span>
                             </div>
                         </div>
-                        {% endfor %}
+                        {% endfor %} -->
                     </div>
                 </div>
             </div>
@@ -295,8 +295,8 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Chart 1: Task Completion Ratio (Doughnut)
-        const ctx1 = document.getElementById('taskCompletionChart').getContext('2d');
-        const data1 = {{ chart_completion|safe }};
+        // const ctx1 = document.getElementById('taskCompletionChart').getContext('2d');
+        // const data1 = {{ chart_completion|safe }};
     new Chart(ctx1, {
         type: 'doughnut',
         data: {
@@ -326,80 +326,80 @@
     });
 
     // Chart 2: Weekly Progress (Line)
-    const ctx2 = document.getElementById('weeklyProgressChart').getContext('2d');
-    const data2 = {{ chart_progress| safe }};
-    new Chart(ctx2, {
-        type: 'line',
-        data: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
-            datasets: [{
-                label: 'Completion Progress %',
-                data: data2.length ? data2 : [10, 30, 50, 75, 100],
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointBackgroundColor: '#6366f1'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { color: 'var(--text-muted)' },
-                    grid: { color: 'rgba(0,0,0,0.03)' }
-                },
-                x: {
-                    ticks: { color: 'var(--text-muted)' },
-                    grid: { display: false }
-                }
-            }
-        }
-    });
+    // const ctx2 = document.getElementById('weeklyProgressChart').getContext('2d');
+    // const data2 = {{ chart_progress| safe }};
+    // new Chart(ctx2, {
+    //     type: 'line',
+    //     data: {
+    //         labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+    //         datasets: [{
+    //             label: 'Completion Progress %',
+    //             data: data2.length ? data2 : [10, 30, 50, 75, 100],
+    //             borderColor: '#6366f1',
+    //             backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    //             tension: 0.4,
+    //             fill: true,
+    //             borderWidth: 3,
+    //             pointRadius: 4,
+    //             pointBackgroundColor: '#6366f1'
+    //         }]
+    //     },
+    //     options: {
+    //         responsive: true,
+    //         maintainAspectRatio: false,
+    //         plugins: {
+    //             legend: { display: false }
+    //         },
+    //         scales: {
+    //             y: {
+    //                 beginAtZero: true,
+    //                 max: 100,
+    //                 ticks: { color: 'var(--text-muted)' },
+    //                 grid: { color: 'rgba(0,0,0,0.03)' }
+    //             },
+    //             x: {
+    //                 ticks: { color: 'var(--text-muted)' },
+    //                 grid: { display: false }
+    //             }
+    //         }
+    //     }
+    // });
 
     // Chart 3: Team Workload (Bar)
-    const ctx3 = document.getElementById('teamProductivityChart').getContext('2d');
-    const data3 = {{ chart_team_productivity| safe }};
-    new Chart(ctx3, {
-        type: 'bar',
-        data: {
-            labels: ['Sarah Connor (PM)', 'John Doe (Backend)', 'Alex Mercer (Design)', 'David Okafor (Tester)', 'Sophie (Admin)'],
-            datasets: [{
-                label: 'Allocated Hours',
-                data: data3.length ? data3 : [10, 25, 18, 12, 5],
-                backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)'],
-                borderRadius: 8,
-                borderWidth: 0,
-                barThickness: 24
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: 'var(--text-muted)' },
-                    grid: { color: 'rgba(0,0,0,0.03)' }
-                },
-                x: {
-                    ticks: { color: 'var(--text-muted)' },
-                    grid: { display: false }
-                }
-            }
-        }
-    });
+    // const ctx3 = document.getElementById('teamProductivityChart').getContext('2d');
+    // const data3 = {{ chart_team_productivity| safe }};
+    // new Chart(ctx3, {
+    //     type: 'bar',
+    //     data: {
+    //         labels: ['Sarah Connor (PM)', 'John Doe (Backend)', 'Alex Mercer (Design)', 'David Okafor (Tester)', 'Sophie (Admin)'],
+    //         datasets: [{
+    //             label: 'Allocated Hours',
+    //             data: data3.length ? data3 : [10, 25, 18, 12, 5],
+    //             backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+    //             borderRadius: 8,
+    //             borderWidth: 0,
+    //             barThickness: 24
+    //         }]
+    //     },
+    //     options: {
+    //         responsive: true,
+    //         maintainAspectRatio: false,
+    //         plugins: {
+    //             legend: { display: false }
+    //         },
+    //         scales: {
+    //             y: {
+    //                 beginAtZero: true,
+    //                 ticks: { color: 'var(--text-muted)' },
+    //                 grid: { color: 'rgba(0,0,0,0.03)' }
+    //             },
+    //             x: {
+    //                 ticks: { color: 'var(--text-muted)' },
+    //                 grid: { display: false }
+    //             }
+    //         }
+    //     }
+    // });
     });
 </script>
 {% endblock %}
