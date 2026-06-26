@@ -704,20 +704,66 @@ def task_board(request):
 # Report Views
 @login_required
 def team_reports(request):
-    user_role = request.user.profile.role
+    try:
+        user_role = request.user.profile.role
+    except UserProfile.DoesNotExist:
+        user_role = 'team_member'
+        
+    from .forms import ReportForm
+    
+    if request.method == 'POST' and user_role in ['team_member', 'team_leader']:
+        form = ReportForm(request.POST, request.FILES)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.submitted_by = request.user
+            report.save()
+            return redirect('team_reports')
+    else:
+        form = ReportForm()
+        if user_role == 'team_member':
+            form.fields['project'].queryset = Project.objects.filter(tasks__assigned_to=request.user).distinct()
+        elif user_role == 'team_leader':
+            tl_assignments = ProjectAssignment.objects.filter(
+                team_leader=request.user,
+                status__in=['pending', 'accepted']
+            ).values_list('project_id', flat=True)
+            form.fields['project'].queryset = Project.objects.filter(id__in=tl_assignments).distinct()
+            
     if user_role == 'project_manager':
         reports = Report.objects.filter(project__manager=request.user).order_by('-created_at')
-    else:
+    elif user_role == 'team_leader':
+        assignments = ProjectAssignment.objects.filter(
+            team_leader=request.user,
+            status__in=['pending', 'accepted']
+        ).values_list('project_id', flat=True)
+        reports = Report.objects.filter(project_id__in=assignments).order_by('-created_at')
+    elif user_role == 'team_member':
+        reports = Report.objects.filter(submitted_by=request.user).order_by('-created_at')
+    elif user_role == 'admin':
         reports = Report.objects.all().order_by('-created_at')
-    return render(request, 'projects/team_reports.html', {'reports': reports})
+    else:
+        reports = Report.objects.none()
+        
+    return render(request, 'projects/team_reports.html', {'reports': reports, 'form': form, 'user_role': user_role})
 
 @login_required
 def approve_report(request, pk):
     report = get_object_or_404(Report, pk=pk)
-    if report.project.manager == request.user or request.user.profile.role == 'admin':
+    
+    can_approve = False
+    if request.user.profile.role == 'admin':
+        can_approve = True
+    elif report.project.manager == request.user:
+        can_approve = True
+    elif request.user.profile.role == 'team_leader' and report.submitted_by != request.user:
+        if ProjectAssignment.objects.filter(team_leader=request.user, project=report.project, status='accepted').exists():
+            can_approve = True
+            
+    if can_approve:
         report.status = 'approved'
         report.save()
         Notification.objects.create(user=report.submitted_by, message=f"Your report '{report.title}' has been approved.")
+        
     return redirect('team_reports')
 
 # Calendar and Messages
@@ -1570,7 +1616,11 @@ def calendar_events_json(request):
     if user_role == 'project_manager':
         projects = projects.filter(manager=request.user)
     elif user_role == 'team_leader':
-        projects = projects.filter(Q(manager=request.user) | Q(tasks__assigned_to=request.user)).distinct()
+        assignments = ProjectAssignment.objects.filter(
+            team_leader=request.user,
+            status__in=['pending', 'accepted']
+        ).values_list('project_id', flat=True)
+        projects = projects.filter(Q(manager=request.user) | Q(tasks__assigned_to=request.user) | Q(id__in=assignments)).distinct()
     elif user_role == 'team_member':
         projects = projects.filter(tasks__assigned_to=request.user).distinct()
     elif user_role == 'client':
@@ -1589,7 +1639,7 @@ def calendar_events_json(request):
                 
             events.append({
                 'id': f"project_{project.id}",
-                'title': f"📋 PROJECT: {project.title}",
+                'title': f"📋 PROJECT: {project.title} (Deadline: {project.deadline.strftime('%b %d')})",
                 'start': project.deadline.isoformat(),
                 'allDay': True,
                 'backgroundColor': status_color,

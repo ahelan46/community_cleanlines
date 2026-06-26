@@ -1,327 +1,260 @@
 {% extends 'base.html' %}
-
 {% block title %}Interactive Calendar | Workspace{% endblock %}
-
 {% block content %}
-<!-- Include FullCalendar v6.1.11 Global Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold mb-0">Project Calendar</h3>
-        <p class="text-muted small mb-0">Monitor upcoming project and task deadlines</p>
-    </div>
-</div>
-
 <style>
-    :root {
-        --fc-border-color: var(--border-color);
-        --fc-today-bg-color: rgba(59, 130, 246, 0.05);
-        --fc-button-bg-color: var(--primary-color);
-        --fc-button-border-color: var(--primary-color);
-        --fc-button-hover-bg-color: #1d4ed8;
-        --fc-button-hover-border-color: #1d4ed8;
-        --fc-button-active-bg-color: #1e3a8a;
-        --fc-button-active-border-color: #1e3a8a;
-    }
-
-    .calendar-container-card {
-        border-radius: 20px;
-        background: var(--glass-bg, rgba(255, 255, 255, 0.7));
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.5));
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    /* Sleek Professional Dashboard Styling */
+    .dashboard-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        position: relative;
         overflow: hidden;
     }
-    
-    html[data-theme="dark"] .calendar-container-card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+
+    .dashboard-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        transform: skewX(-20deg) translateX(100%);
+        animation: shimmer 5s infinite;
     }
 
-    /* Style overrides for FullCalendar premium theme matching */
+    @keyframes shimmer {
+        0% { transform: skewX(-20deg) translateX(-200%); }
+        100% { transform: skewX(-20deg) translateX(300%); }
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .glass-panel:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Calendar Container Improvements */
     #calendar {
-        font-family: inherit;
-        color: var(--text-main);
-    }
-
-    .fc-header-toolbar {
-        padding: 1.5rem 1.5rem 1rem 1.5rem;
-        margin-bottom: 0.5rem !important;
-    }
-
-    .fc-toolbar-title {
-        font-size: 1.25rem !important;
-        font-weight: 700 !important;
-        color: var(--text-main);
-    }
-
- .fc-button {
-    font-weight: 600 !important;
-    font-size: 0.85rem !important;
-    padding: 0.45rem 0.9rem !important;
-    border-radius: 8px !important;
-    text-transform: capitalize !important;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
-    transition: all 0.3s ease !important;
-    background-color: #2563eb !important;
-    border-color: #2563eb !important;
-    color: #ffffff !important;
-    opacity: 1 !important;
-}
-.fc-button-active, .fc-button:not(.fc-button-active):active {
-    background-color: #1e3a8a !important;
-    border-color: #1e3a8a !important;
-    color: #ffffff !important;
-}
-    
-    .fc-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 8px -1px rgba(0,0,0,0.15) !important;
-    }
-
-    .fc-view-harness {
-        background-color: transparent;
-        border-top: 1px solid var(--border-color);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #334155;
+        background: white;
+        border-radius: 20px;
         padding: 1rem;
     }
 
-    .fc-theme-standard td, .fc-theme-standard th {
-        border-color: var(--border-color) !important;
+    .fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9; }
+    .fc-header-toolbar { padding: 1rem 0.5rem; margin-bottom: 1rem !important; }
+    .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800 !important; color: #0f172a; letter-spacing: -0.025em; }
+    
+    .fc-button {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #475569 !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        text-transform: capitalize !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        transition: all 0.2s !important;
     }
+    .fc-button:hover { background: #f1f5f9 !important; color: #0f172a !important; transform: translateY(-1px); }
+    .fc-button-active { background: #3b82f6 !important; color: white !important; border-color: #2563eb !important; }
+    .fc-today-button { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
 
     .fc-col-header-cell {
-        background-color: rgba(248, 250, 252, 0.5);
-        padding: 0.75rem 0 !important;
+        background: #f8fafc;
+        padding: 12px 0 !important;
     }
-    
-    html[data-theme="dark"] .fc-col-header-cell {
-        background-color: rgba(15, 23, 42, 0.5);
-    }
-
-    .fc-col-header-cell-cushion {
-        font-size: 0.8rem !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        text-decoration: none !important;
-    }
-
-    .fc-daygrid-day-number {
-        font-size: 0.85rem !important;
-        font-weight: 600;
-        color: var(--text-main);
-        padding: 6px 8px !important;
-        text-decoration: none !important;
-    }
+    .fc-col-header-cell-cushion { font-weight: 700 !important; color: #64748b !important; text-transform: uppercase; font-size: 0.75rem !important; letter-spacing: 0.05em; }
+    .fc-daygrid-day-number { font-weight: 600; color: #475569; padding: 8px !important; }
+    .fc-day-today { background-color: rgba(59, 130, 246, 0.03) !important; }
 
     .fc-event {
-        cursor: pointer;
         border-radius: 6px !important;
-        padding: 2px 6px !important;
+        border: none !important;
+        padding: 4px 8px !important;
         font-size: 0.75rem !important;
         font-weight: 600 !important;
-        margin: 2px 0 !important;
-        border: none !important;
+        margin: 2px 4px !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        transition: all 0.2s ease;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
+    .fc-event:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); filter: brightness(1.05); }
 
-    .fc-event:hover {
-        transform: translateY(-1px) scale(1.01);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    /* Side list elements */
-    .legend-indicator {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-    }
-
-    .toast-notification {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        background: rgba(30, 41, 59, 0.9);
-        backdrop-filter: blur(10px);
-        color: #fff;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+    /* Legend & Sidebar Styling */
+    .sidebar-title {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 800;
+        color: #94a3b8;
+        margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        z-index: 1060;
-        transform: translateY(120%);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(255,255,255,0.1);
+        gap: 0.5rem;
     }
 
-    .toast-notification.show {
-        transform: translateY(0);
-    }
-    .calendar-events-container {
+    .legend-item {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: #f8fafc;
+        margin-bottom: 0.5rem;
         display: flex;
-        flex-direction: column;
-        gap: 2px;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid #f1f5f9;
+        transition: all 0.2s;
     }
+    .legend-item:hover {
+        background: white;
+        border-color: #e2e8f0;
+        transform: translateX(4px);
+    }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+    .deadline-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .deadline-card:hover {
+        border-color: #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transform: translateY(-2px);
+    }
+    .deadline-date {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.4rem 0.8rem;
+        border-radius: 9999px;
+        letter-spacing: 0.05em;
+    }
+
+    /* Modal Styling */
+    .modal-glass {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.5);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .modal-header-modern { background: #f8fafc; border-bottom: 1px solid #f1f5f9; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 1.5rem 2rem; }
+    .modal-body-modern { padding: 2rem; }
+    .form-modern { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; font-weight: 500; }
+    .form-modern:focus { background: white; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 </style>
 
-<!-- Floating Micro-Toast for alerts -->
-<div id="calendarToast" class="toast-notification">
-    <i class="fas fa-check-circle text-success"></i>
-    <span id="calendarToastMessage" class="small fw-semibold">Event date updated successfully!</span>
-</div>
-
-<!-- Header Area -->
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-    <div>
-        <h2 class="fw-bold mb-1 text-main">Workspace Scheduler</h2>
-        <p class="text-muted small mb-0">Drag and drop deadlines, review schedules, and track meetings.</p>
-    </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createMeetingModal">
-            <i class="fas fa-handshake"></i> Schedule Meeting
-        </button>
-    </div>
-</div>
-
-<!-- Main Calendar Layout -->
-<div class="row g-4">
-    <!-- Left: Calendar Container -->
-    <div class="col-lg-9">
-        <div class="card calendar-container-card border-0 shadow-sm">
-            <div id="calendar"></div>
+<div class="container-fluid py-4 px-xl-5">
+    <!-- Premium Header -->
+    <div class="dashboard-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+            <h2 class="fw-bold mb-2 text-white display-6" style="letter-spacing: -0.025em;">Workspace Scheduler</h2>
+            <p class="mb-0 text-white-50 fs-6 fw-medium">Real-time synchronization for projects, tasks, and team meetings.</p>
+        </div>
+        <div class="mt-4 mt-md-0 d-flex gap-3 position-relative z-1">
+            <button class="btn btn-light text-dark fw-bold rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createMeetingModal">
+                <i class="fas fa-plus-circle text-primary"></i> New Meeting
+            </button>
         </div>
     </div>
 
-    <!-- Right: Sidebar Panel -->
-    <div class="col-lg-3">
-        <!-- Calendar Legend Card -->
-        <div class="glass-card p-4 mb-4">
-            <h6 class="fw-bold text-main mb-3"><i class="fas fa-palette text-muted me-2"></i>Event Colors</h6>
-            <div class="d-flex flex-column gap-2">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" style="background-color: #4f46e5;"></span>
-                    <span class="small fw-semibold text-main">Project Deadlines</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" style="background-color: #db2777;"></span>
-                    <span class="small fw-semibold text-main">Team Meetings</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" style="background-color: #2563eb;"></span>
-                    <span class="small fw-semibold text-main">Tasks: In Progress</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" style="background-color: #16a34a;"></span>
-                    <span class="small fw-semibold text-main">Tasks: Completed</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" style="background-color: #ea580c;"></span>
-                    <span class="small fw-semibold text-main">Tasks: In Review</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" style="background-color: #64748b;"></span>
-                    <span class="small fw-semibold text-main">Tasks: To Do</span>
-                </div>
+    <!-- Main Content -->
+    <div class="row g-4">
+        <!-- Calendar -->
+        <div class="col-lg-9">
+            <div class="glass-panel p-2 p-md-4">
+                <div id="calendar" style="min-height: 700px;"></div>
             </div>
         </div>
 
-        <!-- Quick Reminders Feed -->
-        <div class="glass-card p-4" style="max-height: 480px; overflow-y: auto;">
-            <h6 class="fw-bold text-main mb-3"><i class="fas fa-bell text-muted me-2"></i>Upcoming Deadlines</h6>
-            <div class="d-flex flex-column gap-3">
-                {% for project in projects|slice:":3" %}
-                <div class="p-2 bg-light rounded-3 d-flex justify-content-between align-items-center border-0">
-                    <div>
-                        <strong class="text-main x-small d-block text-truncate" style="max-width: 130px;">{{ project.title }}</strong>
-                        <span class="text-muted x-small">Project Deadline</span>
-                    </div>
-                    <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">{{ project.deadline|date:"M d" }}</span>
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Legend Panel -->
+            <div class="glass-panel p-4 mb-4">
+                <div class="sidebar-title"><i class="fas fa-layer-group"></i> Categories</div>
+                <div class="legend-list">
+                    <div class="legend-item"><div class="legend-dot" style="background: linear-gradient(135deg, #4f46e5, #3b82f6);"></div><span class="fw-bold text-dark small">Project Deadlines</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: linear-gradient(135deg, #db2777, #ec4899);"></div><span class="fw-bold text-dark small">Team Meetings</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: linear-gradient(135deg, #2563eb, #60a5fa);"></div><span class="fw-bold text-dark small">Tasks: In Progress</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: linear-gradient(135deg, #16a34a, #34d399);"></div><span class="fw-bold text-dark small">Tasks: Completed</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: linear-gradient(135deg, #ea580c, #fb923c);"></div><span class="fw-bold text-dark small">Tasks: In Review</span></div>
                 </div>
-                {% empty %}
-                <span class="text-muted x-small text-center py-3">No active project deadlines.</span>
-                {% endfor %}
+            </div>
 
-                {% for task in tasks|slice:":5" %}
-                {% if task.status != 'done' %}
-                <div class="p-2 bg-light rounded-3 d-flex justify-content-between align-items-center border-0">
-                    <div>
-                        <strong class="text-main x-small d-block text-truncate" style="max-width: 130px;">{{ task.title }}</strong>
-                        <span class="text-muted x-small">Task Deadline</span>
+            <!-- Upcoming feed -->
+            <div class="glass-panel p-4" style="max-height: 500px; overflow-y: auto;">
+                <div class="sidebar-title"><i class="fas fa-bolt text-warning"></i> Upcoming Deadlines</div>
+                <div class="d-flex flex-column">
+                    {% for project in projects|slice:":3" %}
+                    <div class="deadline-card">
+                        <div>
+                            <div class="fw-bold text-dark small text-truncate" style="max-width: 140px;">{{ project.title }}</div>
+                            <div class="text-muted" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Project</div>
+                        </div>
+                        <span class="deadline-date bg-danger bg-opacity-10 text-danger">{{ project.deadline|date:"M d" }}</span>
                     </div>
-                    <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">{{ task.deadline|date:"M d" }}</span>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small fw-medium">No project deadlines.</div>
+                    {% endfor %}
+
+                    {% for task in tasks|slice:":5" %}
+                    {% if task.status != 'done' %}
+                    <div class="deadline-card">
+                        <div>
+                            <div class="fw-bold text-dark small text-truncate" style="max-width: 140px;">{{ task.title }}</div>
+                            <div class="text-muted" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Task</div>
+                        </div>
+                        <span class="deadline-date bg-primary bg-opacity-10 text-primary">{{ task.deadline|date:"M d" }}</span>
+                    </div>
+                    {% endif %}
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small fw-medium">No task deadlines.</div>
+                    {% endfor %}
                 </div>
-                {% endif %}
-                {% empty %}
-                <span class="text-muted x-small text-center py-3">No pending task deadlines.</span>
-                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- EVENT DETAILS POPUP MODAL -->
-<div class="modal fade glass-modal" id="eventDetailsModal" tabindex="-1">
+<!-- Meeting Modal -->
+<div class="modal fade" id="createMeetingModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-glass">
-            <div class="modal-header py-3 px-4 border-bottom-0 pb-0">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="legend-indicator" id="modalEventColor"></span>
-                    <h5 class="modal-title fw-bold text-main" id="modalEventTitle">Event Title</h5>
-                </div>
+        <div class="modal-content modal-glass">
+            <div class="modal-header modal-header-modern border-bottom-0 pb-3">
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-handshake text-primary me-2"></i>Schedule Meeting</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <!-- Details grid -->
-                <div class="d-flex flex-column gap-3">
-                    <!-- Event Type Tag -->
-                    <div>
-                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1">Event category</span>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary text-capitalize px-3 py-1 rounded-pill" id="modalEventType">Type</span>
-                    </div>
-
-                    <!-- Timings -->
-                    <div class="bg-glass-dark p-3 rounded-3 border-glass">
-                        <span class="text-muted x-small text-uppercase fw-bold d-block mb-1">Schedule date & time</span>
-                        <strong class="text-main small" id="modalEventTime">timings...</strong>
-                    </div>
-
-                    <!-- Category-specific Details -->
-                    <div id="modalSpecificDetails" class="bg-glass-dark p-3 rounded-3 border-glass">
-                        <!-- Dynamic descriptors -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- SCHEDULE MEETING MODAL -->
-<div class="modal fade glass-modal" id="createMeetingModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-glass">
-            <div class="modal-header py-3 px-4 border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold text-main"><i class="fas fa-handshake text-primary me-2"></i>Schedule Meeting</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
+            <div class="modal-body modal-body-modern pt-0">
                 <form id="meetingForm" onsubmit="submitMeetingForm(event)">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Meeting Title</label>
-                        <input type="text" id="meetTitle" class="form-control" placeholder="e.g. Project Alignment Call" required>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em;">Meeting Title</label>
+                        <input type="text" id="meetTitle" class="form-control form-modern" placeholder="e.g. Project Alignment Call" required>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Link to Project (Optional)</label>
-                        <select id="meetProject" class="form-select">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em;">Link to Project</label>
+                        <select id="meetProject" class="form-select form-modern">
                             <option value="">No linked project</option>
                             {% for proj in projects %}
                             <option value="{{ proj.id }}">{{ proj.title }}</option>
@@ -329,25 +262,25 @@
                         </select>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small fw-bold">Start Date & Time</label>
-                            <input type="datetime-local" id="meetStart" class="form-control" required>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em;">Start Date</label>
+                            <input type="datetime-local" id="meetStart" class="form-control form-modern" required>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small fw-bold">End Date & Time</label>
-                            <input type="datetime-local" id="meetEnd" class="form-control" required>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em;">End Date</label>
+                            <input type="datetime-local" id="meetEnd" class="form-control form-modern" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Description / Agenda</label>
-                        <textarea id="meetDescription" class="form-control" rows="3" placeholder="Brief outline of meeting agenda..."></textarea>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase" style="letter-spacing: 0.05em;">Description</label>
+                        <textarea id="meetDescription" class="form-control form-modern" rows="3" placeholder="Brief outline..."></textarea>
                     </div>
 
-                    <div class="mt-4 text-end">
-                        <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4">Schedule Meeting</button>
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-light fw-bold rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm">Schedule Now</button>
                     </div>
                 </form>
             </div>
@@ -355,6 +288,49 @@
     </div>
 </div>
 
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-glass">
+            <div class="modal-header modal-header-modern">
+                <div class="d-flex align-items-center gap-3">
+                    <span id="modalEventColor" class="legend-dot" style="width: 16px; height: 16px;"></span>
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="modalEventTitle">Event Title</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body modal-body-modern">
+                <div class="d-flex flex-column gap-4">
+                    <div class="d-flex align-items-center justify-content-between bg-light p-3 rounded-3 border">
+                        <span class="fw-bold text-muted small text-uppercase">Category</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary text-capitalize px-3 py-1 rounded-pill" id="modalEventType" style="font-size: 0.8rem;">Type</span>
+                    </div>
+
+                    <div class="bg-light p-4 rounded-3 border">
+                        <div class="text-muted small text-uppercase fw-bold mb-2">Schedule Time</div>
+                        <div class="fw-bold text-dark" id="modalEventTime" style="font-size: 1.1rem;">timings...</div>
+                    </div>
+
+                    <div id="modalSpecificDetails" class="bg-light p-4 rounded-3 border">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="calendarToast" class="toast align-items-center text-white bg-success border-0 rounded-4 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-bold d-flex align-items-center gap-2 px-4 py-3">
+                <i class="fas fa-check-circle fs-5"></i>
+                <span id="calendarToastMessage">Updated successfully!</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -364,57 +340,94 @@
     document.addEventListener('DOMContentLoaded', function() {
         const calendarEl = document.getElementById('calendar');
 
-calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    editable: true, // ENABLES DRAG & DROP deadlines rescheduling!
-    dayMaxEvents: 3,
-    eventDisplay: 'block',
-    headerToolbar: {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            editable: true,
+            height: 'auto',
+            headerToolbar: {
                 left: 'title',
-                center: 'dayGridMonth,timeGridWeek,listMonth',
+                center: 'multiMonthYear,dayGridMonth,timeGridWeek,listMonth',
                 right: 'prev,next today'
             },
-            events: '/calendar/events/json/', // Dynamically fetch JSON events list
+            buttonText: {
+                multiMonthYear: 'Year',
+                dayGridMonth: 'Month',
+                timeGridWeek: 'Week',
+                listMonth: 'List',
+                today: 'Today'
+            },
+            events: '/calendar/events/json/',
             
-            // drag drop reschedule handler
-            eventDrop: function(info) {
-                rescheduleEvent(info);
+            datesSet: function(dateInfo) {
+                let currentDate = calendar.getDate();
+                let currentMonth = currentDate.getMonth();
+                let currentYear = currentDate.getFullYear();
+                
+                let monthOptions = '';
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                for(let i=0; i<12; i++) {
+                    monthOptions += `<option value="${i}" ${i === currentMonth ? 'selected' : ''}>${months[i]}</option>`;
+                }
+                
+                let yearOptions = '';
+                for(let i=currentYear-10; i<=currentYear+10; i++) {
+                    yearOptions += `<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`;
+                }
+                
+                let titleEl = document.querySelector('.fc-toolbar-title');
+                if (titleEl) {
+                    titleEl.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <select id="calendarMonth" class="form-select form-select-lg d-inline-block w-auto border-0 fw-bold bg-transparent shadow-none" style="font-size: 1.5rem; color: #0f172a; cursor: pointer; padding-right: 2rem;">
+                                ${monthOptions}
+                            </select>
+                            <select id="calendarYear" class="form-select form-select-lg d-inline-block w-auto border-0 fw-bold bg-transparent shadow-none" style="font-size: 1.5rem; color: #0f172a; cursor: pointer; padding-right: 2rem;">
+                                ${yearOptions}
+                            </select>
+                        </div>
+                    `;
+                    
+                    document.getElementById('calendarMonth').addEventListener('change', function(e) {
+                        let newMonth = parseInt(e.target.value);
+                        let year = parseInt(document.getElementById('calendarYear').value);
+                        calendar.gotoDate(new Date(year, newMonth, 1));
+                    });
+                    
+                    document.getElementById('calendarYear').addEventListener('change', function(e) {
+                        let newYear = parseInt(e.target.value);
+                        let month = parseInt(document.getElementById('calendarMonth').value);
+                        calendar.gotoDate(new Date(newYear, month, 1));
+                    });
+                }
             },
             
-            // event resize reschedule handler (meetings timing updates)
-            eventResize: function(info) {
-                rescheduleEvent(info);
-            },
-            
-            // Click Handler
+            eventDrop: rescheduleEvent,
+            eventResize: rescheduleEvent,
             eventClick: function(info) {
                 openEventDetails(info.event);
             }
         });
 
         calendar.render();
- 
+    });
 
-    // Toast alert triggers
     function showToast(message) {
-        const toast = document.getElementById('calendarToast');
-        const msg = document.getElementById('calendarToastMessage');
-        msg.textContent = message;
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
+        const toastEl = document.getElementById('calendarToast');
+        document.getElementById('calendarToastMessage').textContent = message;
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
     }
 
-    // EVENT RESCHEDULER VIA AJAX drag drop
     function rescheduleEvent(info) {
         const eventId = info.event.id;
-        const [type, pk] = eventId.split('_');
+        if (!eventId) return;
+        const parts = eventId.split('_');
+        if(parts.length !== 2) return;
+        const [type, pk] = parts;
         
         let startStr = info.event.startStr;
         let endStr = info.event.endStr || '';
 
-        // If no end time, default to start + 1hr for meetings
         if (type === 'meeting' && !endStr) {
             const end = new Date(info.event.start);
             end.setHours(end.getHours() + 1);
@@ -427,17 +440,11 @@ calendar = new FullCalendar.Calendar(calendarEl, {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: JSON.stringify({
-                start: startStr,
-                end: endStr
-            })
+            body: JSON.stringify({ start: startStr, end: endStr })
         })
-        .then(res => {
-            if (!res.ok) throw new Error('Reschedule failed');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} rescheduled successfully!`);
+            showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} rescheduled!`);
         })
         .catch(err => {
             console.error(err);
@@ -446,76 +453,58 @@ calendar = new FullCalendar.Calendar(calendarEl, {
         });
     }
 
-    // EVENT DETAILS POPUP HANDLER
     function openEventDetails(event) {
         const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
-        const modalEventColor = document.getElementById('modalEventColor');
-        const modalEventTitle = document.getElementById('modalEventTitle');
-        const modalEventType = document.getElementById('modalEventType');
-        const modalEventTime = document.getElementById('modalEventTime');
-        const modalSpecificDetails = document.getElementById('modalSpecificDetails');
-
-        // Color sync
-        modalEventColor.style.backgroundColor = event.backgroundColor;
-        modalEventTitle.textContent = event.title.split(': ').slice(1).join(': ');
+        document.getElementById('modalEventColor').style.background = event.backgroundColor;
         
-        const type = event.extendedProps.type;
-        modalEventType.className = `badge bg-secondary bg-opacity-10 text-secondary text-capitalize px-3 py-1 rounded-pill`;
-        modalEventType.textContent = type;
+        // Handle title safely
+        let titleParts = event.title.split(': ');
+        document.getElementById('modalEventTitle').textContent = titleParts.length > 1 ? titleParts.slice(1).join(': ') : event.title;
+        
+        const type = event.extendedProps.type || 'Event';
+        document.getElementById('modalEventType').textContent = type;
 
-        // Schedule dates format
         let timingStr = '';
         if (event.allDay) {
-            const dateObj = new Date(event.start);
-            timingStr = `<i class="far fa-calendar-alt me-2 text-muted"></i>All Day - ${dateObj.toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}`;
+            const d = new Date(event.start);
+            timingStr = `<i class="far fa-calendar text-primary me-2"></i> All Day - ${d.toLocaleDateString()}`;
         } else {
-            const startObj = new Date(event.start);
-            const endObj = new Date(event.end);
-            timingStr = `<i class="far fa-clock me-2 text-muted"></i>${startObj.toLocaleDateString('en-US', {month: 'long', day: 'numeric'})} at ${startObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})} - ${endObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})}`;
+            const s = new Date(event.start);
+            const e = event.end ? new Date(event.end) : new Date(s.getTime() + 3600000);
+            timingStr = `<i class="far fa-clock text-primary me-2"></i> ${s.toLocaleDateString()} at ${s.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${e.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         }
-        modalEventTime.innerHTML = timingStr;
+        document.getElementById('modalEventTime').innerHTML = timingStr;
 
-        // Specific details
+        const specDetails = document.getElementById('modalSpecificDetails');
         if (type === 'project') {
-            modalSpecificDetails.innerHTML = `
-                <div class="d-flex flex-column gap-2 small">
-                    <div><strong class="text-main">Client:</strong> <span class="text-muted">${event.extendedProps.client}</span></div>
-                    <div><strong class="text-main">Project Manager:</strong> <span class="text-muted">${event.extendedProps.manager}</span></div>
-                    <div><strong class="text-main">Status:</strong> <span class="badge bg-info bg-opacity-10 text-info px-2 py-0.5 rounded-pill small">${event.extendedProps.status}</span></div>
-                </div>
+            specDetails.innerHTML = `
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Client:</strong> <span class="text-muted fw-medium">${event.extendedProps.client || 'N/A'}</span></div>
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Manager:</strong> <span class="text-muted fw-medium">${event.extendedProps.manager || 'N/A'}</span></div>
+                <div><strong class="text-dark small text-uppercase me-2">Status:</strong> <span class="badge bg-info bg-opacity-10 text-info px-2 py-1">${event.extendedProps.status || 'N/A'}</span></div>
             `;
         } else if (type === 'task') {
-            modalSpecificDetails.innerHTML = `
-                <div class="d-flex flex-column gap-2 small">
-                    <div><strong class="text-main">Project:</strong> <span class="text-muted">${event.extendedProps.project}</span></div>
-                    <div><strong class="text-main">Assignee:</strong> <span class="text-muted">${event.extendedProps.assignee}</span></div>
-                    <div><strong class="text-main">Status:</strong> <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-0.5 rounded-pill small">${event.extendedProps.status}</span></div>
-                    <div><strong class="text-main">Priority:</strong> <span class="badge bg-warning bg-opacity-10 text-warning px-2 py-0.5 rounded-pill small text-uppercase">${event.extendedProps.priority}</span></div>
-                </div>
+            specDetails.innerHTML = `
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Project:</strong> <span class="text-muted fw-medium">${event.extendedProps.project || 'N/A'}</span></div>
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Assignee:</strong> <span class="text-muted fw-medium">${event.extendedProps.assignee || 'Unassigned'}</span></div>
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Status:</strong> <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">${event.extendedProps.status || 'N/A'}</span></div>
+                <div><strong class="text-dark small text-uppercase me-2">Priority:</strong> <span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1 text-uppercase">${event.extendedProps.priority || 'N/A'}</span></div>
             `;
         } else if (type === 'meeting') {
-            modalSpecificDetails.innerHTML = `
-                <div class="d-flex flex-column gap-2 small">
-                    <div><strong class="text-main">Linked Project:</strong> <span class="text-muted">${event.extendedProps.project}</span></div>
-                    <div><strong class="text-main">Organizer:</strong> <span class="text-muted">${event.extendedProps.organizer}</span></div>
-                    <div><strong class="text-main">Agenda / Notes:</strong> <p class="text-muted bg-white p-2 rounded-3 border-0 mt-1 mb-0">${event.extendedProps.description}</p></div>
-                </div>
+            specDetails.innerHTML = `
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Project:</strong> <span class="text-muted fw-medium">${event.extendedProps.project || 'N/A'}</span></div>
+                <div class="mb-2"><strong class="text-dark small text-uppercase me-2">Organizer:</strong> <span class="text-muted fw-medium">${event.extendedProps.organizer || 'N/A'}</span></div>
+                <div><strong class="text-dark small text-uppercase d-block mb-1 mt-3">Agenda / Notes:</strong> <div class="bg-white p-3 rounded border text-muted small">${event.extendedProps.description || 'No agenda provided.'}</div></div>
             `;
+        } else {
+            specDetails.innerHTML = `<div class="text-muted small">No additional details available.</div>`;
         }
 
         modal.show();
     }
 
-    // CREATE MEETING VIA AJAX SUBMIT
     window.submitMeetingForm = function(event) {
         event.preventDefault();
         
-        const title = document.getElementById('meetTitle').value;
-        const projectId = document.getElementById('meetProject').value;
-        const start = document.getElementById('meetStart').value;
-        const end = document.getElementById('meetEnd').value;
-        const description = document.getElementById('meetDescription').value;
-
         fetch('/calendar/events/create-meeting/', {
             method: 'POST',
             headers: {
@@ -523,32 +512,23 @@ calendar = new FullCalendar.Calendar(calendarEl, {
                 'X-CSRFToken': '{{ csrf_token }}'
             },
             body: JSON.stringify({
-                title: title,
-                project_id: projectId,
-                start: start,
-                end: end,
-                description: description
+                title: document.getElementById('meetTitle').value,
+                project_id: document.getElementById('meetProject').value,
+                start: document.getElementById('meetStart').value,
+                end: document.getElementById('meetEnd').value,
+                description: document.getElementById('meetDescription').value
             })
         })
-        .then(res => {
-            if (!res.ok) throw new Error('Create failed');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            // Dismiss Modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('createMeetingModal'));
-            modal.hide();
-            
-            // Reset Form fields
+            bootstrap.Modal.getInstance(document.getElementById('createMeetingModal')).hide();
             document.getElementById('meetingForm').reset();
-            
-            // Refetch events and show toast
             calendar.refetchEvents();
             showToast("Meeting scheduled successfully!");
         })
         .catch(err => {
             console.error(err);
-            alert("Could not schedule meeting on server.");
+            alert("Could not schedule meeting.");
         });
     }
 });

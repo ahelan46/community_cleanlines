@@ -51,11 +51,12 @@ class TaskForm(forms.ModelForm):
 class ReportForm(forms.ModelForm):
     class Meta:
         model = Report
-        fields = ['project', 'title', 'content']
+        fields = ['project', 'title', 'content', 'attachment']
         widgets = {
             'project': forms.Select(attrs={'class': 'form-select'}),
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Report Title'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Report Details'}),
+            'attachment': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 from .models import Feedback

@@ -2,108 +2,263 @@
 {% extends 'base.html' %}
 {% block title %}Team Leaders & Project Assignments{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Team Leaders & Project Assignments</h2>
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(79, 70, 229, 0.2);
+    }
+    
+    .team-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .team-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        width: 100%;
+        margin-top: -8px;
+    }
+
+    .table-modern th {
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.5rem;
+    }
+
+    .table-modern td {
+        background: #ffffff;
+        border-top: 1px solid #f3f4f6;
+        border-bottom: 1px solid #f3f4f6;
+        padding: 1.25rem 1.5rem;
+        vertical-align: middle;
+        transition: all 0.2s;
+    }
+
+    .table-modern tr td:first-child {
+        border-left: 1px solid #f3f4f6;
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+
+    .table-modern tr td:last-child {
+        border-right: 1px solid #f3f4f6;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .table-modern tr:hover td {
+        background: #f9fafb;
+        border-color: #e5e7eb;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        color: #4338ca;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .badge-modern {
+        padding: 0.4em 0.85em;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 9999px;
+        letter-spacing: 0.025em;
+    }
+
+    .badge-pending { background-color: #fef3c7; color: #92400e; }
+    .badge-accepted { background-color: #d1fae5; color: #065f46; }
+    .badge-rejected { background-color: #fee2e2; color: #991b1b; }
+    .badge-total { background-color: #e0e7ff; color: #3730a3; }
+
+    .btn-assign {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-assign:hover {
+        background: #4f46e5;
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .modal-content.glass {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .modal-header.glass-header {
+        background: #f9fafb;
+        border-bottom: 1px solid #f3f4f6;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        padding: 1.5rem;
+    }
+    .modal-body {
+        padding: 1.5rem;
+    }
+</style>
+
+<div class="container-fluid px-4 py-4">
+    <div class="dashboard-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-users-cog me-2 opacity-75"></i>Team Management</h2>
+            <p class="mb-0 opacity-75">Overview of team leaders and their project assignments</p>
+        </div>
     </div>
 
-    <div class="card shadow-sm mb-5">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-users-cog me-2"></i>Team Leaders</h5>
+    <div class="team-card p-4">
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Team Leader</th>
+                        <th>Email</th>
+                        <th>Total Assignments</th>
+                        <th>Status Summary</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leader_data in team_leader_data %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-circle">
+                                    {{ leader_data.user.username|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ leader_data.user.username }}</div>
+                                    <div class="text-muted small">Leader</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted fw-medium">{{ leader_data.user.email }}</td>
+                        <td>
+                            <span class="badge-modern badge-total d-inline-flex align-items-center">
+                                <i class="fas fa-briefcase me-1"></i> {{ leader_data.assignment_count }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <span class="badge-modern badge-pending" title="Pending">
+                                    <i class="fas fa-hourglass-half me-1"></i> {{ leader_data.pending_count }} Pending
+                                </span>
+                                <span class="badge-modern badge-accepted" title="Accepted">
+                                    <i class="fas fa-check-circle me-1"></i> {{ leader_data.accepted_count }} Accepted
+                                </span>
+                                <span class="badge-modern badge-rejected" title="Rejected">
+                                    <i class="fas fa-times-circle me-1"></i> {{ leader_data.rejected_count }} Rejected
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="btn-assign" data-bs-toggle="modal" data-bs-target="#assignModal{{ leader_data.user.id }}">
+                                <i class="fas fa-plus me-1"></i> Assign
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Team Leader</th>
-                            <th>Email</th>
-                            <th>Assignments</th>
-                            <th>Status Summary</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leader_data in team_leader_data %}
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                                        {{ leader_data.user.username|slice:":1"|upper }}
-                                    </div>
-                                    {{ leader_data.user.username }}
-                                </div>
-                            </td>
-                            <td>{{ leader_data.user.email }}</td>
-                            <td><span class="badge bg-info text-dark">{{ leader_data.assignment_count }}</span></td>
-                            <td>
-                                <span class="badge bg-warning text-dark">{{ leader_data.pending_count }} Pending</span>
-                                <span class="badge bg-success">{{ leader_data.accepted_count }} Accepted</span>
-                                <span class="badge bg-danger">{{ leader_data.rejected_count }} Rejected</span>
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignModal{{ leader_data.user.id }}">
-                                    <i class="fas fa-plus-circle me-1"></i>Assign
-                                </button>
+    </div>
+</div>
 
-                                <!-- Modal -->
-                                <div class="modal fade" id="assignModal{{ leader_data.user.id }}" tabindex="-1" aria-labelledby="assignModalLabel{{ leader_data.user.id }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="assignModalLabel{{ leader_data.user.id }}">Assign Project to {{ leader_data.user.username }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                {% if projects %}
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Project Title</th>
-                                                                <th>Client</th>
-                                                                <th>Deadline</th>
-                                                                <th>Status</th>
-                                                                <th>Action</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for project in projects %}
-                                                            <tr>
-                                                                <td>{{ project.title }}</td>
-                                                                <td>{{ project.client }}</td>
-                                                                <td>{{ project.deadline|date:"M d, Y"|default:"N/A" }}</td>
-                                                                <td>
-                                                                    <span class="badge {% if project.get_status_display == 'Completed' %}bg-success{% elif project.get_status_display == 'In Progress' %}bg-primary{% else %}bg-secondary{% endif %}">
-                                                                        {{ project.get_status_display }}
-                                                                    </span>
-                                                                </td>
-                                                                <td>
-                                                                    <a href="{% url 'quick_assign_project' project.id leader_data.user.id %}" class="btn btn-xs btn-success">
-                                                                        Assign
-                                                                    </a>
-                                                                </td>
-                                                            </tr>
-                                                            {% endfor %}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                                {% else %}
-                                                <p class="text-center text-muted py-4">
-                                                    <i class="fas fa-inbox me-2"></i>No projects available to assign
-                                                </p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Modals rendered outside of overflow/transform containers -->
+{% for leader_data in team_leader_data %}
+<div class="modal fade text-start" id="assignModal{{ leader_data.user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content glass">
+            <div class="modal-header glass-header">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="fas fa-user-plus text-primary me-2"></i>Assign Project to {{ leader_data.user.username }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-white">
+                {% if projects %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Project Title</th>
+                                <th>Client</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="border-top-0">
+                            {% for project in projects %}
+                            <tr>
+                                <td class="fw-bold">{{ project.title }}</td>
+                                <td class="text-muted">{{ project.client }}</td>
+                                <td>
+                                    <span class="text-muted small">
+                                        <i class="fas fa-calendar-alt me-1 text-primary"></i>{{ project.deadline|date:"M d, Y"|default:"N/A" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill {% if project.get_status_display == 'Completed' %}bg-success{% elif project.get_status_display == 'In Progress' %}bg-primary{% else %}bg-secondary{% endif %} bg-opacity-10 text-dark border">
+                                        {{ project.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'quick_assign_project' project.id leader_data.user.id %}" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">
+                                        Assign <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="display-1 text-muted mb-3 opacity-25"><i class="fas fa-box-open"></i></div>
+                    <h5 class="fw-bold text-dark">No projects available</h5>
+                    <p class="text-muted">There are currently no projects available to assign.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endfor %}
+
 {% endblock %}

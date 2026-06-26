@@ -221,6 +221,7 @@ class Report(models.Model):
     submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_reports')
     title = models.CharField(max_length=200)
     content = models.TextField()
+    attachment = models.FileField(upload_to='report_files/', null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
