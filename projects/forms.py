@@ -73,6 +73,41 @@ class FeedbackForm(forms.ModelForm):
         }
 
 class ClientProjectForm(forms.Form):
+    client_name = forms.CharField(
+        label='Contact / Client Name',
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your contact name'
+        })
+    )
+    company_name = forms.CharField(
+        label='Company / Organization Name',
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your company name'
+        })
+    )
+    phone = forms.CharField(
+        label='Direct Phone Number',
+        max_length=20,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter phone number'
+        })
+    )
+    email = forms.EmailField(
+        label='Email Address',
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter email address'
+        })
+    )
     project_title = forms.CharField(
         label='Project Title',
         max_length=200,

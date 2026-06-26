@@ -628,7 +628,15 @@
             viewCards.classList.add('d-none');
             viewTable.classList.remove('d-none');
         }
+        localStorage.setItem('projectListViewPref', view);
     };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const pref = localStorage.getItem('projectListViewPref');
+        if (pref === 'table') {
+            window.switchView('table');
+        }
+    });
 
     // AJAX Details Modal
     window.openProjectDetails = function(projectId) {

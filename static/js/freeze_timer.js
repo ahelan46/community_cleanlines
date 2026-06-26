@@ -5,12 +5,17 @@
  */
 
 (function() {
-    const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
     let inactivityTimeout = null;
     let activityEventsBound = false;
+    let currentThresholdMinutes = 0;
+    let pollingInterval = null;
 
-    // Helper: get CSRF token from cookies
+    // Helper: get CSRF token from cookies or meta tag
     function getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+            return meta.getAttribute('content');
+        }
         const name = 'csrftoken';
         const cookies = document.cookie.split(';');
         for (let cookie of cookies) {
@@ -23,10 +28,6 @@
     }
 
     function triggerFreeze() {
-        // Double-check the state hasn't changed right before freezing
-        if (localStorage.getItem('attendance_freeze_state') !== 'running') {
-            return;
-        }
 
         fetch('/attendance/freeze-inactivity/', {
             method: 'POST',
@@ -51,16 +52,29 @@
             clearTimeout(inactivityTimeout);
         }
         
-        // Only run timer if user is checked in and not on break
-        if (localStorage.getItem('attendance_freeze_state') === 'running') {
-            inactivityTimeout = setTimeout(triggerFreeze, INACTIVITY_LIMIT_MS);
+        // Run timer if a global threshold is set
+        if (currentThresholdMinutes > 0) {
+            inactivityTimeout = setTimeout(triggerFreeze, currentThresholdMinutes * 60 * 1000);
         }
     }
 
+    function fetchThreshold() {
+        fetch('/user-mgmt/get-inactivity-threshold/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const newThreshold = parseInt(data.minutes) || 0;
+                    if (newThreshold !== currentThresholdMinutes) {
+                        currentThresholdMinutes = newThreshold;
+                        resetInactivityTimer();
+                    }
+                }
+            })
+            .catch(err => console.error('Error fetching threshold:', err));
+    }
+
     function handleActivity() {
-        if (localStorage.getItem('attendance_freeze_state') === 'running') {
-            resetInactivityTimer();
-        }
+        resetInactivityTimer();
     }
 
     function bindActivityEvents() {
@@ -72,8 +86,10 @@
         activityEventsBound = true;
     }
 
-    // Initialize timer on script load
+    // Initialize timer and threshold polling on script load
     bindActivityEvents();
+    fetchThreshold(); // fetch immediately
+    pollingInterval = setInterval(fetchThreshold, 30000); // Poll every 30 seconds
     resetInactivityTimer();
 
     // Listen to storage changes to start/stop the timer if it changes in another tab

@@ -10,6 +10,9 @@ urlpatterns = [
     path('projects/<int:pk>/json/', views.project_detail_json, name='project_detail_json'),
     path('tasks/', views.task_list, name='task_list'),
     path('create-project/', views.create_project, name='create_project'),
+    path('accept-client-project/<int:project_id>/', views.accept_client_project, name='accept_client_project'),
+    path('reject-client-project/<int:project_id>/', views.reject_client_project, name='reject_client_project'),
+    path('pending-client-requests/', views.pending_client_requests, name='pending_client_requests'),
 
     path('teams/', views.teams, name='teams'),
     path('attendance/photo/<int:attendance_id>/', views.get_attendance_photo, name='attendance_photo'),
@@ -52,7 +55,11 @@ urlpatterns = [
     path('user-mgmt/update-status/', views.admin_update_user_status, name='admin_update_user_status'),
     path('user-mgmt/freeze/', views.admin_users_freeze, name='admin_users_freeze'),
     path('frozen/', views.user_frozen_page, name='user_frozen_page'),
+    path('user-mgmt/check-frozen/', views.check_frozen_status, name='check_frozen_status'),
     path('user-mgmt/freeze-timer/', views.freeze_all_timer, name='freeze_all_timer'),
+    path('user-mgmt/unfreeze-timer/', views.unfreeze_all_timer, name='unfreeze_all_timer'),
+    path('user-mgmt/set-inactivity-threshold/', views.set_inactivity_threshold, name='set_inactivity_threshold'),
+    path('user-mgmt/get-inactivity-threshold/', views.get_inactivity_threshold, name='get_inactivity_threshold'),
     path('attendance/freeze-inactivity/', views.freeze_inactivity, name='freeze_inactivity'),
     # Attendance URLs
     path('attendance/', views.attendance_dashboard, name='attendance_dashboard'),

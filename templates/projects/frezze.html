@@ -307,12 +307,18 @@
                         <button id="cancelFreezeTimerBtn" class="btn btn-secondary btn-sm" disabled>
                             <i class="fas fa-stop me-1"></i> Cancel
                         </button>
+                        <button id="freezeAllNowBtn" class="btn btn-danger btn-sm ms-2">
+                            <i class="fas fa-snowflake me-1"></i> Freeze All
+                        </button>
+                        <button id="unfreezeAllNowBtn" class="btn btn-success btn-sm">
+                            <i class="fas fa-sun me-1"></i> Unfreeze All
+                        </button>
                         <div id="timerDisplay" class="ms-auto fw-bold text-primary">
-                            <span id="countdownValue">—</span> seconds remaining
+                            <span id="countdownValue">—</span>
                         </div>
                     </div>
                     <div class="small text-muted mt-2">
-                        <i class="fas fa-info-circle"></i> This will freeze all <strong>Project Managers, Team Leaders, and Team Members</strong> (clients are never frozen).
+                        <i class="fas fa-info-circle"></i> When a threshold is active, users who are completely inactive (no mouse movement or typing) for that duration will be automatically frozen.
                     </div>
                 </div>
             </div>
@@ -357,7 +363,7 @@
                                     <span class="freeze-slider:before" style="position: absolute; content: ''; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: 0.3s; border-radius: 50%;"></span>
                                 </label>
                             </div>
-                            <div class="x-small text-muted mt-1">
+                            <div class="x-small text-center mt-1 ms-7">
                                 <span id="status-text-${user.id}">${user.is_frozen ? '❄️ Frozen' : (currentStatus ? '🟢 Active' : '🔴 Inactive')}</span>
                             </div>
                         </td>
@@ -434,19 +440,29 @@ function updateTimerDisplay(seconds) {
     if (countdownSpan) countdownSpan.textContent = seconds;
 }
 
-function stopFreezeTimer() {
-    if (freezeTimerInterval) {
-        clearInterval(freezeTimerInterval);
-        freezeTimerInterval = null;
+async function stopFreezeTimer() {
+    try {
+        const response = await fetch('/user-mgmt/set-inactivity-threshold/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ minutes: 0 })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            showToast('✅ Inactivity monitoring disabled.', 'success');
+            document.getElementById('countdownValue').textContent = '—';
+            document.getElementById('startFreezeTimerBtn').disabled = false;
+            document.getElementById('cancelFreezeTimerBtn').disabled = true;
+        } else {
+            showToast(data.message || 'Failed to stop inactivity monitoring.', 'danger');
+        }
+    } catch (error) {
+        console.error(error);
+        showToast('Network error.', 'danger');
     }
-    if (freezeTimeoutId) {
-        clearTimeout(freezeTimeoutId);
-        freezeTimeoutId = null;
-    }
-    remainingSeconds = 0;
-    updateTimerDisplay('—');
-    document.getElementById('startFreezeTimerBtn').disabled = false;
-    document.getElementById('cancelFreezeTimerBtn').disabled = true;
 }
 
 async function executeFreezeAll() {
@@ -476,38 +492,65 @@ async function executeFreezeAll() {
     }
 }
 
-function startFreezeTimer() {
+async function executeUnfreezeAll() {
+    try {
+        const response = await fetch('/user-mgmt/unfreeze-timer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            showToast(`✅ ${data.unfrozen_count} user(s) have been unfrozen.`, 'success');
+            // Refresh the table to show updated statuses
+            pendingChanges = {};
+            pendingFreezeChanges = {};
+            fetchUsers();
+        } else {
+            showToast(data.message || 'Failed to unfreeze users.', 'danger');
+        }
+    } catch (error) {
+        console.error(error);
+        showToast('Network error while unfreezing users.', 'danger');
+    }
+}
+
+async function startFreezeTimer() {
     const minutesInput = document.getElementById('freezeMinutes');
     let minutes = parseInt(minutesInput.value);
     if (isNaN(minutes) || minutes < 1) minutes = 1;
-    remainingSeconds = minutes * 60;
-    updateTimerDisplay(remainingSeconds);
 
-    // Disable start button, enable cancel button
-    document.getElementById('startFreezeTimerBtn').disabled = true;
-    document.getElementById('cancelFreezeTimerBtn').disabled = false;
-
-    // Set a timeout to execute the freeze after the total seconds
-    freezeTimeoutId = setTimeout(() => {
-        executeFreezeAll();
-    }, remainingSeconds * 1000);
-
-    // Update the countdown every second
-    freezeTimerInterval = setInterval(() => {
-        if (remainingSeconds <= 1) {
-            // Time's up – the timeout will handle the freeze
-            if (freezeTimerInterval) clearInterval(freezeTimerInterval);
-            freezeTimerInterval = null;
+    try {
+        const response = await fetch('/user-mgmt/set-inactivity-threshold/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ minutes: minutes })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            showToast(`✅ Inactivity threshold set to ${minutes} minutes.`, 'success');
+            document.getElementById('countdownValue').textContent = `${minutes} min threshold active`;
+            document.getElementById('startFreezeTimerBtn').disabled = true;
+            document.getElementById('cancelFreezeTimerBtn').disabled = false;
         } else {
-            remainingSeconds--;
-            updateTimerDisplay(remainingSeconds);
+            showToast(data.message || 'Failed to start inactivity monitoring.', 'danger');
         }
-    }, 1000);
+    } catch (error) {
+        console.error(error);
+        showToast('Network error.', 'danger');
+    }
 }
 
 // Attach event listeners to the timer buttons (add inside initFreezeManagement)
 document.getElementById('startFreezeTimerBtn')?.addEventListener('click', startFreezeTimer);
 document.getElementById('cancelFreezeTimerBtn')?.addEventListener('click', stopFreezeTimer);
+document.getElementById('freezeAllNowBtn')?.addEventListener('click', executeFreezeAll);
+document.getElementById('unfreezeAllNowBtn')?.addEventListener('click', executeUnfreezeAll);
 /**
  * Fetch users from server (excludes admin users)
  */
@@ -804,6 +847,14 @@ function showToast(message, type = 'success') {
  */
 function initFreezeManagement() {
     fetchUsers();
+    
+    // Auto-refresh the table every 10 seconds to show real-time auto-freezes
+    setInterval(() => {
+        // Only refresh if there are no pending unsaved changes
+        if (Object.keys(pendingChanges).length === 0 && Object.keys(pendingFreezeChanges).length === 0) {
+            fetchUsers();
+        }
+    }, 10000);
 
     // Filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {

@@ -5,55 +5,97 @@
 
 {% block content %}
 <style>
+    /* Premium Chat Layout */
     .chat-layout {
-        height: calc(100vh - 190px);
-        min-height: 550px;
-        background-color: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        height: calc(100vh - 100px);
+        /* Increased height */
+        min-height: 750px;
+        /* Increased minimum height */
+        background-color: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
         overflow: hidden;
         display: flex;
     }
 
     .chat-sidebar {
-        width: 320px;
-        border-right: 1px solid var(--border-color);
+        width: 340px;
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
-        background-color: #f8fafc;
+        background-color: #ffffff;
+        z-index: 10;
     }
 
     .chat-window {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        background-color: var(--card-bg);
+        background-color: #f0f2f5;
+        /* Classic chat background color */
+        position: relative;
+    }
+
+    /* Subtle SVG pattern for the chat background */
+    .chat-window::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.6;
+        z-index: 0;
+        pointer-events: none;
     }
 
     @media (max-width: 992px) {
         .chat-sidebar {
-            width: 250px;
+            width: 80px;
+            /* Collapse sidebar on small screens */
+        }
+
+        .chat-sidebar .text-truncate,
+        .chat-sidebar .x-small,
+        .chat-sidebar .status-badge {
+            display: none !important;
+        }
+
+        .chat-sidebar .avatar-wrapper {
+            margin: 0 auto;
         }
     }
 
     /* Tabs override */
+    .sidebar-tabs {
+        background: #f8fafc;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 0.5rem 0.5rem 0 0.5rem;
+    }
+
     .sidebar-tabs .nav-link {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        padding: 0.6rem 0.5rem;
-        color: var(--text-muted);
+        padding: 0.75rem 0.5rem;
+        color: #64748b;
         border: none;
         border-bottom: 2px solid transparent;
         transition: all 0.2s ease;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .sidebar-tabs .nav-link:hover {
+        background: rgba(0, 0, 0, 0.02);
     }
 
     .sidebar-tabs .nav-link.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
-        background: transparent;
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+        background: #ffffff;
     }
 
     .chat-list-container {
@@ -61,11 +103,21 @@
         overflow-y: auto;
     }
 
+    /* Scrollbar styling for sidebar */
+    .chat-list-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .chat-list-container::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+    }
+
     .chat-item {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.85rem 1.25rem;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
         border-bottom: 1px solid rgba(0, 0, 0, 0.02);
         cursor: pointer;
         transition: all 0.2s ease;
@@ -75,18 +127,29 @@
     }
 
     .chat-item:hover {
-        background-color: rgba(59, 130, 246, 0.03);
+        background-color: #f8fafc;
     }
 
     .chat-item.active {
-        background-color: rgba(59, 130, 246, 0.06);
-        border-left: 3px solid var(--primary-color);
+        background-color: #eff6ff;
+    }
+
+    .chat-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #3b82f6;
+        border-radius: 0 4px 4px 0;
     }
 
     .avatar-wrapper {
         position: relative;
-        width: 40px;
-        height: 40px;
+        width: 46px;
+        height: 46px;
+        flex-shrink: 0;
     }
 
     .avatar-wrapper img {
@@ -94,20 +157,21 @@
         height: 100%;
         border-radius: 50%;
         object-fit: cover;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .status-badge {
         position: absolute;
-        bottom: 1px;
-        right: 1px;
-        width: 10px;
-        height: 10px;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         border: 2px solid #fff;
     }
 
     .status-online {
-        background-color: #22c55e;
+        background-color: #10b981;
     }
 
     .status-offline {
@@ -115,52 +179,221 @@
     }
 
     .unread-glowing-badge {
-        background: var(--primary-color);
+        background: #ef4444;
         color: #fff;
         font-size: 0.65rem;
         font-weight: 700;
-        padding: 0.2rem 0.45rem;
-        border-radius: 10px;
-        box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+        padding: 0.15rem 0.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
     }
 
     .chat-body-messages {
         flex-grow: 1;
         overflow-y: auto;
         padding: 1.5rem;
-        background-color: black;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1.25rem;
+        z-index: 1;
+        scroll-behavior: smooth;
     }
 
+    .chat-body-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-body-messages::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+    }
+
+    /* Message Bubbles Styling */
     .msg-bubble {
-        max-width: 65%;
-        padding: 0.85rem 1rem;
-        border-radius: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        max-width: 70%;
+        padding: 0.75rem 1.25rem;
         position: relative;
+        animation: messageSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        line-height: 1.5;
+        font-size: 0.95rem;
+    }
+
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .msg-sent {
-        background-color: var(--primary-color);
-        color: #fff;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: #ffffff;
         align-self: flex-end;
-        border-bottom-right-radius: 4px;
+        border-radius: 20px 20px 4px 20px;
     }
 
     .msg-received {
-        background-color: black;
-        color: var(--text-main);
+        background-color: #ffffff;
+        color: #1e293b !important;
         align-self: flex-start;
-        border-bottom-left-radius: 4px;
-        border: 1px solid var(--border-color);
+        border-radius: 20px 20px 20px 4px;
+        border: 1px solid rgba(0, 0, 0, 0.03);
     }
 
+    .msg-received .fw-bold {
+        color: #3b82f6 !important;
+        margin-bottom: 0.25rem;
+        display: block;
+        font-size: 0.8rem;
+        text-transform: capitalize;
+    }
+
+    .msg-time {
+        font-size: 0.65rem;
+        opacity: 0.7;
+        display: block;
+        text-align: right;
+        margin-top: 4px;
+    }
+
+    .msg-sent .msg-time {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .msg-received .msg-time {
+        color: #94a3b8;
+    }
+
+    /* File preview styles */
+    .file-preview-card {
+        border-radius: 12px;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: transform 0.2s;
+    }
+
+    .file-preview-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .msg-sent .file-preview-card {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .msg-received .file-preview-card {
+        background-color: #f8fafc;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .msg-received .file-preview-card a {
+        color: #3b82f6 !important;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .msg-sent .file-preview-card a {
+        color: #ffffff !important;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    /* Input Area */
     .chat-input-area {
         padding: 1rem 1.5rem;
-        background-color: var(--card-bg);
-        border-top: 1px solid var(--border-color);
+        background-color: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        z-index: 10;
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: #f1f5f9;
+        border-radius: 30px;
+        padding: 0.25rem 0.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+
+    .chat-input-wrapper:focus-within {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    #chatMessageInput {
+        flex-grow: 1;
+        background: transparent;
+        border: none;
+        padding: 0.75rem 1rem;
+        outline: none;
+        color: #1e293b;
+    }
+
+    #chatMessageInput::placeholder {
+        color: #94a3b8;
+    }
+
+    .btn-send {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-send:hover {
+        background: #2563eb;
+        transform: scale(1.05);
+    }
+
+    .btn-attach {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        color: #64748b;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-attach:hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    /* Quick Emoji Bar */
+    .emoji-pill {
+        cursor: pointer;
+        font-size: 1.25rem;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        padding: 0.25rem 0.35rem;
+        display: inline-block;
+    }
+
+    .emoji-pill:hover {
+        transform: scale(1.3) translateY(-2px);
     }
 
     /* Typing indicator animation */
@@ -168,20 +401,21 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        padding: 8px 16px;
-        background: #e2e8f0;
-        border-radius: 20px;
+        padding: 10px 16px;
+        background: #ffffff;
+        border-radius: 20px 20px 20px 4px;
         width: fit-content;
-        margin-left: 1.5rem;
         margin-top: 0.5rem;
         opacity: 0;
         transition: opacity 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.03);
     }
 
     .typing-dot {
         width: 6px;
         height: 6px;
-        background: #64748b;
+        background: #cbd5e1;
         border-radius: 50%;
         animation: typing 1.4s infinite ease-in-out both;
     }
@@ -200,90 +434,13 @@
         80%,
         100% {
             transform: scale(0);
+            background: #cbd5e1;
         }
 
         40% {
-            transform: scale(1);
+            transform: scale(1.2);
+            background: #3b82f6;
         }
-    }
-
-    /* File preview styles */
-    .file-preview-card {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 0.5rem;
-        margin-top: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .msg-received .file-preview-card {
-        background-color: white;
-        border: 1px solid var(--border-color);
-    }
-
-    /* Quick Emoji Bar */
-    .emoji-pill {
-        cursor: pointer;
-        font-size: 1.1rem;
-        transition: transform 0.2s ease;
-        padding: 0.25rem;
-    }
-
-    .emoji-pill:hover {
-        transform: scale(1.2);
-    }
-
-    .msg-bubble {
-        max-width: 65%;
-        padding: 0.85rem 1rem;
-        border-radius: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        position: relative;
-    }
-
-    .msg-sent {
-        background-color: var(--primary-color);
-        color: #fff;
-        align-self: flex-end;
-        border-bottom-right-radius: 4px;
-    }
-
-    .msg-received,
-    .msg-received p,
-    .msg-received .small,
-    .msg-received .x-small {
-        color: #000000 !important;
-    }
-
-    .msg-received .fw-bold {
-        color: #3b82f6 !important;
-    }
-
-    .msg-received {
-        background-color: #fff;
-        color: #000000 !important;
-        align-self: flex-start;
-        border-bottom-left-radius: 4px;
-        border: 1px solid var(--border-color);
-    }
-
-    /* Sender name inside received messages */
-    .msg-received .fw-bold {
-        color: #3b82f6 !important;
-        /* Blue color for sender name */
-    }
-
-    /* Adjust file preview link colors */
-    .msg-received .file-preview-card a {
-        color: #3b82f6 !important;
-    }
-
-    .msg-sent .file-preview-card a {
-        color: #fff !important;
-        text-decoration: underline;
     }
 </style>
 
@@ -306,10 +463,14 @@
                 data-bs-target="#tab-channels">Channels</button>
             <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab"
                 data-bs-target="#tab-managers">Managers</button>
+            {% if user.profile.role != 'client' %}
             <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab"
                 data-bs-target="#tab-team">Team</button>
+            {% endif %}
+            {% if user.profile.role == 'admin' or user.profile.role == 'project_manager' %}
             <button class="nav-link flex-grow-1 text-center" data-bs-toggle="tab"
                 data-bs-target="#tab-clients">Clients</button>
+            {% endif %}
         </nav>
 
         <!-- Directory Tab Content -->
@@ -365,6 +526,7 @@
             </div>
 
             <!-- Team Tab -->
+            {% if user.profile.role != 'client' %}
             <div class="tab-pane fade" id="tab-team">
                 {% for t in team %}
                 <div class="chat-item"
@@ -389,8 +551,10 @@
                 <div class="text-center py-5 text-muted small">No team members registered.</div>
                 {% endfor %}
             </div>
+            {% endif %}
 
             <!-- Clients Tab -->
+            {% if user.profile.role == 'admin' or user.profile.role == 'project_manager' %}
             <div class="tab-pane fade" id="tab-clients">
                 {% for c in clients %}
                 <div class="chat-item"
@@ -415,6 +579,7 @@
                 <div class="text-center py-5 text-muted small">No clients registered.</div>
                 {% endfor %}
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -484,23 +649,19 @@
             </div>
 
             <!-- Text & File share Input Form -->
-            <form id="chatSendForm" onsubmit="submitChatMessage(event)" class="d-flex gap-2.5 align-items-center">
+            <form id="chatSendForm" onsubmit="submitChatMessage(event)" class="chat-input-wrapper mt-2">
                 <!-- File Share trigger -->
-                <button type="button"
-                    class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0"
-                    style="width: 42px; height: 42px;" onclick="document.getElementById('chatFileInput').click()">
-                    <i class="fas fa-paperclip text-muted"></i>
+                <button type="button" class="btn-attach" onclick="document.getElementById('chatFileInput').click()">
+                    <i class="fas fa-paperclip"></i>
                 </button>
                 <input type="file" id="chatFileInput" style="display: none;"
                     onchange="handleFileSelected(this.files[0])">
 
                 <!-- Text entry -->
-                <input type="text" id="chatMessageInput" class="form-control rounded-pill border-0 bg-light py-2.5 px-4"
-                    placeholder="Type your message here..." autocomplete="off">
+                <input type="text" id="chatMessageInput" placeholder="Type your message here..." autocomplete="off">
 
                 <!-- Submit -->
-                <button style="background-color: #000000;" type="submit"
-                    class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0">
+                <button type="submit" class="btn-send">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
@@ -654,10 +815,10 @@
 
             return `
                 <div class="msg-bubble msg-${isMe ? 'sent' : 'received'}">
-                    ${!isMe ? `<span class="fw-bold x-small d-block mb-1 text-primary">${m.sender_name}</span>` : ''}
-                    <p class="small mb-0" style="white-space: pre-wrap;">${m.content}</p>
+                    ${!isMe ? `<span class="fw-bold">${m.sender_name}</span>` : ''}
+                    <div style="white-space: pre-wrap;">${m.content}</div>
                     ${fileHTML}
-                    <span class="x-small text-${isMe ? 'white' : 'muted'} opacity-70 d-block text-end mt-1" style="font-size: 0.65rem;">${m.created_at}</span>
+                    <span class="msg-time">${m.created_at}</span>
                 </div>
             `;
         }).join('');

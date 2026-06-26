@@ -1,112 +1,349 @@
-<!-- Project detail page; extends base.html and is opened from project_list.html and project_detail_list.html. -->
 {% extends 'base.html' %}
 
 {% block title %}{{ project.title }} | Tracker{% endblock %}
 
 {% block content %}
+<style>
+    /* Premium UI Styles for Project Detail */
+    .hero-glass-card {
+        background: linear-gradient(135deg, rgba(30, 58, 138, 0.9) 0%, rgba(59, 130, 246, 0.8) 100%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-glass-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        transform: rotate(30deg);
+        pointer-events: none;
+    }
+
+    .stat-widget {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stat-widget:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    }
+
+    .icon-deadline { color: #f43f5e; box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.2); }
+    .icon-manager { color: #8b5cf6; box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.2); }
+    .icon-created { color: #10b981; box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.2); }
+
+    .premium-card {
+        background: #ffffff;
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+        transition: transform 0.3s ease;
+    }
+
+    body.dark-mode .premium-card {
+        background: #1e293b;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .task-item {
+        transition: all 0.2s ease;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        border: 1px solid transparent;
+    }
+    
+    .task-item:hover {
+        background: rgba(59, 130, 246, 0.04);
+        border-color: rgba(59, 130, 246, 0.1);
+        transform: translateX(4px);
+    }
+
+    body.dark-mode .task-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .contact-profile-img {
+        width: 100px;
+        height: 100px;
+        border: 4px solid #ffffff;
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    body.dark-mode .contact-profile-img {
+        border-color: #1e293b;
+    }
+
+    .contact-profile-img:hover {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Custom Checkbox */
+    .custom-checkbox {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 2px solid #cbd5e1;
+        transition: all 0.2s ease;
+    }
+    
+    .custom-checkbox:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+</style>
+
+<!-- Breadcrumb with a sleeker look -->
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'project_list' %}"
-                class="text-primary text-decoration-none">Projects</a></li>
-        <li class="breadcrumb-item active text-white" aria-current="page">{{ project.title }}</li>
+    <ol class="breadcrumb mb-0 align-items-center">
+        <li class="breadcrumb-item"><a href="{% url 'project_list' %}" class="text-primary fw-medium text-decoration-none">
+            <i class="fas fa-layer-group me-1"></i> Projects
+        </a></li>
+        <li class="breadcrumb-item active fw-bold" aria-current="page">{{ project.title }}</li>
     </ol>
 </nav>
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="glass-card mb-4">
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <h2 class="fw-bold mb-1">{{ project.title }}</h2>
-                    <p class="text-muted mb-0">Client: <span class="text-white">{{ project.client.name }}</span></p>
+        <!-- Hero Header Card -->
+        <div class="hero-glass-card p-4 p-lg-5 mb-4 text-white">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-4 mb-4">
+                <div class="position-relative z-1">
+                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 fw-medium mb-3 shadow-sm border border-white border-opacity-25">
+                        <i class="fas fa-building me-2 text-info"></i>{{ project.client.name }}
+                    </span>
+                    <h1 class="fw-bold mb-2 display-5">{{ project.title }}</h1>
+                    
+                    {% if project.budget_amount %}
+                    <p class="fs-5 mb-0 opacity-75">
+                        <i class="fas fa-coins me-2 text-warning"></i>Budget: <span class="fw-bold text-white">${{ project.budget_amount }}</span>
+                    </p>
+                    {% endif %}
                 </div>
-                <div class="d-flex gap-2">
+                
+                <div class="d-flex flex-column align-items-end gap-3 position-relative z-1">
+                    <span class="badge {% if project.status == 'completed' %}bg-success{% elif project.status == 'ongoing' %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill px-4 py-2 fs-6 shadow-sm border border-white border-opacity-25">
+                        <i class="fas fa-circle me-2 small text-white opacity-75"></i>{{ project.get_status_display }}
+                    </span>
+                    
                     {% if user == project.manager %}
-                    <a href="{% url 'assign_project_to_leader' project.pk %}" class="btn btn-sm btn-info"
-                        title="Assign to Team Leader">
-                        <i class="fas fa-users"></i> Assign
+                    <a href="{% url 'assign_project_to_leader' project.pk %}" class="btn btn-light rounded-pill px-4 py-2 fw-bold shadow-lg text-primary" style="transition: transform 0.2s; background: rgba(255,255,255,0.95);">
+                        <i class="fas fa-user-plus me-2"></i>Assign Team
                     </a>
                     {% endif %}
-                    <span
-                        class="badge {% if project.status == 'completed' %}bg-success{% elif project.status == 'ongoing' %}bg-warning{% else %}bg-secondary{% endif %} px-3 py-2 fs-6">
-                        {{ project.get_status_display }}
-                    </span>
                 </div>
             </div>
 
-            <h6 class="fw-bold text-muted text-uppercase small mb-3">Description</h6>
-            <p class="mb-4">{{ project.description }}</p>
-
-            <div class="row g-3">
+            <div class="row g-3 mt-2 position-relative z-1">
+                <!-- Deadline Widget -->
                 <div class="col-md-4">
-                    <div class="p-3 rounded bg-dark border border-secondary border-opacity-25">
-                        <small class="text-muted d-block">Deadline</small>
-                        <span class="fw-bold"><i class="fas fa-calendar me-2 text-primary"></i>{{ project.deadline }}</span>
+                    <div class="stat-widget p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon-wrapper icon-deadline me-3">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <small class="text-white opacity-75 d-block text-uppercase fw-semibold" style="letter-spacing: 0.5px; font-size: 0.75rem;">Deadline</small>
+                                <span class="fw-bold fs-5">{{ project.deadline|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <!-- Manager Widget -->
                 <div class="col-md-4">
-                    <div class="p-3 rounded bg-dark border border-secondary border-opacity-25">
-                        <small class="text-muted d-block">Manager</small>
-                        <span class="fw-bold"><i class="fas fa-user-tie me-2 text-primary"></i>{% if project.manager %}{{ project.manager.username }}{% else %}Unassigned{% endif %}</span>
+                    <div class="stat-widget p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon-wrapper icon-manager me-3">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div>
+                                <small class="text-white opacity-75 d-block text-uppercase fw-semibold" style="letter-spacing: 0.5px; font-size: 0.75rem;">Manager</small>
+                                <span class="fw-bold fs-5 text-truncate d-inline-block" style="max-width: 120px;">{% if project.manager %}{{ project.manager.get_full_name|default:project.manager.username }}{% else %}Unassigned{% endif %}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <!-- Created Widget -->
                 <div class="col-md-4">
-                    <div class="p-3 rounded bg-dark border border-secondary border-opacity-25">
-                        <small class="text-muted d-block">Created On</small>
-                        <span class="fw-bold"><i class="fas fa-clock me-2 text-primary"></i>{{ project.created_at|date:"M d, Y" }}</span>
+                    <div class="stat-widget p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon-wrapper icon-created me-3">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <small class="text-white opacity-75 d-block text-uppercase fw-semibold" style="letter-spacing: 0.5px; font-size: 0.75rem;">Created On</small>
+                                <span class="fw-bold fs-5">{{ project.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="glass-card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-bold mb-0">Project Tasks</h5>
+        <!-- Description Details -->
+        {% if project.description %}
+        <div class="premium-card p-4 p-lg-5 mb-4">
+            <h5 class="fw-bold mb-4 d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fas fa-align-left"></i>
+                </div>
+                Project Brief
+            </h5>
+            <div class="opacity-75" style="line-height: 1.8; font-size: 1.05rem;">
+                {{ project.description|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tasks Card -->
+        <div class="premium-card p-4 p-lg-5 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary border-opacity-10">
+                <h5 class="fw-bold mb-0 d-flex align-items-center">
+                    <div class="bg-success bg-opacity-10 text-success rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    Project Roadmap
+                </h5>
                 {% if user.profile.role == 'team_leader' %}
-                <a href="{% url 'task_board' %}" class="btn btn-sm btn-outline-primary"><i
-                        class="fas fa-plus me-1"></i>Add Task</a>
+                <a href="{% url 'task_board' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-medium transition-all" style="transform: translateY(0);">
+                    <i class="fas fa-plus me-2"></i>New Task
+                </a>
                 {% endif %}
             </div>
 
-            <div class="list-group list-group-flush bg-transparent">
+            <div class="list-group list-group-flush border-0">
                 {% for task in tasks %}
-                <div class="list-group-item bg-transparent border-secondary border-opacity-25 px-0 py-3">
-                    <div class="d-flex align-items-center">
-                        <div class="form-check me-3">
-                            <input class="form-check-input" type="checkbox" {% if task.status == 'done' %}checked{% endif %} disabled>
+                <div class="list-group-item task-item p-3 border-0 bg-transparent">
+                    <div class="d-flex align-items-start align-items-md-center flex-column flex-md-row gap-3">
+                        <div class="form-check m-0">
+                            <input class="form-check-input custom-checkbox" type="checkbox" {% if task.status == 'done' %}checked{% endif %} disabled>
                         </div>
                         <div class="flex-grow-1">
-                            <h6
-                                class="mb-0 fw-bold {% if task.status == 'done' %}text-muted text-decoration-line-through{% endif %}">
-                                {{ task.title }}</h6>
-                            <small class="text-muted">Assigned to: {% if task.assigned_to %}{{ task.assigned_to.username }}{% else %}Unassigned{% endif %} • Due: {{ task.deadline }}</small>
+                            <h6 class="mb-1 fw-bold fs-5 {% if task.status == 'done' %}text-muted text-decoration-line-through opacity-75{% endif %}">
+                                {{ task.title }}
+                            </h6>
+                            <div class="d-flex flex-wrap gap-3 small mt-2">
+                                <span class="text-muted d-flex align-items-center">
+                                    <i class="fas fa-user-circle me-1 opacity-50"></i> 
+                                    {% if task.assigned_to %}
+                                        <span class="fw-medium ms-1">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                                    {% else %}
+                                        <span class="text-warning ms-1 fst-italic">Unassigned</span>
+                                    {% endif %}
+                                </span>
+                                <span class="text-muted d-flex align-items-center">
+                                    <i class="fas fa-flag me-1 opacity-50"></i> 
+                                    <span class="ms-1 fw-medium">{{ task.deadline|date:"M d" }}</span>
+                                </span>
+                            </div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <span
-                                class="badge {% if task.status == 'done' %}bg-success-soft{% elif task.status == 'in_progress' %}bg-warning-soft{% else %}bg-secondary-soft{% endif %}">
-                                {{ task.get_status_display }}
-                            </span>
+                        <div class="flex-shrink-0 mt-3 mt-md-0">
+                            {% if task.status == 'done' %}
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 border border-success border-opacity-25 fw-medium">
+                                    <i class="fas fa-check-circle me-1"></i> Completed
+                                </span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 border border-primary border-opacity-25 fw-medium">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> In Progress
+                                </span>
+                            {% elif task.status == 'review' %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 border border-warning border-opacity-25 fw-medium">
+                                    <i class="fas fa-search me-1"></i> Review
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2 border border-secondary border-opacity-25 fw-medium">
+                                    <i class="fas fa-list-ul me-1"></i> To Do
+                                </span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div class="text-center py-4">
-                    <p class="text-muted mb-0">No tasks assigned to this project.</p>
+                <div class="text-center py-5">
+                    <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-clipboard-list fa-2x text-muted opacity-50"></i>
+                    </div>
+                    <h5 class="fw-bold text-muted mb-2">No tasks defined yet</h5>
+                    <p class="text-muted small mb-0">Tasks assigned to this project will appear here.</p>
                 </div>
                 {% endfor %}
             </div>
         </div>
     </div>
 
+    <!-- Right Sidebar (Client Profile) -->
     <div class="col-lg-4">
-        <div class="glass-card mb-4 text-center">
-            <h6 class="fw-bold text-muted text-uppercase small mb-3">Client Contact</h6>
-            <img src="https://ui-avatars.com/api/?name={{ project.client.name }}&background=6366f1&color=fff&size=80"
-                class="rounded-circle mb-3">
-            <h5 class="fw-bold">{{ project.client.name }}</h5>
-            <p class="text-muted mb-4 small"><i class="fas fa-envelope me-2"></i>{{ project.client.email }}</p>
-            <div class="d-grid">
-                <a href="mailto:{{ project.client.email }}" class="btn btn-sm btn-outline-primary">Send Email</a>
+        <div class="premium-card text-center position-relative overflow-hidden mb-4 p-0">
+            <!-- Decorative banner background -->
+            <div style="height: 120px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);"></div>
+            
+            <div class="card-body px-4 pb-5 pt-0 position-relative">
+                <div class="d-flex justify-content-center" style="margin-top: -50px; margin-bottom: 20px;">
+                    <img src="https://ui-avatars.com/api/?name={{ project.client.name|urlencode }}&background=ffffff&color=6366f1&size=100&bold=true&rounded=true"
+                        class="contact-profile-img rounded-circle bg-white" alt="Client Avatar">
+                </div>
+                
+                <h6 class="fw-bold text-uppercase small tracking-wide mb-1" style="color: #6366f1; letter-spacing: 1px;">Client Partner</h6>
+                <h4 class="fw-bold mb-4">{{ project.client.name }}</h4>
+                
+                <div class="d-flex flex-column gap-3 mb-4 text-start bg-secondary bg-opacity-10 p-3 rounded-3">
+                    <div class="d-flex align-items-center text-muted">
+                        <div class="me-3 text-center" style="width: 24px;">
+                            <i class="fas fa-envelope text-primary"></i>
+                        </div>
+                        <span class="small fw-medium text-break">{{ project.client.email }}</span>
+                    </div>
+                    {% if project.client.phone %}
+                    <div class="d-flex align-items-center text-muted">
+                        <div class="me-3 text-center" style="width: 24px;">
+                            <i class="fas fa-phone text-success"></i>
+                        </div>
+                        <span class="small fw-medium">{{ project.client.phone }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid">
+                    <a href="mailto:{{ project.client.email }}" class="btn btn-outline-primary rounded-pill py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center">
+                        <i class="fas fa-paper-plane me-2"></i> Compose Email
+                    </a>
+                </div>
             </div>
         </div>
     </div>

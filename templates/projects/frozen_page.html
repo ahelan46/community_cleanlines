@@ -109,6 +109,18 @@
             e.stopPropagation();
         }
     });
+
+    // Poll to see if the user was unfrozen by an administrator
+    setInterval(() => {
+        fetch('/user-mgmt/check-frozen/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.is_frozen === false) {
+                    window.location.href = '/'; // redirect back to dashboard
+                }
+            })
+            .catch(err => console.error(err));
+    }, 5000); // Check every 5 seconds
 </script>
 </body>
 </html>
