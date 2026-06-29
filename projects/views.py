@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.template.loader import get_template, TemplateDoesNotExist
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+from .models import Notification
 
 from .models import DemoURL
 
@@ -3411,3 +3412,13 @@ def delete_notification(request, pk):
     notification = get_object_or_404(Notification, pk=pk, user=request.user)
     notification.delete()
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+
+@login_required
+def mark_all_notifications_read(request):
+    Notification.objects.filter(
+        user=request.user,
+        is_read=False
+    ).update(is_read=True)
+
+    return redirect('dashboard')
