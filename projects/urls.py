@@ -30,6 +30,7 @@ urlpatterns = [
     path('calendar/events/<str:type>/<int:pk>/update/', views.update_calendar_event, name='update_calendar_event'),
     path('calendar/events/create-meeting/', views.create_meeting_json, name='create_meeting_json'),
     path('messages/', views.messages_view, name='messages'),
+    path('notifications/mark-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('messages/history/<str:target_type>/<int:target_id>/', views.chat_history_json, name='chat_history_json'),
     path('messages/send/', views.send_chat_message, name='send_chat_message'),
     path('client-projects/', views.client_projects, name='client_projects'),
